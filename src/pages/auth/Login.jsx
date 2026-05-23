@@ -71,6 +71,9 @@ function Login() {
                 "token",
                 token
             );
+            console.log(
+    localStorage.getItem("token")
+);
 
             alert(res.data.message);
 
