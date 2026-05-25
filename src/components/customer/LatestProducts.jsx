@@ -1,95 +1,157 @@
 import { useEffect, useState } from "react";
 import { getProducts } from "../../services/productService";
-import ProductCard from "./ProductCard";
+import ProductCard from "./PrductCard/ProductCard";
 
 function LatestProducts() {
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
+    // =========================
+    // FETCH PRODUCTS
+    // =========================
     useEffect(() => {
+
         const fetchData = async () => {
+
             try {
+
                 const res = await getProducts({
                     sort: "newest",
-                    limit: 8
+                    limit: 10
                 });
 
-                console.log("API RESPONSE:", res.data);
-
-                const productsArray = 
+                const productsArray =
                     res.data?.data?.products ||
                     res.data?.products ||
                     [];
 
-                console.log("Products array:", productsArray);
+                setProducts(productsArray);
 
-                setProducts(Array.isArray(productsArray) ? productsArray : []);
-                setError(null);
             } catch (error) {
+
                 console.log("Lỗi load sản phẩm:", error);
-                setError("Không thể tải danh sách sản phẩm. Vui lòng thử lại sau!");
-                setProducts([]);
+
             } finally {
+
                 setLoading(false);
+
             }
+
         };
 
         fetchData();
+
     }, []);
 
+    // =========================
+    // LOADING
+    // =========================
     if (loading) {
         return (
-            <div className="mt-10 container mx-auto text-center py-10">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                <p className="mt-2 text-gray-600">Đang tải sản phẩm...</p>
+            <div style={styles.loadingContainer}>
+                <div style={styles.spinner}></div>
+
+                <p style={styles.loadingText}>
+                    Đang tải sản phẩm...
+                </p>
             </div>
         );
     }
 
-    if (error) {
-        return (
-            <div className="mt-10 container mx-auto text-center py-10">
-                <p className="text-red-500">{error}</p>
-                <button 
-                    onClick={() => window.location.reload()} 
-                    className="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-                >
-                    Thử lại
-                </button>
-            </div>
-        );
-    }
-
-    if (products.length === 0) {
-        return (
-            <div className="mt-10 container mx-auto text-center py-10">
-                <p className="text-gray-500">Không có sản phẩm nào!</p>
-            </div>
-        );
-    }
-
+    // =========================
+    // UI
+    // =========================
     return (
-        <section className="mt-10 container mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-5">
-                Sản phẩm mới nhất
-            </h2>
 
-            {/* Grid layout đẹp như Shopee, Tiki */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {products.map((p) => (
-                    <ProductCard
-                        key={p.id || p.product_code || Math.random()}
-                        product={p}
-                        onAddToCart={(product) => {
-                            console.log("Add to cart:", product);
-                            // Thêm logic giỏ hàng ở đây
-                        }}
-                    />
-                ))}
+        <section style={styles.section}>
+
+            <div style={styles.container}>
+
+                {/* TITLE */}
+                <h2 style={styles.title}>
+                    Sản phẩm mới nhất
+                </h2>
+
+                {/* GRID */}
+                <div style={styles.grid}>
+
+                    {products.map((p) => (
+
+                        <ProductCard
+                            key={p.id}
+                            product={p}
+                        />
+
+                    ))}
+
+                </div>
+
             </div>
+
         </section>
+
     );
 }
+
+// =========================
+// STYLES
+// =========================
+const styles = {
+
+    section: {
+        width: "100%",
+        marginTop: "50px",
+    },
+
+    container: {
+        width: "100%",
+        maxWidth: "1500px",
+        margin: "auto",
+        padding: "0 20px",
+    },
+
+    title: {
+        fontSize: "32px",
+        fontWeight: "700",
+        marginBottom: "30px",
+        color: "#111827",
+    },
+
+    grid: {
+        display: "grid",
+
+        gridTemplateColumns:
+            "repeat(auto-fit, minmax(250px, 1fr))",
+
+        gap: "20px",
+    },
+
+    loadingContainer: {
+        width: "100%",
+        textAlign: "center",
+        padding: "60px 0",
+    },
+
+    spinner: {
+        width: "40px",
+        height: "40px",
+
+        border: "4px solid #e5e7eb",
+        borderTop: "4px solid #111827",
+
+        borderRadius: "50%",
+
+        margin: "auto",
+
+        animation: "spin 1s linear infinite",
+    },
+
+    loadingText: {
+        marginTop: "15px",
+        color: "#6b7280",
+        fontSize: "15px",
+    },
+};
 
 export default LatestProducts;

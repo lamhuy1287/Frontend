@@ -8,13 +8,14 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 // Trang admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import UserDashboard from "./pages/user/UserDashboard";
+import UserDashboard from "./pages/customer/UserDashboard";
 import AdminRoutes from "./routes/AdminRoutes";
 
 
 // Trang người dùng
-import Home from "./pages/user/Home";
-import Profile from "./pages/user/Profile";
+import Home from "./pages/customer/Home";
+import Profile from "./pages/customer/Profile";
+import ProductDetail from "./pages/customer/ProductDetail";
 
 function App() {
 
@@ -46,6 +47,10 @@ function App() {
                 <Route
                     path="/profile"
                     element={<Profile />}
+                />
+                <Route
+                    path="/product/:id"
+                    element={<ProductDetail />}
                 />
 
             </Routes>
