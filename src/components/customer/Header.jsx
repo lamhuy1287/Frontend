@@ -11,131 +11,269 @@ import {
     FaChevronDown
 } from "react-icons/fa";
 
-import { getCategories } from "../../services/categoryService";
+import {
+    getCategories
+} from "../../services/categoryService";
+
+// CART CONTEXT
+import {
+    useCart
+} from "../../context/CartContext";
 
 function Header() {
 
-    const [categories, setCategories] = useState([]);
+    const [categories,
+        setCategories] =
+        useState([]);
+
+    // =========================
+    // CART CONTEXT
+    // =========================
+
+    const {
+        cartCount
+    } = useCart();
+
+    // =========================
+    // EFFECT
+    // =========================
 
     useEffect(() => {
+
         loadCategories();
+
     }, []);
 
-    const loadCategories = async () => {
-        try {
-            const res = await getCategories();
+    // =========================
+    // LOAD CATEGORIES
+    // =========================
 
-            // ✅ Normalize dữ liệu để luôn là mảng
-            const normalized =
-                Array.isArray(res)
-                    ? res
-                    : res?.data || [];
+    const loadCategories =
+        async () => {
 
-            // ✅ đảm bảo children luôn là mảng
-            const safeData = normalized.map(item => ({
-                ...item,
-                children: Array.isArray(item.children)
-                    ? item.children
-                    : []
-            }));
+            try {
 
-            setCategories(safeData);
+                const res =
+                    await getCategories();
 
-        } catch (error) {
-            console.log(error);
-            setCategories([]);
-        }
-    };
+                // NORMALIZE DATA
+                const normalized =
+                    Array.isArray(res)
+                        ? res
+                        : res?.data || [];
+
+                // SAFE CHILDREN
+                const safeData =
+                    normalized.map(
+                        (item) => ({
+
+                            ...item,
+
+                            children:
+                                Array.isArray(
+                                    item.children
+                                )
+                                    ? item.children
+                                    : []
+
+                        })
+                    );
+
+                setCategories(
+                    safeData
+                );
+
+            } catch (error) {
+
+                console.log(error);
+
+                setCategories([]);
+
+            }
+
+        };
 
     return (
+
         <header>
 
             {/* TOP HEADER */}
+
             <div className="top-header">
+
                 <div className="container top-header-container">
 
                     {/* LOGO */}
-                    <Link to="/user" className="logo">
+
+                    <Link
+                        to="/user"
+                        className="logo"
+                    >
+
                         <img
                             src={logo}
                             alt="Logo"
                             className="logo-image"
                         />
+
                     </Link>
 
                     {/* SEARCH */}
+
                     <div className="search-box">
-                        <FaSearch className="search-icon" />
+
+                        <FaSearch
+                            className="search-icon"
+                        />
+
                         <input
                             type="text"
                             placeholder="Tìm kiếm sản phẩm..."
                         />
+
                     </div>
 
                     {/* ACTIONS */}
+
                     <div className="header-actions">
 
-                        <Link to="/profile" className="action-item">
+                        {/* PROFILE */}
+
+                        <Link
+                            to="/profile"
+                            className="action-item"
+                        >
+
                             <FaUser />
-                            <span>Tài khoản</span>
+
+                            <span>
+                                Tài khoản
+                            </span>
+
                         </Link>
 
-                        <Link to="/cart" className="action-item cart">
-                            <FaShoppingCart />
-                            <span>Giỏ hàng</span>
+                        {/* CART */}
 
-                            <div className="cart-badge">
-                                2
-                            </div>
+                        <Link
+                            to="/cart"
+                            className="action-item cart"
+                        >
+
+                            <FaShoppingCart />
+
+                            <span>
+                                Giỏ hàng
+                            </span>
+
+                            {
+                                cartCount > 0 && (
+
+                                    <div className="cart-badge">
+
+                                        {cartCount}
+
+                                    </div>
+
+                                )
+                            }
+
                         </Link>
 
                     </div>
 
                 </div>
+
             </div>
 
             {/* MENU */}
+
             <div className="menu">
+
                 <div className="container">
 
                     <nav className="menu-nav">
 
-                        {Array.isArray(categories) && categories.map((category) => (
-                            <div className="menu-item" key={category.id}>
+                        {
+                            Array.isArray(
+                                categories
+                            ) &&
+                            categories.map(
+                                (
+                                    category
+                                ) => (
 
-                                <button>
-                                    {category.name}
+                                    <div
+                                        className="menu-item"
+                                        key={
+                                            category.id
+                                        }
+                                    >
 
-                                    {category.children.length > 0 && (
-                                        <FaChevronDown />
-                                    )}
-                                </button>
+                                        <button>
 
-                                {category.children.length > 0 && (
-                                    <div className="dropdown">
+                                            {
+                                                category.name
+                                            }
 
-                                        {category.children.map((child) => (
-                                            <Link
-                                                key={child.id}
-                                                to={`/category/${child.id}`}
-                                            >
-                                                {child.name}
-                                            </Link>
-                                        ))}
+                                            {
+                                                category.children.length > 0 && (
+
+                                                    <FaChevronDown />
+
+                                                )
+                                            }
+
+                                        </button>
+
+                                        {
+                                            category.children.length > 0 && (
+
+                                                <div className="dropdown">
+
+                                                    {
+                                                        category.children.map(
+                                                            (
+                                                                child
+                                                            ) => (
+
+                                                                <Link
+                                                                    key={
+                                                                        child.id
+                                                                    }
+                                                                    to={`/category/${child.id}`}
+                                                                >
+
+                                                                    {
+                                                                        child.name
+                                                                    }
+
+                                                                </Link>
+
+                                                            )
+                                                        )
+                                                    }
+
+                                                </div>
+
+                                            )
+                                        }
 
                                     </div>
-                                )}
 
-                            </div>
-                        ))}
+                                )
+                            )
+                        }
 
                     </nav>
 
                 </div>
+
             </div>
 
         </header>
+
     );
+
 }
 
 export default Header;

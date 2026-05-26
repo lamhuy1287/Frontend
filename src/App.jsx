@@ -16,6 +16,7 @@ import AdminRoutes from "./routes/AdminRoutes";
 import Home from "./pages/customer/Home";
 import Profile from "./pages/customer/Profile";
 import ProductDetail from "./pages/customer/ProductDetail";
+import Cart from "./pages/customer/Cart";
 
 function App() {
 
@@ -51,6 +52,10 @@ function App() {
                 <Route
                     path="/product/:id"
                     element={<ProductDetail />}
+                />
+                <Route
+                    path="/cart"
+                    element={<Cart />}
                 />
 
             </Routes>

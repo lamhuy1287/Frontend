@@ -105,14 +105,14 @@ const styles = {
     },
 
     container: {
-        width: "100%",
+        width: "80%",
         maxWidth: "1500px",
         margin: "auto",
         padding: "0 20px",
     },
 
     title: {
-        fontSize: "32px",
+        fontSize: "22px",
         fontWeight: "700",
         marginBottom: "30px",
         color: "#111827",

@@ -21,6 +21,9 @@ import {
     FaTruck,
     FaShieldAlt
 } from "react-icons/fa";
+import {
+    addToCart
+} from "../../services/cartService";
 
 function ProductDetail() {
 
@@ -51,6 +54,10 @@ function ProductDetail() {
     const [relatedProducts,
         setRelatedProducts] =
         useState([]);
+
+    const [addingCart,
+        setAddingCart] =
+        useState(false);
 
     // =========================
     // FETCH PRODUCT
@@ -166,6 +173,72 @@ function ProductDetail() {
                 .join("\n");
 
         }, [product]);
+
+    // =========================
+    // ADD TO CART
+    // =========================
+
+    const handleAddToCart =
+        async () => {
+
+            // CHƯA CHỌN VARIANT
+            if (!selectedVariant) {
+
+                alert(
+                    "Vui lòng chọn phân loại"
+                );
+
+                return;
+            }
+
+            // CHƯA LOGIN
+            const token =
+                localStorage.getItem(
+                    "token"
+                );
+
+            if (!token) {
+
+                alert(
+                    "Vui lòng đăng nhập"
+                );
+
+                return;
+            }
+
+            try {
+
+                setAddingCart(true);
+
+                await addToCart({
+
+                    product_variant_id:
+                        selectedVariant.id,
+
+                    quantity: quantity
+
+                });
+
+                alert(
+                    "Đã thêm vào giỏ hàng"
+                );
+
+            } catch (error) {
+
+                console.log(error);
+
+                alert(
+                    error.response?.data?.message ||
+                    "Add to cart failed"
+                );
+
+            } finally {
+
+                setAddingCart(false);
+
+            }
+
+        };
 
     // =========================
     // LOADING
@@ -597,18 +670,31 @@ function ProductDetail() {
                             >
 
                                 <button
-                                    style={
-                                        styles.addCartBtn
+                                    style={{
+                                        ...styles.addCartBtn,
+                                        opacity:
+                                            addingCart ? 0.7 : 1,
+                                        cursor:
+                                            addingCart
+                                                ? "not-allowed"
+                                                : "pointer"
+                                    }}
+                                    onClick={
+                                        handleAddToCart
                                     }
+                                    disabled={addingCart}
                                 >
 
                                     <FaShoppingCart />
 
                                     <span>
-                                        Thêm
-                                        vào
-                                        giỏ
-                                        hàng
+
+                                        {
+                                            addingCart
+                                                ? "Đang thêm..."
+                                                : "Thêm vào giỏ hàng"
+                                        }
+
                                     </span>
 
                                 </button>
