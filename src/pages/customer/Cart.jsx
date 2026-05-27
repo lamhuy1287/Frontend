@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState
+} from "react";
+
 import CustomerLayout from "../../layouts/CustomerLayout";
 
 import {
@@ -8,39 +13,80 @@ import {
     clearCart
 } from "../../services/cartService";
 
+import {
+    useCart
+} from "../../context/CartContext";
+
 function Cart() {
 
-    const [cart, setCart] = useState(null);
+    // =========================
+    // CONTEXT
+    // =========================
 
-    const [loading, setLoading] = useState(true);
+    const {
+        setCartCount,
+        removeCartItem: removeCartItemContext
+    } = useCart();
+
+    // =========================
+    // STATE
+    // =========================
+
+    const [cart, setCart] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
 
     // SELECTED ITEMS
-    const [selectedItems, setSelectedItems] = useState([]);
+    const [selectedItems,
+        setSelectedItems] =
+        useState([]);
 
     // COUPON
-    const [coupon, setCoupon] = useState("");
+    const [coupon, setCoupon] =
+        useState("");
 
     // =========================
     // FETCH CART
     // =========================
 
-    const fetchCart = async () => {
+    const fetchCart =
+        async () => {
 
-        try {
+            try {
 
-            const res = await getCart();
+                const res =
+                    await getCart();
 
-            setCart(res.data.data);
+                console.log(
+                    "CART:",
+                    res.data
+                );
 
-        } catch (err) {
+                const cartData =
+                    res.data.data;
 
-            console.log(err);
+                setCart(cartData);
 
-        } finally {
+                // UPDATE HEADER COUNT
+                setCartCount(
+                    cartData?.total_quantity || 0
+                );
 
-            setLoading(false);
-        }
-    };
+            } catch (err) {
+
+                console.log(err);
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+    // =========================
+    // EFFECT
+    // =========================
 
     useEffect(() => {
 
@@ -48,14 +94,18 @@ function Cart() {
 
     }, []);
 
+    // =========================
     // AUTO SELECT ALL
+    // =========================
 
     useEffect(() => {
 
         if (cart?.items) {
 
             setSelectedItems(
-                cart.items.map((item) => item.id)
+                cart.items.map(
+                    (item) => item.id
+                )
             );
         }
 
@@ -76,20 +126,142 @@ function Cart() {
                 ? currentQuantity + 1
                 : currentQuantity - 1;
 
-        // KHÔNG CHO < 1
-        if (newQuantity < 1) {
-            return;
-        }
-
         try {
 
-            // FIX BAD REQUEST
+            // =========================
+            // AUTO REMOVE WHEN = 0
+            // =========================
+
+            if (newQuantity <= 0) {
+
+                // UPDATE UI NGAY
+                setCart((prev) => {
+
+                    if (!prev) {
+                        return prev;
+                    }
+
+                    const updatedItems =
+                        prev.items.filter(
+                            (item) =>
+                                item.id !== itemId
+                        );
+
+                    const totalQuantity =
+                        updatedItems.reduce(
+                            (
+                                total,
+                                item
+                            ) =>
+                                total +
+                                item.quantity,
+                            0
+                        );
+
+                    // UPDATE HEADER
+                    setCartCount(
+                        totalQuantity
+                    );
+
+                    return {
+
+                        ...prev,
+
+                        items:
+                            updatedItems,
+
+                        total_quantity:
+                            totalQuantity
+                    };
+                });
+
+                // REMOVE CHECKBOX
+                setSelectedItems(
+                    (prev) =>
+                        prev.filter(
+                            (id) =>
+                                id !== itemId
+                        )
+                );
+
+                // API REMOVE
+                await removeCartItem(
+                    itemId
+                );
+
+                return;
+            }
+
+            // =========================
+            // UPDATE QUANTITY
+            // =========================
+
             await updateCartItem(
                 itemId,
                 newQuantity
             );
 
-            fetchCart();
+            // UPDATE UI NGAY
+            setCart((prev) => {
+
+                if (!prev) {
+                    return prev;
+                }
+
+                const updatedItems =
+                    prev.items.map(
+                        (item) => {
+
+                            if (
+                                item.id === itemId
+                            ) {
+
+                                return {
+
+                                    ...item,
+
+                                    quantity:
+                                        newQuantity,
+
+                                    subtotal:
+                                        Number(
+                                            item.variant.price
+                                        ) *
+                                        newQuantity
+                                };
+                            }
+
+                            return item;
+                        }
+                    );
+
+                const totalQuantity =
+                    updatedItems.reduce(
+                        (
+                            total,
+                            item
+                        ) =>
+                            total +
+                            item.quantity,
+                        0
+                    );
+
+                // UPDATE HEADER
+                setCartCount(
+                    totalQuantity
+                );
+
+                return {
+
+                    ...prev,
+
+                    items:
+                        updatedItems,
+
+                    total_quantity:
+                        totalQuantity
+                };
+            });
 
         } catch (err) {
 
@@ -99,116 +271,208 @@ function Cart() {
                 err.response?.data?.message ||
                 "Không thể cập nhật số lượng"
             );
+
+            fetchCart();
         }
     };
 
     // =========================
     // REMOVE ITEM
     // =========================
+    const handleRemoveItem =
+        async (itemId) => {
 
-    const handleRemoveItem = async (
-        itemId
-    ) => {
+            try {
 
-        try {
+                // UPDATE UI NGAY
+                setCart((prev) => {
 
-            await removeCartItem(itemId);
+                    if (!prev) {
+                        return prev;
+                    }
 
-            fetchCart();
+                    const updatedItems =
+                        prev.items.filter(
+                            (item) =>
+                                item.id !== itemId
+                        );
 
-        } catch (err) {
+                    const totalQuantity =
+                        updatedItems.reduce(
+                            (
+                                total,
+                                item
+                            ) =>
+                                total +
+                                item.quantity,
+                            0
+                        );
 
-            console.log(err);
-        }
-    };
+                    // UPDATE HEADER COUNT
+                    setCartCount(
+                        totalQuantity
+                    );
+
+                    return {
+
+                        ...prev,
+
+                        items:
+                            updatedItems,
+
+                        total_quantity:
+                            totalQuantity
+                    };
+                });
+
+                // REMOVE CHECKBOX SELECTED
+                setSelectedItems(
+                    (prev) =>
+                        prev.filter(
+                            (id) =>
+                                id !== itemId
+                        )
+                );
+
+                // API
+                await removeCartItem(
+                    itemId
+                );
+
+            } catch (err) {
+
+                console.log(err);
+
+                // RELOAD NẾU LỖI
+                fetchCart();
+            }
+        };
 
     // =========================
     // CLEAR CART
     // =========================
 
-    const handleClearCart = async () => {
+    const handleClearCart =
+        async () => {
 
-        try {
+            try {
 
-            await clearCart();
+                // UPDATE UI NGAY
+                setCart({
 
-            fetchCart();
+                    items: [],
 
-        } catch (err) {
+                    total_quantity: 0
+                });
 
-            console.log(err);
-        }
-    };
+                setSelectedItems([]);
+
+                setCartCount(0);
+
+                // API
+                await clearCart();
+
+            } catch (err) {
+
+                console.log(err);
+
+                fetchCart();
+            }
+        };
 
     // =========================
     // SELECT ITEM
     // =========================
 
-    const handleSelectItem = (id) => {
+    const handleSelectItem =
+        (id) => {
 
-        setSelectedItems((prev) => {
+            setSelectedItems(
+                (prev) => {
 
-            if (prev.includes(id)) {
+                    if (
+                        prev.includes(id)
+                    ) {
 
-                return prev.filter(
-                    (itemId) => itemId !== id
-                );
-            }
+                        return prev.filter(
+                            (itemId) =>
+                                itemId !== id
+                        );
+                    }
 
-            return [...prev, id];
-        });
-    };
+                    return [
+                        ...prev,
+                        id
+                    ];
+                }
+            );
+        };
 
     // =========================
     // SELECT ALL
     // =========================
 
-    const handleSelectAll = () => {
+    const handleSelectAll =
+        () => {
 
-        if (
-            selectedItems.length ===
-            cart.items.length
-        ) {
+            if (
+                selectedItems.length ===
+                cart.items.length
+            ) {
 
-            setSelectedItems([]);
+                setSelectedItems([]);
 
-        } else {
+            } else {
 
-            setSelectedItems(
-                cart.items.map((item) => item.id)
-            );
-        }
-    };
+                setSelectedItems(
+                    cart.items.map(
+                        (item) => item.id
+                    )
+                );
+            }
+        };
 
     // =========================
     // SELECTED ITEMS
     // =========================
 
-    const selectedCartItems = useMemo(() => {
+    const selectedCartItems =
+        useMemo(() => {
 
-        return cart?.items?.filter((item) =>
-            selectedItems.includes(item.id)
-        ) || [];
+            return (
+                cart?.items?.filter(
+                    (item) =>
+                        selectedItems.includes(
+                            item.id
+                        )
+                ) || []
+            );
 
-    }, [cart, selectedItems]);
+        }, [cart, selectedItems]);
 
     // =========================
     // TOTAL
     // =========================
 
-    const totalPrice = selectedCartItems.reduce(
-        (total, item) =>
-            total + Number(item.subtotal),
-        0
-    );
+    const totalPrice =
+        selectedCartItems.reduce(
+            (total, item) =>
+                total +
+                Number(item.subtotal),
+            0
+        );
 
-    const totalQuantity = selectedCartItems.reduce(
-        (total, item) =>
-            total + item.quantity,
-        0
-    );
+    const totalQuantity =
+        selectedCartItems.reduce(
+            (total, item) =>
+                total +
+                item.quantity,
+            0
+        );
 
-    // DEMO COUPON
+    // =========================
+    // COUPON
+    // =========================
 
     const discount =
         coupon === "SALE10"
@@ -225,6 +489,7 @@ function Cart() {
     if (loading) {
 
         return (
+
             <div className="cart-loading">
                 Loading...
             </div>
@@ -564,7 +829,7 @@ function Cart() {
                                             </div>
 
                                             <button className="checkout-btn">
-                                                Mua hàng 
+                                                Mua hàng
                                             </button>
 
                                         </div>
@@ -597,7 +862,7 @@ const styles = `
 .cart-page{
     min-height:100vh;
     background:#f5f5f5;
-    padding:24px 16px;
+    // padding:24px 16px;
 }
 
 .cart-wrapper{
