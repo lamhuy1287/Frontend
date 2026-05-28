@@ -25,6 +25,8 @@ import {
     addToCart
 } from "../../services/cartService";
 
+import socket from "../../socket";
+
 function ProductDetail() {
 
     const { id } = useParams();
@@ -63,96 +65,157 @@ function ProductDetail() {
     // FETCH PRODUCT
     // =========================
 
-    useEffect(() => {
+    const fetchProduct = async () => {
 
-        const fetchProduct = async () => {
+        try {
+
+            const res =
+                await getProductDetail(id);
+
+            const productData =
+                res.data.data;
+
+            setProduct(productData);
+
+            // =====================
+            // IMAGE
+            // =====================
+
+            setSelectedImage((prev) => {
+
+                if (!prev) {
+                    return productData.images?.[0]?.image_url || "";
+                }
+
+                const found =
+                    productData.images.find(
+                        (img) =>
+                            img.image_url === prev
+                    );
+
+                return (
+                    found?.image_url ||
+                    productData.images?.[0]?.image_url ||
+                    ""
+                );
+
+            });
+
+            // =====================
+            // VARIANT
+            // =====================
+
+            setSelectedVariant((prev) => {
+
+                if (!prev) {
+                    return productData.variants?.[0];
+                }
+
+                const found =
+                    productData.variants.find(
+                        (v) =>
+                            v.id === prev.id
+                    );
+
+                return (
+                    found ||
+                    productData.variants?.[0] ||
+                    null
+                );
+
+            });
+
+            // =====================
+            // RELATED PRODUCTS
+            // =====================
 
             try {
 
-                const res =
-                    await getProductDetail(id);
+                const relatedRes =
+                    await getProducts();
 
-                const productData =
-                    res.data.data;
+                let allProducts =
+                    relatedRes?.data?.data?.products || [];
 
-                setProduct(productData);
-
-                // DEFAULT IMAGE
-                if (
-                    productData.images &&
-                    productData.images.length > 0
-                ) {
-
-                    setSelectedImage(
-                        productData.images[0]
-                            .image_url
+                allProducts =
+                    allProducts.filter(
+                        (item) =>
+                            item.id !== productData.id
                     );
 
-                }
-
-                // DEFAULT VARIANT
-                if (
-                    productData.variants &&
-                    productData.variants.length > 0
-                ) {
-
-                    setSelectedVariant(
-                        productData.variants[0]
+                const related =
+                    allProducts.filter(
+                        (item) =>
+                            item.category_id ===
+                            productData.category_id
                     );
 
-                }
-
-                // =========================
-                // RELATED PRODUCTS
-                // =========================
-
-                try {
-
-                    const relatedRes =
-                        await getProducts();
-
-                    let allProducts =
-                        relatedRes?.data?.data?.products || [];
-
-                    // BỎ CHÍNH NÓ
-                    allProducts =
-                        allProducts.filter(
-                            (item) =>
-                                item.id !== productData.id
-                        );
-
-                    // CHỈ LẤY CÙNG DANH MỤC
-                    const related =
-                        allProducts.filter(
-                            (item) =>
-                                item.category_id ===
-                                productData.category_id
-                        );
-
-                    // GIỚI HẠN 5 SẢN PHẨM
-                    setRelatedProducts(
-                        related.slice(0, 5)
-                    );
-
-                } catch (error) {
-
-                    console.log(error);
-
-                }
+                setRelatedProducts(
+                    related.slice(0, 5)
+                );
 
             } catch (error) {
 
                 console.log(error);
 
-            } finally {
-
-                setLoading(false);
-
             }
 
-        };
+        } catch (error) {
+
+            console.log(error);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    useEffect(() => {
 
         fetchProduct();
+
+        // =====================
+        // REALTIME LISTENER
+        // =====================
+
+        socket.on(
+            "product_updated",
+            (data) => {
+
+                console.log(
+                    "SOCKET product_updated:",
+                    data
+                );
+
+                if (
+                    Number(data.product_id) ===
+                    Number(id)
+                ) {
+
+                    console.log(
+                        "Realtime refresh product"
+                    );
+
+                    fetchProduct();
+
+                }
+
+            }
+        );
+
+        // =====================
+        // CLEANUP
+        // =====================
+
+        return () => {
+
+            socket.off(
+                "product_updated"
+            );
+
+        };
 
     }, [id]);
 
