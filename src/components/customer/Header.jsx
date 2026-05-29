@@ -1,14 +1,15 @@
 import "./Header.css";
+
 import logo from "../../assets/logo2.png";
 
 import { Link } from "react-router-dom";
+
 import { useEffect, useState } from "react";
 
 import {
     FaSearch,
     FaShoppingCart,
-    FaUser,
-    FaChevronDown
+    FaUser
 } from "react-icons/fa";
 
 import {
@@ -21,6 +22,10 @@ import {
 } from "../../context/CartContext";
 
 function Header() {
+
+    // =========================
+    // STATES
+    // =========================
 
     const [categories,
         setCategories] =
@@ -56,36 +61,30 @@ function Header() {
                 const res =
                     await getCategories();
 
+                console.log(
+                    "CATEGORIES:",
+                    res
+                );
+
+                // =====================
                 // NORMALIZE DATA
+                // =====================
+
                 const normalized =
                     Array.isArray(res)
                         ? res
                         : res?.data || [];
 
-                // SAFE CHILDREN
-                const safeData =
-                    normalized.map(
-                        (item) => ({
-
-                            ...item,
-
-                            children:
-                                Array.isArray(
-                                    item.children
-                                )
-                                    ? item.children
-                                    : []
-
-                        })
-                    );
-
                 setCategories(
-                    safeData
+                    normalized
                 );
 
             } catch (error) {
 
-                console.log(error);
+                console.log(
+                    "LOAD CATEGORY ERROR:",
+                    error
+                );
 
                 setCategories([]);
 
@@ -93,11 +92,17 @@ function Header() {
 
         };
 
+    // =========================
+    // RENDER
+    // =========================
+
     return (
 
         <header>
 
-            {/* TOP HEADER */}
+            {/* =====================
+                TOP HEADER
+            ===================== */}
 
             <div className="top-header">
 
@@ -185,7 +190,9 @@ function Header() {
 
             </div>
 
-            {/* MENU */}
+            {/* =====================
+                MENU
+            ===================== */}
 
             <div className="menu">
 
@@ -194,74 +201,26 @@ function Header() {
                     <nav className="menu-nav">
 
                         {
-                            Array.isArray(
-                                categories
-                            ) &&
-                            categories.map(
-                                (
-                                    category
-                                ) => (
+                            Array.isArray(categories) &&
+                            categories.map((category) => (
 
-                                    <div
-                                        className="menu-item"
-                                        key={
-                                            category.id
-                                        }
+                                <div
+                                    className="menu-item"
+                                    key={category.id}
+                                >
+
+                                    <Link
+                                        to={`/category/${category.id}`}
+                                        className="menu-link"
                                     >
 
-                                        <button>
+                                        {category.name}
 
-                                            {
-                                                category.name
-                                            }
+                                    </Link>
 
-                                            {
-                                                category.children.length > 0 && (
+                                </div>
 
-                                                    <FaChevronDown />
-
-                                                )
-                                            }
-
-                                        </button>
-
-                                        {
-                                            category.children.length > 0 && (
-
-                                                <div className="dropdown">
-
-                                                    {
-                                                        category.children.map(
-                                                            (
-                                                                child
-                                                            ) => (
-
-                                                                <Link
-                                                                    key={
-                                                                        child.id
-                                                                    }
-                                                                    to={`/category/${child.id}`}
-                                                                >
-
-                                                                    {
-                                                                        child.name
-                                                                    }
-
-                                                                </Link>
-
-                                                            )
-                                                        )
-                                                    }
-
-                                                </div>
-
-                                            )
-                                        }
-
-                                    </div>
-
-                                )
-                            )
+                            ))
                         }
 
                     </nav>

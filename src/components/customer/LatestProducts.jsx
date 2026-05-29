@@ -69,9 +69,14 @@ function LatestProducts() {
             <div style={styles.container}>
 
                 {/* TITLE */}
-                <h2 style={styles.title}>
-                    Sản phẩm mới nhất
-                </h2>
+<h2
+    style={{
+        ...styles.title,
+        textAlign: "center"
+    }}
+>
+    Sản phẩm mới nhất
+</h2>
 
                 {/* GRID */}
                 <div style={styles.grid}>

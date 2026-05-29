@@ -17,6 +17,8 @@ import Home from "./pages/customer/Home";
 import Profile from "./pages/customer/Profile";
 import ProductDetail from "./pages/customer/ProductDetail";
 import Cart from "./pages/customer/Cart";
+import CategoryProducts from "./pages/customer/CategoryProducts";
+
 
 function App() {
 
@@ -57,6 +59,10 @@ function App() {
                     path="/cart"
                     element={<Cart />}
                 />
+<Route
+    path="/category/:id"
+    element={<CategoryProducts />}
+/>
 
             </Routes>
 

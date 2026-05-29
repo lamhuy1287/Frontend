@@ -64,7 +64,7 @@ header {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    flex-wrap: nowrap; /* Không xuống dòng */
+    flex-wrap: nowrap;
 }
 
 /* =========================
@@ -74,7 +74,7 @@ header {
 .logo {
     display: flex;
     align-items: center;
-    flex-shrink: 0; /* KHÔNG CO LẠI */
+    flex-shrink: 0;
 }
 
 .logo-image {
@@ -91,7 +91,7 @@ header {
 
 .search-box {
     position: relative;
-    flex: 1 1 auto; /* Co giãn linh hoạt */
+    flex: 1 1 auto;
     min-width: 160px;
     max-width: 500px;
     height: 45px;
@@ -124,14 +124,14 @@ header {
 }
 
 /* =========================
-   ACTIONS - QUAN TRỌNG: KHÔNG BAO GIỜ BỊ ẨN
+   ACTIONS
 ========================= */
 
 .header-actions {
     display: flex;
     align-items: center;
     gap: 20px;
-    flex-shrink: 0; /* QUAN TRỌNG: KHÔNG CO, KHÔNG ẨN */
+    flex-shrink: 0;
     white-space: nowrap;
 }
 
@@ -211,74 +211,73 @@ header {
     position: relative;
 }
 
-.menu-item button {
-    background: transparent;
-    border: none;
-    outline: none;
+/* =========================
+   MENU LINK
+========================= */
+
+.menu-link {
+
+    position: relative;
+
     display: flex;
+
     align-items: center;
-    gap: 8px;
+
     color: #fff;
+
     font-size: 16px;
+
     font-weight: 500;
-    cursor: pointer;
-    transition: 0.25s ease;
+
     padding: 10px 0;
+
+    white-space: nowrap;
+
+    transition: 0.3s ease;
 }
 
-.menu-item button:hover {
-    color: #e5e5e5;
-}
+/* HOVER */
 
-.menu-item button svg {
-    font-size: 12px;
+.menu-link:hover {
+    color: #f5f5f5;
 }
 
 /* =========================
-   DROPDOWN
+   BONUS UNDERLINE EFFECT
 ========================= */
 
-.dropdown {
+.menu-link::after {
+
+    content: "";
+
     position: absolute;
-    top: 120%;
+
     left: 0;
-    min-width: 220px;
+
+    bottom: -4px;
+
+    width: 0;
+
+    height: 2px;
+
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-    padding: 10px 0;
-    opacity: 0;
-    visibility: hidden;
-    transition: 0.25s ease;
-    display: flex;
-    flex-direction: column;
-    z-index: 999;
+
+    transition: width 0.3s ease;
 }
 
-.menu-item:hover .dropdown {
-    opacity: 1;
-    visibility: visible;
-    top: 100%;
-}
+.menu-link:hover::after {
 
-.dropdown a {
-    color: #333;
-    font-size: 14px;
-    padding: 12px 20px;
-    transition: 0.2s ease;
-}
-
-.dropdown a:hover {
-    background: #f5f5f5;
-    color: #000;
+    width: 100%;
 }
 
 /* =========================
-   🟢 RESPONSIVE - ĐÃ TEST KỸ
+   RESPONSIVE
 ========================= */
 
-/* Tablet (900px - 1024px) */
+/* Tablet */
+
 @media (max-width: 1024px) {
+
     .top-header-container {
         gap: 15px;
     }
@@ -297,8 +296,10 @@ header {
     }
 }
 
-/* Tablet nhỏ (768px - 900px) */
+/* Tablet nhỏ */
+
 @media (max-width: 900px) {
+
     .top-header-container {
         gap: 12px;
     }
@@ -330,10 +331,12 @@ header {
     }
 }
 
-/* === QUAN TRỌNG: MÀN HÌNH 768px (TRƯỜNG HỢP CỦA BẠN) === */
+/* Mobile */
+
 @media (max-width: 768px) {
+
     .top-header-container {
-        flex-wrap: nowrap; /* GIỮ NGANG, KHÔNG XUỐNG DÒNG */
+        flex-wrap: nowrap;
         gap: 10px;
         padding: 0 8px;
     }
@@ -342,7 +345,6 @@ header {
         max-width: 100px;
     }
 
-    /* THU NHỎ Ô SEARCH */
     .search-box {
         min-width: 100px;
         max-width: 280px;
@@ -360,7 +362,6 @@ header {
         font-size: 14px;
     }
 
-    /* ACTION VẪN ĐẦY ĐỦ, KHÔNG ẨN */
     .header-actions {
         gap: 12px;
         flex-shrink: 0;
@@ -383,7 +384,6 @@ header {
         font-size: 10px;
     }
 
-    /* MENU */
     .menu-nav {
         justify-content: flex-start;
         overflow-x: auto;
@@ -397,18 +397,15 @@ header {
         display: none;
     }
 
-    .menu-item button {
+    .menu-link {
         font-size: 14px;
-        white-space: nowrap;
-    }
-
-    .dropdown {
-        min-width: 200px;
     }
 }
 
-/* Mobile lớn (550px - 768px) - Vẫn giữ ngang nhưng co nhẹ */
+/* Mobile nhỏ */
+
 @media (max-width: 650px) {
+
     .logo-image {
         max-width: 80px;
     }
@@ -427,8 +424,10 @@ header {
     }
 }
 
-/* === MOBILE NHỎ (dưới 550px) - LÚC NÀY MỚI XUỐNG DÒNG === */
+/* XS */
+
 @media (max-width: 550px) {
+
     .top-header-container {
         flex-wrap: wrap;
         justify-content: center;
@@ -468,8 +467,10 @@ header {
     }
 }
 
-/* Mobile siêu nhỏ */
+/* MOBILE SIÊU NHỎ */
+
 @media (max-width: 480px) {
+
     .logo-image {
         max-width: 80px;
     }
@@ -491,7 +492,7 @@ header {
         gap: 18px;
     }
 
-    .menu-item button {
+    .menu-link {
         font-size: 13px;
     }
 }
