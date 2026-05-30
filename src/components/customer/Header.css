@@ -495,4 +495,108 @@ header {
     .menu-link {
         font-size: 13px;
     }
+
 }
+/* =========================
+   PROFILE DROPDOWN
+========================= */
+
+.profile-dropdown {
+
+    position: relative;
+}
+
+.dropdown-menu {
+
+    position: absolute;
+
+    top: 120%;
+
+    right: 0;
+
+    width: 220px;
+
+    background: white;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.12);
+
+    padding: 10px;
+
+    z-index: 999;
+}
+
+.dropdown-item {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 14px;
+
+    border-radius: 12px;
+
+    text-decoration: none;
+
+    color: #111;
+
+    background: transparent;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    transition: 0.25s;
+}
+
+.dropdown-item:hover {
+
+    background: #f5f5f5;
+}
+
+.logout-btn {
+
+    font-family: inherit;
+}
+
+.profile-btn {
+
+    background: transparent;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-family: inherit;
+}
+
+.dropdown-menu {
+
+    animation: dropdownFade 0.2s ease;
+}
+
+@keyframes dropdownFade {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(10px);
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+    }
+}
+

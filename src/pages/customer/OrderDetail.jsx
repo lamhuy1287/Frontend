@@ -1,403 +1,308 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+    useEffect,
+    useState
+} from "react";
 
-import CustomerLayout from "../../layouts/CustomerLayout";
+import {
+    useParams
+} from "react-router-dom";
+
+import CustomerLayout
+    from "../../layouts/CustomerLayout";
 
 import {
     getOrderDetail
 } from "../../services/orderService";
 
+import "./OrderDetail.css";
+
 function OrderDetail() {
+
+    // =========================
+    // PARAMS
+    // =========================
 
     const { id } = useParams();
 
-    const [order, setOrder] =
+    // =========================
+    // STATES
+    // =========================
+
+    const [order,
+        setOrder] =
         useState(null);
 
-    const [error, setError] =
-        useState(null);
+    const [loading,
+        setLoading] =
+        useState(true);
+
+    // =========================
+    // EFFECT
+    // =========================
 
     useEffect(() => {
 
-        const fetchOrder = async () => {
-
-            try {
-
-                const res =
-                    await getOrderDetail(id);
-
-                setOrder(
-                    res.data.data
-                );
-
-            } catch (err) {
-
-                console.error(err);
-
-                setError(
-                    err.response?.data?.message ||
-                    "Không tải được đơn hàng"
-                );
-            }
-        };
-
         if (id) {
-            fetchOrder();
+
+            fetchOrderDetail();
         }
 
     }, [id]);
 
-    if (error) {
+    // =========================
+    // FETCH DETAIL
+    // =========================
+
+    const fetchOrderDetail =
+        async () => {
+
+            try {
+
+                setLoading(true);
+
+                const res =
+                    await getOrderDetail(id);
+
+                console.log(
+                    "ORDER DETAIL:",
+                    res
+                );
+
+                setOrder(
+                    res?.data || null
+                );
+
+            } catch (error) {
+
+                console.log(
+                    "LOAD ORDER DETAIL ERROR:",
+                    error
+                );
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+    // =========================
+    // LOADING
+    // =========================
+
+    if (loading) {
 
         return (
+
             <CustomerLayout>
-                <div className="order-error">
-                    {error}
+
+                <div
+                    style={{
+                        padding: "40px"
+                    }}
+                >
+
+                    <h2>
+                        Loading...
+                    </h2>
+
                 </div>
+
             </CustomerLayout>
         );
     }
+
+    // =========================
+    // NOT FOUND
+    // =========================
 
     if (!order) {
 
         return (
+
             <CustomerLayout>
-                <div className="order-loading">
-                    Loading...
+
+                <div
+                    style={{
+                        padding: "40px"
+                    }}
+                >
+
+                    <h2>
+                        Không tìm thấy đơn hàng
+                    </h2>
+
                 </div>
+
             </CustomerLayout>
         );
     }
+
+    // =========================
+    // RENDER
+    // =========================
 
     return (
 
         <CustomerLayout>
 
-            <>
-                <style>{styles}</style>
+            <div className="order-detail-page">
 
-                <div className="order-page">
+                <h1>
+                    Chi tiết đơn hàng
+                    #{order.id}
+                </h1>
 
-                    <div className="order-wrapper">
+                {/* CUSTOMER */}
 
-                        <div className="order-header">
+                <div className="detail-card">
 
-                            <div>
+                    <h3>
+                        Thông tin nhận hàng
+                    </h3>
 
-                                <h1>
-                                    Đơn hàng #{order.id}
-                                </h1>
+                    <p>
+                        <strong>
+                            Người nhận:
+                        </strong>
 
-                                <p>
-                                    Chi tiết đơn hàng của bạn
-                                </p>
+                        {" "}
+                        {order.customer_name}
+                    </p>
 
-                            </div>
+                    <p>
+                        <strong>
+                            Số điện thoại:
+                        </strong>
 
-                            <span
-                                className={`status ${order.status}`}
-                            >
-                                {order.status}
-                            </span>
+                        {" "}
+                        {order.phone}
+                    </p>
 
-                        </div>
+                    <p>
+                        <strong>
+                            Địa chỉ:
+                        </strong>
 
-                        <div className="order-grid">
+                        {" "}
+                        {order.address}
+                    </p>
 
-                            {/* LEFT */}
+                </div>
 
-                            <div>
+                {/* ORDER INFO */}
 
-                                <div className="card">
+                <div className="detail-card">
 
-                                    <h2>
-                                        Thông tin đơn hàng
-                                    </h2>
+                    <h3>
+                        Thông tin đơn hàng
+                    </h3>
 
-                                    <div className="info-row">
-                                        <span>Mã đơn</span>
-                                        <strong>#{order.id}</strong>
-                                    </div>
+                    <p>
+                        <strong>
+                            Trạng thái:
+                        </strong>
 
-                                    <div className="info-row">
-                                        <span>Khách hàng</span>
-                                        <strong>{order.customer_name}</strong>
-                                    </div>
+                        {" "}
+                        {order.status}
+                    </p>
 
-                                    <div className="info-row">
-                                        <span>Số điện thoại</span>
-                                        <strong>{order.phone}</strong>
-                                    </div>
+                    <p>
+                        <strong>
+                            Thanh toán:
+                        </strong>
 
-                                    <div className="info-row">
-                                        <span>Địa chỉ</span>
-                                        <strong>{order.address}</strong>
-                                    </div>
+                        {" "}
+                        {order.payment_method}
+                    </p>
 
-                                    <div className="info-row">
-                                        <span>Thanh toán</span>
-                                        <strong>{order.payment_method}</strong>
-                                    </div>
+                    <p>
+                        <strong>
+                            Trạng thái thanh toán:
+                        </strong>
 
-                                    <div className="info-row">
-                                        <span>Trạng thái thanh toán</span>
-                                        <strong>
-                                            {order.payment_status}
-                                        </strong>
-                                    </div>
+                        {" "}
+                        {order.payment_status}
+                    </p>
 
-                                    <div className="info-row">
-                                        <span>Ngày tạo</span>
-                                        <strong>
-                                            {order.created_at
-                                                ? new Date(order.created_at).toLocaleString("vi-VN")
-                                                : "-"}
-                                        </strong>
-                                    </div>
+                </div>
 
-                                </div>
+                {/* ITEMS */}
 
-                                <div className="card">
+                <div className="detail-card">
 
-                                    <h2>
-                                        Sản phẩm
-                                    </h2>
+                    <h3>
+                        Sản phẩm
+                    </h3>
 
-                                    {
-                                        order.items?.map((item) => (
+                    <div className="order-items">
 
-                                            <div
-                                                key={item.id}
-                                                className="product-item"
-                                            >
+                        {
+                            order.items?.map((item) => (
 
-                                                <div>
+                                <div
+                                    className="order-item"
+                                    key={item.id}
+                                >
 
-                                                    <div className="product-name">
-                                                        {item.product_name}
-                                                    </div>
+                                    <div>
 
-                                                    <div className="product-variant">
-                                                        {item.variant_name}
-                                                    </div>
+                                        <h4>
+                                            {item.product_name}
+                                        </h4>
 
-                                                    <div className="product-qty">
-                                                        Số lượng: {item.quantity}
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="product-price">
-
-                                                    {Number(
-                                                        item.price
-                                                    ).toLocaleString("vi-VN")} đ
-
-                                                </div>
-
-                                            </div>
-
-                                        ))
-                                    }
-
-                                </div>
-
-                            </div>
-
-                            {/* RIGHT */}
-
-                            <div>
-
-                                <div className="card">
-
-                                    <h2>
-                                        Thanh toán
-                                    </h2>
-
-                                    <div className="summary-row">
-                                        <span>Tổng tiền</span>
-
-                                        <strong className="total-price">
-
-                                            {
-                                                Number(
-                                                    order.total_price
-                                                ).toLocaleString("vi-VN")
-                                            } đ
-
-                                        </strong>
+                                        <p>
+                                            {item.variant_name}
+                                        </p>
 
                                     </div>
 
-                                    <div className="summary-row">
-                                        <span>Giảm giá</span>
+                                    <div>
 
-                                        <strong>
+                                        x{item.quantity}
 
-                                            {
-                                                Number(
-                                                    order.discount_amount
-                                                ).toLocaleString("vi-VN")
-                                            } đ
+                                    </div>
 
-                                        </strong>
+                                    <div>
+
+                                        {
+                                            Number(item.price)
+                                                .toLocaleString()
+                                        }đ
 
                                     </div>
 
                                 </div>
 
-                            </div>
-
-                        </div>
+                            ))
+                        }
 
                     </div>
 
                 </div>
 
-            </>
+                {/* TOTAL */}
+
+                <div className="order-total-box">
+
+                    Tổng tiền:
+
+                    <span>
+
+                        {
+                            Number(order.total_price)
+                                .toLocaleString()
+                        }đ
+
+                    </span>
+
+                </div>
+
+            </div>
 
         </CustomerLayout>
 
     );
 }
 
-const styles = `
-
-.order-page{
-    min-height:100vh;
-    background:#f5f5f5;
-    padding:24px 16px;
-}
-
-.order-wrapper{
-    max-width:1200px;
-    margin:auto;
-}
-
-.order-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
-}
-
-.order-header h1{
-    margin:0;
-    font-size:32px;
-}
-
-.order-header p{
-    margin-top:6px;
-    color:#666;
-}
-
-.order-grid{
-    display:grid;
-    grid-template-columns:2fr 1fr;
-    gap:20px;
-}
-
-.card{
-    background:white;
-    border-radius:16px;
-    padding:24px;
-    margin-bottom:20px;
-    box-shadow:0 4px 20px rgba(0,0,0,.05);
-}
-
-.card h2{
-    margin-bottom:18px;
-}
-
-.info-row{
-    display:flex;
-    justify-content:space-between;
-    padding:10px 0;
-    border-bottom:1px solid #eee;
-}
-
-.product-item{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:16px 0;
-    border-bottom:1px solid #eee;
-}
-
-.product-name{
-    font-weight:600;
-    margin-bottom:4px;
-}
-
-.product-variant,
-.product-qty{
-    color:#666;
-    font-size:14px;
-}
-
-.product-price{
-    font-weight:700;
-}
-
-.summary-row{
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:16px;
-}
-
-.total-price{
-    font-size:22px;
-    color:#ef4444;
-}
-
-.status{
-    padding:8px 14px;
-    border-radius:999px;
-    font-size:13px;
-    font-weight:600;
-}
-
-.status.pending{
-    background:#fef3c7;
-    color:#92400e;
-}
-
-.status.completed{
-    background:#dcfce7;
-    color:#166534;
-}
-
-.status.cancelled{
-    background:#fee2e2;
-    color:#991b1b;
-}
-
-.order-loading,
-.order-error{
-    padding:40px;
-    text-align:center;
-}
-
-@media(max-width:768px){
-
-    .order-grid{
-        grid-template-columns:1fr;
-    }
-
-    .order-header{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:12px;
-    }
-
-    .info-row,
-    .product-item{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:6px;
-    }
-}
-
-`;
-
 export default OrderDetail;
+

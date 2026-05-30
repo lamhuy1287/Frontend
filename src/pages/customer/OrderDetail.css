@@ -1,0 +1,149 @@
+/* =========================
+   PAGE
+========================= */
+
+.order-detail-page {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.order-detail-page h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #222;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.detail-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.detail-card h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #111827;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 10px;
+}
+
+.detail-card p {
+    margin-bottom: 10px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.detail-card strong {
+    color: #111827;
+}
+
+/* =========================
+   ORDER ITEMS
+========================= */
+
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.order-item {
+    display: grid;
+    grid-template-columns: 1fr 100px 150px;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #f1f1f1;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.order-item h4 {
+    font-size: 16px;
+    color: #111827;
+    margin-bottom: 4px;
+}
+
+.order-item p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.order-item div:nth-child(2) {
+    text-align: center;
+    font-weight: 600;
+    color: #374151;
+}
+
+.order-item div:nth-child(3) {
+    text-align: right;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+/* =========================
+   TOTAL
+========================= */
+
+.order-total-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 25px;
+
+    padding: 20px 25px;
+
+    background: #111827;
+    color: white;
+
+    border-radius: 12px;
+
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.order-total-box span {
+    color: #facc15;
+    font-size: 28px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+
+    .order-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .order-item div:nth-child(2),
+    .order-item div:nth-child(3) {
+        text-align: left;
+    }
+
+    .order-total-box {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .order-total-box span {
+        font-size: 24px;
+    }
+
+    .order-detail-page h1 {
+        font-size: 24px;
+    }
+}

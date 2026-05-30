@@ -1,15 +1,22 @@
+
 import "./Header.css";
 
 import logo from "../../assets/logo2.png";
 
 import { Link } from "react-router-dom";
 
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useState,
+    useRef
+} from "react";
 
 import {
     FaSearch,
     FaShoppingCart,
-    FaUser
+    FaUser,
+    FaBoxOpen,
+    FaSignOutAlt
 } from "react-icons/fa";
 
 import {
@@ -31,6 +38,17 @@ function Header() {
         setCategories] =
         useState([]);
 
+    const [showDropdown,
+        setShowDropdown] =
+        useState(false);
+
+    // =========================
+    // REF
+    // =========================
+
+    const dropdownRef =
+        useRef();
+
     // =========================
     // CART CONTEXT
     // =========================
@@ -46,6 +64,42 @@ function Header() {
     useEffect(() => {
 
         loadCategories();
+
+    }, []);
+
+    // =========================
+    // CLOSE DROPDOWN
+    // =========================
+
+    useEffect(() => {
+
+        const handleClickOutside = (
+            event
+        ) => {
+
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(
+                    event.target
+                )
+            ) {
+
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener(
+            "mousedown",
+            handleClickOutside
+        );
+
+        return () => {
+
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutside
+            );
+        };
 
     }, []);
 
@@ -91,6 +145,20 @@ function Header() {
             }
 
         };
+
+    // =========================
+    // LOGOUT
+    // =========================
+
+    const handleLogout = () => {
+
+        localStorage.removeItem(
+            "access_token"
+        );
+
+        window.location.href =
+            "/";
+    };
 
     // =========================
     // RENDER
@@ -144,18 +212,90 @@ function Header() {
 
                         {/* PROFILE */}
 
-                        <Link
-                            to="/profile"
-                            className="action-item"
+                        <div
+                            className="profile-dropdown"
+                            ref={dropdownRef}
                         >
 
-                            <FaUser />
+                            <button
+                                className="action-item profile-btn"
+                                onClick={() =>
+                                    setShowDropdown(
+                                        !showDropdown
+                                    )
+                                }
+                            >
 
-                            <span>
-                                Tài khoản
-                            </span>
+                                <FaUser />
 
-                        </Link>
+                                <span>
+                                    Tài khoản
+                                </span>
+
+                            </button>
+
+                            {
+                                showDropdown && (
+
+                                    <div className="dropdown-menu">
+
+                                        {/* PROFILE */}
+
+                                        <Link
+                                            to="/profile"
+                                            className="dropdown-item"
+                                            onClick={() =>
+                                                setShowDropdown(false)
+                                            }
+                                        >
+
+                                            <FaUser />
+
+                                            <span>
+                                                Tài khoản
+                                            </span>
+
+                                        </Link>
+
+                                        {/* ORDERS */}
+
+                                        <Link
+                                            to="/my-orders"
+                                            className="dropdown-item"
+                                            onClick={() =>
+                                                setShowDropdown(false)
+                                            }
+                                        >
+
+                                            <FaBoxOpen />
+
+                                            <span>
+                                                Đơn hàng
+                                            </span>
+
+                                        </Link>
+
+                                        {/* LOGOUT */}
+
+                                        <button
+                                            className="dropdown-item logout-btn"
+                                            onClick={handleLogout}
+                                        >
+
+                                            <FaSignOutAlt />
+
+                                            <span>
+                                                Đăng xuất
+                                            </span>
+
+                                        </button>
+
+                                    </div>
+
+                                )
+                            }
+
+                        </div>
 
                         {/* CART */}
 
@@ -236,3 +376,4 @@ function Header() {
 }
 
 export default Header;
+

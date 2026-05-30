@@ -20,6 +20,8 @@ import Cart from "./pages/customer/Cart";
 import CategoryProducts from "./pages/customer/CategoryProducts";
 import Checkout from "./pages/customer/Checkout";
 import OrderDetail from "./pages/customer/OrderDetail";
+import MyOrders from "./pages/customer/orders/MyOrders";
+
 
 function App() {
 
@@ -72,6 +74,11 @@ function App() {
                     path="/category/:id"
                     element={<CategoryProducts />}
                 />
+                <Route
+                    path="/my-orders"
+                    element={<MyOrders />}
+                />
+
 
             </Routes>
 

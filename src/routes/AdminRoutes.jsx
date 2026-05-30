@@ -13,6 +13,10 @@ import ProductEdit from "../pages/admin/products/ProductEdit";
 
 import Orders from "../pages/admin/Orders";
 
+import OrderDetail from "../pages/admin/orders/OrderDetail";
+
+
+
 import Users from "../pages/admin/Users";
 
 
@@ -60,6 +64,13 @@ function AdminRoutes() {
                     path="products/edit/:id"
                     element={<ProductEdit />}
                 />
+  
+<Route
+    path="orders/:id"
+    element={<OrderDetail />}
+/>
+
+
 
 
 
