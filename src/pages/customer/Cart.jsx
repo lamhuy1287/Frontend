@@ -4,6 +4,10 @@ import {
     useState
 } from "react";
 
+import {
+    useNavigate
+} from "react-router-dom";
+
 import CustomerLayout from "../../layouts/CustomerLayout";
 
 import {
@@ -18,6 +22,8 @@ import {
 } from "../../context/CartContext";
 
 function Cart() {
+
+    const navigate = useNavigate();
 
     // =========================
     // CONTEXT
@@ -471,6 +477,26 @@ function Cart() {
         );
 
     // =========================
+    // CHECKOUT
+    // =========================
+
+    const handleCheckout = () => {
+
+        if (selectedItems.length === 0) {
+
+            alert(
+                "Vui lòng chọn sản phẩm"
+            );
+
+            return;
+        }
+
+        navigate(
+            "/checkout"
+        );
+    };
+
+    // =========================
     // COUPON
     // =========================
 
@@ -828,7 +854,10 @@ function Cart() {
 
                                             </div>
 
-                                            <button className="checkout-btn">
+                                            <button
+                                                className="checkout-btn"
+                                                onClick={handleCheckout}
+                                            >
                                                 Mua hàng
                                             </button>
 

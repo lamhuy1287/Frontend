@@ -18,7 +18,8 @@ import Profile from "./pages/customer/Profile";
 import ProductDetail from "./pages/customer/ProductDetail";
 import Cart from "./pages/customer/Cart";
 import CategoryProducts from "./pages/customer/CategoryProducts";
-
+import Checkout from "./pages/customer/Checkout";
+import OrderDetail from "./pages/customer/OrderDetail";
 
 function App() {
 
@@ -59,10 +60,18 @@ function App() {
                     path="/cart"
                     element={<Cart />}
                 />
-<Route
-    path="/category/:id"
-    element={<CategoryProducts />}
-/>
+                <Route
+                    path="/checkout"
+                    element={<Checkout />}
+                />
+                <Route
+                    path="/my-orders/:id"
+                    element={<OrderDetail />}
+                />
+                <Route
+                    path="/category/:id"
+                    element={<CategoryProducts />}
+                />
 
             </Routes>
 
