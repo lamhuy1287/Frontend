@@ -11,7 +11,8 @@ import CustomerLayout
     from "../../layouts/CustomerLayout";
 
 import {
-    getOrderDetail
+    getOrderDetail,
+    cancelOrder
 } from "../../services/orderService";
 
 import "./OrderDetail.css";
@@ -35,6 +36,10 @@ function OrderDetail() {
     const [loading,
         setLoading] =
         useState(true);
+
+    const [cancelling,
+        setCancelling] =
+        useState(false);
 
     // =========================
     // EFFECT
@@ -84,6 +89,51 @@ function OrderDetail() {
                 setLoading(false);
             }
         };
+
+    // =========================
+    // CANCEL ORDER
+    // =========================
+
+    const canCancelOrder =
+        order?.status === "pending";
+
+    const isCancelLocked =
+        ["confirmed", "shipping"].includes(
+            order?.status
+        );
+
+    const handleCancel = async () => {
+
+        if (
+            !window.confirm(
+                "Bạn chắc chắn muốn hủy đơn?"
+            )
+        ) {
+            return;
+        }
+
+        try {
+
+            setCancelling(true);
+
+            await cancelOrder(order.id);
+
+            alert("Đã hủy đơn");
+
+            fetchOrderDetail();
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message
+                || "Hủy đơn thất bại"
+            );
+
+        } finally {
+
+            setCancelling(false);
+        }
+    };
 
     // =========================
     // LOADING
@@ -214,6 +264,35 @@ function OrderDetail() {
                         {" "}
                         {order.payment_method}
                     </p>
+
+                    {(
+                        canCancelOrder
+                        || isCancelLocked
+                    ) && (
+
+                        <div className="order-detail-action">
+
+                            <button
+                                className="cancel-order-button"
+                                onClick={handleCancel}
+                                disabled={
+                                    !canCancelOrder
+                                    || cancelling
+                                }
+                            >
+                                Hủy đơn hàng
+                            </button>
+
+                            {isCancelLocked && (
+                                <p className="cancel-note">
+                                    Đơn hàng đã được shop xử lý,
+                                    không thể hủy ở trạng thái
+                                    này.
+                                </p>
+                            )}
+
+                        </div>
+                    )}
 
                     <p>
                         <strong>

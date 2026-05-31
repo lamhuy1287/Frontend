@@ -47,6 +47,44 @@
 }
 
 /* =========================
+   ORDER ACTIONS
+========================= */
+
+.order-detail-action {
+    margin-top: 16px;
+}
+
+.cancel-order-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.cancel-order-button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.cancel-order-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cancel-note {
+    margin-top: 10px;
+    color: #b91c1c;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================
    ORDER ITEMS
 ========================= */
 
