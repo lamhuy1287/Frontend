@@ -216,33 +216,49 @@ function OrderDetail() {
                     Thông tin thanh toán
                 </h3>
 
-                <div className="detail-grid">
+<div className="detail-grid">
 
-                    <div>
+    <div>
 
-                        <strong>
-                            Phương thức:
-                        </strong>
+        <strong>
+            Phương thức:
+        </strong>
 
-                        <p>
-                            {order.payment_method}
-                        </p>
+        <p>
+            {order.payment_method}
+        </p>
 
-                    </div>
+    </div>
 
-                    <div>
+    <div>
 
-                        <strong>
-                            Thanh toán:
-                        </strong>
+        <strong>
+            Thanh toán:
+        </strong>
 
-                        <p>
-                            {order.payment_status}
-                        </p>
+        <p>
+            {order.payment_status}
+        </p>
 
-                    </div>
+    </div>
 
-                </div>
+    <div>
+
+        <strong>
+            Mã giảm giá:
+        </strong>
+
+        <p>
+            {
+                order.coupon_code
+                    ? order.coupon_code
+                    : "Không có"
+            }
+        </p>
+
+    </div>
+
+</div>
 
             </div>
 
@@ -310,20 +326,74 @@ function OrderDetail() {
 
             {/* TOTAL */}
 
-            <div className="total-box">
+<div className="total-wrapper">
 
-                Tổng cộng:
+    {/* SUBTOTAL */}
 
-                <span>
+    <div className="total-row">
 
-                    {
-                        Number(order.total_price)
-                            .toLocaleString()
-                    }đ
+        <span>
+            Tạm tính:
+        </span>
 
-                </span>
+        <span>
 
-            </div>
+            {
+                Number(
+                    order.total_price
+                ) +
+                Number(
+                    order.discount_amount || 0
+                )
+            }
+            đ
+
+        </span>
+
+    </div>
+
+    {/* DISCOUNT */}
+
+    <div className="total-row discount-row">
+
+        <span>
+            Giảm giá:
+        </span>
+
+        <span>
+
+            -
+            {
+                Number(
+                    order.discount_amount || 0
+                ).toLocaleString()
+            }
+            đ
+
+        </span>
+
+    </div>
+
+    {/* FINAL */}
+
+    <div className="total-box">
+
+        Tổng cộng:
+
+        <span>
+
+            {
+                Number(
+                    order.total_price
+                ).toLocaleString()
+            }
+            đ
+
+        </span>
+
+    </div>
+
+</div>
 
         </div>
 

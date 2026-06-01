@@ -1,4 +1,3 @@
-
 import "./MyOrders.css";
 
 import { useEffect, useState } from "react";
@@ -12,8 +11,10 @@ import CustomerLayout
     from "../../../layouts/CustomerLayout";
 
 import {
-    getMyOrders
+    getMyOrders,
+    cancelOrder  
 } from "../../../services/orderService";
+import socket from "../../../socket";
 
 function MyOrders() {
 
@@ -23,11 +24,8 @@ function MyOrders() {
     const [loading, setLoading] =
         useState(true);
 
-    /*
-    |--------------------------------------------------------------------------
-    | FETCH ORDERS
-    |--------------------------------------------------------------------------
-    */
+    const [cancellingId, setCancellingId] = 
+        useState(null);
 
     const fetchOrders = async () => {
 
@@ -53,35 +51,114 @@ function MyOrders() {
         }
     };
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOAD
-    |--------------------------------------------------------------------------
-    */
+
+
+    const canCancelOrder = (orderStatus) => {
+        return orderStatus === "pending";
+    };
+
+    const isCancelLocked = (orderStatus) => {
+        return ["confirmed", "shipping"].includes(orderStatus);
+    };
+
+    const handleCancel = async (orderId, orderStatus) => {
+
+        // Kiểm tra có thể hủy không
+        if (!canCancelOrder(orderStatus)) {
+            if (isCancelLocked(orderStatus)) {
+                alert("Đơn hàng đã được shop xử lý, không thể hủy ở trạng thái này.");
+            } else {
+                alert("Đơn hàng không thể hủy ở trạng thái hiện tại.");
+            }
+            return;
+        }
+
+        // Xác nhận hủy đơn
+        if (
+            !window.confirm(
+                "Bạn chắc chắn muốn hủy đơn hàng này?"
+            )
+        ) {
+            return;
+        }
+
+        try {
+
+            setCancellingId(orderId); // Đánh dấu đơn hàng đang được hủy
+
+            await cancelOrder(orderId);
+
+            alert("Đã hủy đơn thành công");
+
+            // Refresh lại danh sách đơn hàng
+            await fetchOrders();
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message
+                || "Hủy đơn thất bại"
+            );
+
+        } finally {
+
+            setCancellingId(null); // Xóa trạng thái đang hủy
+        }
+    };
 
     useEffect(() => {
 
         fetchOrders();
 
     }, []);
+    useEffect(() => {
 
-    /*
-    |--------------------------------------------------------------------------
-    | FORMAT PRICE
-    |--------------------------------------------------------------------------
-    */
+    const handleOrderUpdate = (data) => {
 
+        console.log(
+            "SOCKET order_updated:",
+            data
+        );
+
+        setOrders((prevOrders) => {
+
+            return prevOrders.map((order) => {
+
+                if (
+                    Number(order.id)
+                    === Number(data.order_id)
+                ) {
+
+                    return {
+                        ...order,
+                        status: data.status
+                    };
+                }
+
+                return order;
+            });
+        });
+    };
+
+    socket.on(
+        "order_updated",
+        handleOrderUpdate
+    );
+
+    return () => {
+
+        socket.off(
+            "order_updated",
+            handleOrderUpdate
+        );
+    };
+
+}, []);
     const formatPrice = (price) => {
 
         return Number(price)
             .toLocaleString("vi-VN") + "đ";
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | STATUS CLASS
-    |--------------------------------------------------------------------------
-    */
 
     const getStatusClass = (status) => {
 
@@ -106,13 +183,16 @@ function MyOrders() {
                 return "status";
         }
     };
-
-    /*
-    |--------------------------------------------------------------------------
-    | LOADING
-    |--------------------------------------------------------------------------
-    */
-
+    const getStatusText = (status) => {
+        const statusMap = {
+            "pending": "Chờ xác nhận",
+            "confirmed": "Đã xác nhận",
+            "shipping": "Đang giao hàng",
+            "completed": "Hoàn thành",
+            "cancelled": "Đã hủy"
+        };
+        return statusMap[status] || status;
+    };
     if (loading) {
 
         return (
@@ -218,7 +298,7 @@ function MyOrders() {
                                             )
                                         }
                                     >
-                                        {order.status}
+                                        {getStatusText(order.status)}
                                     </div>
 
                                 </div>
@@ -261,7 +341,7 @@ function MyOrders() {
 
                                 </div>
 
-                                {/* FOOTER */}
+                                {/* FOOTER - Thêm nút hủy đơn hàng */}
 
                                 <div className="order-footer">
 
@@ -274,7 +354,19 @@ function MyOrders() {
 
                                     </Link>
 
+                                    {/* Nút hủy đơn hàng - chỉ hiển thị khi trạng thái là pending */}
+                                    {order.status === "pending" && (
+                                        <button
+                                            className="cancel-order-btn"
+                                            onClick={() => handleCancel(order.id, order.status)}
+                                            disabled={cancellingId === order.id}
+                                        >
+                                            {cancellingId === order.id ? "Đang hủy..." : "Hủy đơn"}
+                                        </button>
+                                    )}
+
                                 </div>
+
 
                             </div>
                         ))
@@ -289,4 +381,3 @@ function MyOrders() {
 }
 
 export default MyOrders;
-

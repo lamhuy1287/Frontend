@@ -5,16 +5,105 @@ import {
     FaBuilding,
     FaShoppingCart,
     FaUsers,
-    FaSignOutAlt
+    FaSignOutAlt,
+    FaTicketAlt
 } from "react-icons/fa";
 
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+    Link,
+    useLocation,
+    useNavigate
+} from "react-router-dom";
+
+import {
+    useEffect,
+    useState
+} from "react";
+
+import {
+    getAllOrders
+} from "../../services/orderService";
+
+import socket from "../../socket";
 
 function Sidebar() {
 
     const navigate = useNavigate();
 
     const location = useLocation();
+
+    // =========================
+    // STATE
+    // =========================
+
+    const [pendingCount, setPendingCount] = useState(0);
+
+    // =========================
+    // FETCH PENDING ORDERS
+    // =========================
+
+    const fetchPendingOrders = async () => {
+
+        try {
+
+            const response = await getAllOrders();
+
+            const orders = response.data || [];
+
+            if (!Array.isArray(orders)) {
+
+                console.log("Orders không phải mảng:", orders);
+
+                setPendingCount(0);
+
+                return;
+            }
+
+            const pendingOrders = orders.filter(
+                (order) => order.status === "pending"
+            );
+
+            setPendingCount(pendingOrders.length);
+
+        } catch (error) {
+
+            console.log(
+                "LOAD PENDING ORDERS ERROR:",
+                error
+            );
+
+            setPendingCount(0);
+        }
+    };
+
+    // =========================
+    // SOCKET REALTIME
+    // =========================
+
+    useEffect(() => {
+
+        fetchPendingOrders();
+
+        socket.on("order_updated", () => {
+            fetchPendingOrders();
+        });
+
+        socket.on("new_order", () => {
+            fetchPendingOrders();
+        });
+
+        return () => {
+
+            socket.off("order_updated");
+
+            socket.off("new_order");
+        };
+
+    }, []);
+
+    // =========================
+    // LOGOUT
+    // =========================
 
     const handleLogout = () => {
 
@@ -25,6 +114,10 @@ function Sidebar() {
         navigate("/");
     };
 
+    // =========================
+    // ACTIVE
+    // =========================
+
     const isActive = (path) => {
 
         return location.pathname === path;
@@ -32,39 +125,32 @@ function Sidebar() {
 
     return (
 
-        <div
-            style={{
-                width: "270px",
-                height: "100vh",
-                background: "#111827",
-                color: "white",
-                padding: "25px",
-                overflowY: "auto"
-            }}
-        >
+        <div style={sidebarStyle}>
 
-            {/* LOGO */}
-            <div style={{ marginBottom: "40px" }}>
+            {/* =========================
+            LOGO
+            ========================= */}
 
-                <h1
-                    style={{
-                        color: "#60A5FA"
-                    }}
-                >
+            <div style={logoWrapper}>
+
+                <h1 style={logoText}>
                     Hobby Corner
                 </h1>
 
-                <p
-                    style={{
-                        color: "#9CA3AF"
-                    }}
-                >
+                <p style={logoSubText}>
                     Admin Dashboard
                 </p>
 
             </div>
 
-            {/* DASHBOARD */}
+            {/* =========================
+            DASHBOARD
+            ========================= */}
+
+            <div style={groupTitle}>
+                TỔNG QUAN
+            </div>
+
             <MenuItem
                 to="/admin"
                 icon={<FaHome />}
@@ -72,7 +158,10 @@ function Sidebar() {
                 active={isActive("/admin")}
             />
 
-            {/* PRODUCT */}
+            {/* =========================
+            PRODUCT
+            ========================= */}
+
             <div style={groupTitle}>
                 QUẢN LÝ SẢN PHẨM
             </div>
@@ -98,7 +187,28 @@ function Sidebar() {
                 active={isActive("/admin/products")}
             />
 
-            {/* ORDER */}
+            {/* =========================
+            COUPON
+            ========================= */}
+
+            <div style={groupTitle}>
+                KHUYẾN MÃI
+            </div>
+
+            <MenuItem
+                to="/admin/coupons"
+                icon={<FaTicketAlt />}
+                text="Mã giảm giá"
+                active={
+                    isActive("/admin/coupons") ||
+                    isActive("/admin/create-coupon")
+                }
+            />
+
+            {/* =========================
+            ORDER
+            ========================= */}
+
             <div style={groupTitle}>
                 ĐƠN HÀNG
             </div>
@@ -108,9 +218,17 @@ function Sidebar() {
                 icon={<FaShoppingCart />}
                 text="Đơn hàng"
                 active={isActive("/admin/orders")}
+                badge={
+                    pendingCount > 0
+                        ? String(pendingCount)
+                        : null
+                }
             />
 
-            {/* USER */}
+            {/* =========================
+            USER
+            ========================= */}
+
             <div style={groupTitle}>
                 NGƯỜI DÙNG
             </div>
@@ -122,24 +240,37 @@ function Sidebar() {
                 active={isActive("/admin/users")}
             />
 
-            {/* LOGOUT */}
+            {/* =========================
+            LOGOUT
+            ========================= */}
+
             <button
                 onClick={handleLogout}
                 style={logoutStyle}
             >
+
                 <FaSignOutAlt />
+
                 Đăng xuất
+
             </button>
 
         </div>
     );
 }
 
+export default Sidebar;
+
+// =======================================
+// MENU ITEM
+// =======================================
+
 function MenuItem({
     to,
     icon,
     text,
-    active
+    active,
+    badge
 }) {
 
     return (
@@ -147,75 +278,125 @@ function MenuItem({
         <Link
             to={to}
             style={{
-                ...menuStyle,
+                ...menuItemStyle,
                 background: active
                     ? "#2563EB"
-                    : "#1F2937"
+                    : "transparent",
+                color: active
+                    ? "white"
+                    : "#D1D5DB"
             }}
         >
 
-            {icon}
+            <div style={menuLeft}>
 
-            {text}
+                <span style={{ fontSize: "18px" }}>
+                    {icon}
+                </span>
+
+                <span>
+                    {text}
+                </span>
+
+            </div>
+
+            {
+                badge && (
+                    <span style={badgeStyle}>
+                        {badge}
+                    </span>
+                )
+            }
 
         </Link>
     );
 }
 
-const menuStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
+// =======================================
+// STYLES
+// =======================================
 
-    padding: "14px 16px",
-
-    borderRadius: "14px",
-
+const sidebarStyle = {
+    width: "270px",
+    height: "100vh",
+    background: "#111827",
     color: "white",
+    padding: "25px",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column"
+};
 
-    textDecoration: "none",
+const logoWrapper = {
+    marginBottom: "35px"
+};
 
-    marginBottom: "12px",
+const logoText = {
+    color: "#60A5FA",
+    fontSize: "28px",
+    fontWeight: "800"
+};
 
-    transition: "0.3s"
+const logoSubText = {
+    color: "#9CA3AF",
+    marginTop: "5px",
+    fontSize: "14px"
 };
 
 const groupTitle = {
-    color: "#9CA3AF",
+    color: "#6B7280",
+    fontSize: "12px",
+    fontWeight: "700",
+    marginTop: "25px",
+    marginBottom: "12px",
+    letterSpacing: "1px"
+};
 
-    fontSize: "13px",
+const menuItemStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "14px 16px",
+    borderRadius: "14px",
+    textDecoration: "none",
+    marginBottom: "10px",
+    transition: "0.3s",
+    fontWeight: "600"
+};
 
-    marginTop: "30px",
+const menuLeft = {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px"
+};
 
-    marginBottom: "15px",
-
-    fontWeight: "bold"
+const badgeStyle = {
+    background: "#EF4444",
+    color: "white",
+    minWidth: "24px",
+    height: "24px",
+    borderRadius: "999px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    fontWeight: "bold",
+    padding: "0 8px"
 };
 
 const logoutStyle = {
-    width: "100%",
-
-    marginTop: "40px",
-
-    padding: "14px",
-
-    border: "none",
-
-    borderRadius: "14px",
-
+    marginTop: "auto",
     background: "#DC2626",
-
     color: "white",
-
+    border: "none",
+    padding: "15px",
+    borderRadius: "14px",
     cursor: "pointer",
-
     display: "flex",
-
     alignItems: "center",
-
     justifyContent: "center",
-
-    gap: "10px"
+    gap: "10px",
+    fontWeight: "700",
+    fontSize: "15px"
 };
-
-export default Sidebar;

@@ -20,7 +20,9 @@ import {
 import {
     useCart
 } from "../../context/CartContext";
-
+import {
+    validateCoupon
+} from "../../services/couponService";
 function Cart() {
 
     const navigate = useNavigate();
@@ -52,6 +54,17 @@ function Cart() {
     // COUPON
     const [coupon, setCoupon] =
         useState("");
+
+    const [discount, setDiscount] =
+        useState(0);
+
+    const [couponMessage,
+        setCouponMessage] =
+        useState("");
+
+    const [appliedCoupon,
+        setAppliedCoupon] =
+        useState(null);
 
     // =========================
     // FETCH CART
@@ -476,6 +489,66 @@ function Cart() {
             0
         );
 
+    const handleApplyCoupon =
+        async () => {
+
+            try {
+
+                if (!coupon.trim()) {
+
+                    alert(
+                        "Vui lòng nhập mã"
+                    );
+
+                    return;
+                }
+
+                const res =
+                    await validateCoupon(
+                        coupon,
+                        totalPrice
+                    );
+
+                console.log(
+                    "COUPON:",
+                    res.data
+                );
+
+                setDiscount(
+                    res.data.discount_amount
+                );
+
+                setAppliedCoupon(
+                    res.data.coupon
+                );
+
+                setCouponMessage(
+                    res.data.message
+                );
+
+                alert(
+                    "Áp dụng mã thành công"
+                );
+
+            } catch (err) {
+
+                console.log(err);
+
+                setDiscount(0);
+
+                setAppliedCoupon(null);
+
+                setCouponMessage(
+                    err.response?.data?.message ||
+                    "Mã không hợp lệ"
+                );
+
+                alert(
+                    err.response?.data?.message ||
+                    "Mã không hợp lệ"
+                );
+            }
+        };
     // =========================
     // CHECKOUT
     // =========================
@@ -491,19 +564,22 @@ function Cart() {
             return;
         }
 
-        navigate(
-            "/checkout"
-        );
+navigate(
+    "/checkout",
+    {
+        state: {
+            couponCode: coupon,
+            discountAmount: discount
+        }
+    }
+);
     };
 
     // =========================
     // COUPON
     // =========================
 
-    const discount =
-        coupon === "SALE10"
-            ? totalPrice * 0.1
-            : 0;
+
 
     const finalTotal =
         totalPrice - discount;
@@ -790,7 +866,9 @@ function Cart() {
                                                     }
                                                 />
 
-                                                <button>
+                                                <button
+                                                    onClick={handleApplyCoupon}
+                                                >
                                                     Áp dụng
                                                 </button>
 

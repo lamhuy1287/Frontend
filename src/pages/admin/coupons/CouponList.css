@@ -1,0 +1,157 @@
+.coupon-list-page {
+    padding: 30px;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+/* =========================
+HEADER
+========================= */
+.coupon-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.coupon-header h1 {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+.coupon-header p {
+    color: #666;
+}
+
+.create-coupon-btn {
+    background: black;
+    color: white;
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.create-coupon-btn:hover {
+    opacity: 0.9;
+}
+
+/* =========================
+SEARCH
+========================= */
+.coupon-toolbar {
+    margin-bottom: 25px;
+}
+
+.coupon-toolbar input {
+    width: 350px;
+    height: 48px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 0 15px;
+    font-size: 15px;
+}
+
+/* =========================
+TABLE
+========================= */
+.coupon-table-wrapper {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+}
+
+.coupon-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.coupon-table th {
+    background: #111;
+    color: white;
+    padding: 18px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.coupon-table td {
+    padding: 18px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.coupon-table tr:hover {
+    background: #fafafa;
+}
+
+/* =========================
+CODE
+========================= */
+.coupon-code-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.coupon-code-box span {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.coupon-code-box button {
+    border: none;
+    background: #eee;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* =========================
+STATUS
+========================= */
+.status-badge {
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-badge.Đang\ hoạt\ động {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.Hết\ hạn {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.Hết\ lượt {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.Đã\ tắt {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* =========================
+ACTION
+========================= */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.delete-btn {
+    border: none;
+    background: #ef4444;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}

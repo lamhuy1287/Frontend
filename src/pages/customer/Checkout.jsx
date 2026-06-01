@@ -4,7 +4,8 @@ import {
 } from "react";
 
 import {
-    useNavigate
+    useNavigate,
+    useLocation
 } from "react-router-dom";
 
 import CustomerLayout from "../../layouts/CustomerLayout";
@@ -20,6 +21,7 @@ import {
 function Checkout() {
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [cart, setCart] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -27,6 +29,8 @@ function Checkout() {
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("cod");
+    const [couponCode, setCouponCode] = useState("");
+    const [discountAmount, setDiscountAmount] = useState(0);
 
     const fetchCart = async () => {
         try {
@@ -41,16 +45,35 @@ function Checkout() {
     };
 
     useEffect(() => {
+
         fetchCart();
+
+        if (location.state) {
+
+            setCouponCode(
+                location.state.couponCode || ""
+            );
+
+            setDiscountAmount(
+                location.state.discountAmount || 0
+            );
+        }
+
     }, []);
 
     const handlePlaceOrder = async () => {
         try {
             const payload = {
+
                 customer_name: customerName,
+
                 phone,
+
                 address,
-                payment_method: paymentMethod
+
+                payment_method: paymentMethod,
+
+                coupon_code: couponCode
             };
 
             const res = await checkout(payload);
@@ -166,11 +189,42 @@ function Checkout() {
                                                 </div>
                                             ))}
                                         </div>
+                                        {
+                                            discountAmount > 0 && (
+
+                                                <div className="order-total-box">
+
+                                                    <div>
+
+                                                        <span>
+                                                            Giảm giá
+                                                        </span>
+
+                                                        <strong
+                                                            style={{
+                                                                color: "red"
+                                                            }}
+                                                        >
+                                                            -
+                                                            {Number(
+                                                                discountAmount
+                                                            ).toLocaleString("vi-VN")}
+                                                        </strong>
+
+                                                    </div>
+
+                                                </div>
+                                            )
+                                        }
 
                                         <div className="order-total-box">
                                             <div>
                                                 <span>Tổng tiền</span>
-                                                <strong>{Number(cart.total_price).toLocaleString("vi-VN")}</strong>
+                                                <strong>
+                                                    {Number(
+                                                        cart.total_price - discountAmount
+                                                    ).toLocaleString("vi-VN")}
+                                                </strong>
                                             </div>
                                         </div>
                                     </>

@@ -19,6 +19,7 @@ import {
     getAllOrders,
     updateOrderStatus
 } from "../../services/orderService";
+import socket from "../../socket";
 
 function Orders() {
 
@@ -86,11 +87,97 @@ function Orders() {
     // LOAD DATA
    
 
-    useEffect(() => {
+useEffect(() => {
 
-        fetchOrders();
+    fetchOrders();
 
-    }, []);
+    // =========================
+    // ORDER CREATED
+    // =========================
+
+    const handleOrderCreated =
+        (newOrder) => {
+
+            console.log(
+                "SOCKET order_created:",
+                newOrder
+            );
+
+            setOrders((prev) => [
+
+                newOrder,
+                ...prev
+            ]);
+        };
+
+    // =========================
+    // ORDER UPDATED
+    // =========================
+
+    const handleOrderUpdated =
+        (updatedOrder) => {
+
+            console.log(
+                "SOCKET order_updated:",
+                updatedOrder
+            );
+
+            setOrders((prev) => {
+
+                return prev.map((order) => {
+
+                    if (
+                        Number(order.id)
+                        ===
+                        Number(updatedOrder.order_id)
+                    ) {
+
+                        return {
+                            ...order,
+                            status:
+                                updatedOrder.status,
+                            payment_status:
+                                updatedOrder.payment_status
+                        };
+                    }
+
+                    return order;
+                });
+            });
+        };
+
+    // =========================
+    // SOCKET LISTENERS
+    // =========================
+
+    socket.on(
+        "order_created",
+        handleOrderCreated
+    );
+
+    socket.on(
+        "order_updated",
+        handleOrderUpdated
+    );
+
+    // =========================
+    // CLEANUP
+    // =========================
+
+    return () => {
+
+        socket.off(
+            "order_created",
+            handleOrderCreated
+        );
+
+        socket.off(
+            "order_updated",
+            handleOrderUpdated
+        );
+    };
+
+}, []);
 
    // FORMAT PRICE
 
@@ -185,9 +272,7 @@ const handleChangeStatus =
                 nextStatus
             );
 
-            // reload data thật
 
-            fetchOrders();
 
         } catch (error) {
 

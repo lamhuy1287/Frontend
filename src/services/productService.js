@@ -122,83 +122,34 @@ export const createProduct = async (
 // =========================
 // UPDATE
 // =========================
+
 export const updateProduct = async (
     id,
-    productData
+    formData
 ) => {
 
     const token = getToken();
 
-    const formData = new FormData();
-
-    // =====================
-    // BASIC INFO
-    // =====================
-
-    formData.append(
-        "name",
-        productData.name
-    );
-
-    formData.append(
-        "product_code",
-        productData.product_code
-    );
-
-    formData.append(
-        "category_id",
-        productData.category_id
-    );
-
-    formData.append(
-        "brand_id",
-        productData.brand_id
-    );
-
-    formData.append(
-        "description",
-        productData.description || ""
-    );
-
-    // =====================
-    // VARIANTS
-    // =====================
-
-    formData.append(
-        "variants",
-        JSON.stringify(
-            productData.variants
-        )
-    );
-
-    // =====================
-    // IMAGES
-    // =====================
-
-    if (productData.images) {
-
-        productData.images.forEach(
-            (file) => {
-
-                formData.append(
-                    "images",
-                    file
-                );
-            }
-        );
-    }
-
     return axios.put(
+
         `${API_URL}/products/${id}`,
+
         formData,
+
         {
             headers: {
-                "Authorization":
-                    `Bearer ${token}`
+
+                Authorization:
+                    `Bearer ${token}`,
+
+                "Content-Type":
+                    "multipart/form-data"
             }
         }
     );
 };
+
+
 
 // =========================
 // DELETE

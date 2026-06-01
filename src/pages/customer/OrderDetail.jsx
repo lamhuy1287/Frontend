@@ -11,8 +11,7 @@ import CustomerLayout
     from "../../layouts/CustomerLayout";
 
 import {
-    getOrderDetail,
-    cancelOrder
+    getOrderDetail
 } from "../../services/orderService";
 
 import "./OrderDetail.css";
@@ -265,34 +264,7 @@ function OrderDetail() {
                         {order.payment_method}
                     </p>
 
-                    {(
-                        canCancelOrder
-                        || isCancelLocked
-                    ) && (
 
-                        <div className="order-detail-action">
-
-                            <button
-                                className="cancel-order-button"
-                                onClick={handleCancel}
-                                disabled={
-                                    !canCancelOrder
-                                    || cancelling
-                                }
-                            >
-                                Hủy đơn hàng
-                            </button>
-
-                            {isCancelLocked && (
-                                <p className="cancel-note">
-                                    Đơn hàng đã được shop xử lý,
-                                    không thể hủy ở trạng thái
-                                    này.
-                                </p>
-                            )}
-
-                        </div>
-                    )}
 
                     <p>
                         <strong>

@@ -194,4 +194,18 @@
         font-size: 22px;
     }
 }
+.total-wrapper {
+    margin-top: 20px;
+}
 
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.discount-row span:last-child {
+    color: #dc2626;
+    font-weight: 600;
+}

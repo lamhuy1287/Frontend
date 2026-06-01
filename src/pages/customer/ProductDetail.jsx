@@ -1,936 +1,273 @@
-import {
-    useEffect,
-    useMemo,
-    useState
-} from "react";
-
-import {
-    useParams,
-    Link
-} from "react-router-dom";
-
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import CustomerLayout from "../../layouts/CustomerLayout";
-
-import {
-    getProductDetail,
-    getProducts
-} from "../../services/productService";
-
-import {
-    FaShoppingCart,
-    FaTruck,
-    FaShieldAlt
-} from "react-icons/fa";
-import {
-    addToCart
-} from "../../services/cartService";
-
+import { getProductDetail, getProducts } from "../../services/productService";
+import { FaShoppingCart, FaTruck, FaShieldAlt } from "react-icons/fa";
+import { addToCart } from "../../services/cartService";
 import socket from "../../socket";
 
 function ProductDetail() {
-
     const { id } = useParams();
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedImage, setSelectedImage] = useState("");
+    const [selectedVariant, setSelectedVariant] = useState(null);
+    const [showFullDescription, setShowFullDescription] = useState(false);
+    const [quantity, setQuantity] = useState(1);
+    const [relatedProducts, setRelatedProducts] = useState([]);
+    const [addingCart, setAddingCart] = useState(false);
 
-    const [product, setProduct] =
-        useState(null);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [selectedImage,
-        setSelectedImage] =
-        useState("");
-
-    const [selectedVariant,
-        setSelectedVariant] =
-        useState(null);
-
-    const [showFullDescription,
-        setShowFullDescription] =
-        useState(false);
-
-    const [quantity,
-        setQuantity] =
-        useState(1);
-
-    const [relatedProducts,
-        setRelatedProducts] =
-        useState([]);
-
-    const [addingCart,
-        setAddingCart] =
-        useState(false);
-
-    // =========================
-    // FETCH PRODUCT
-    // =========================
-
+    // ========================= FETCH PRODUCT =========================
     const fetchProduct = async () => {
-
         try {
-
-            const res =
-                await getProductDetail(id);
-
-            const productData =
-                res.data.data;
-
+            const res = await getProductDetail(id);
+            const productData = res.data.data;
             setProduct(productData);
 
-            // =====================
             // IMAGE
-            // =====================
-
             setSelectedImage((prev) => {
-
-                if (!prev) {
-                    return productData.images?.[0]?.image_url || "";
-                }
-
-                const found =
-                    productData.images.find(
-                        (img) =>
-                            img.image_url === prev
-                    );
-
-                return (
-                    found?.image_url ||
-                    productData.images?.[0]?.image_url ||
-                    ""
-                );
-
+                if (!prev) return productData.images?.[0]?.image_url || "";
+                const found = productData.images.find((img) => img.image_url === prev);
+                return found?.image_url || productData.images?.[0]?.image_url || "";
             });
 
-            // =====================
             // VARIANT
-            // =====================
-
             setSelectedVariant((prev) => {
-
-                if (!prev) {
-                    return productData.variants?.[0];
-                }
-
-                const found =
-                    productData.variants.find(
-                        (v) =>
-                            v.id === prev.id
-                    );
-
-                return (
-                    found ||
-                    productData.variants?.[0] ||
-                    null
-                );
-
+                if (!prev) return productData.variants?.[0];
+                const found = productData.variants.find((v) => v.id === prev.id);
+                return found || productData.variants?.[0] || null;
             });
 
-            // =====================
             // RELATED PRODUCTS
-            // =====================
-
             try {
-
-                const relatedRes =
-                    await getProducts();
-
-                let allProducts =
-                    relatedRes?.data?.data?.products || [];
-
-                allProducts =
-                    allProducts.filter(
-                        (item) =>
-                            item.id !== productData.id
-                    );
-
-                const related =
-                    allProducts.filter(
-                        (item) =>
-                            item.category_id ===
-                            productData.category_id
-                    );
-
-                setRelatedProducts(
-                    related.slice(0, 5)
-                );
-
+                const relatedRes = await getProducts();
+                let allProducts = relatedRes?.data?.data?.products || [];
+                allProducts = allProducts.filter((item) => item.id !== productData.id);
+                const related = allProducts.filter((item) => item.category_id === productData.category_id);
+                setRelatedProducts(related.slice(0, 5));
             } catch (error) {
-
                 console.log(error);
-
             }
-
         } catch (error) {
-
             console.log(error);
-
         } finally {
-
             setLoading(false);
-
         }
-
     };
 
     useEffect(() => {
-
         fetchProduct();
-
-        // =====================
         // REALTIME LISTENER
-        // =====================
-
-        socket.on(
-            "product_updated",
-            (data) => {
-
-                console.log(
-                    "SOCKET product_updated:",
-                    data
-                );
-
-                if (
-                    Number(data.product_id) ===
-                    Number(id)
-                ) {
-
-                    console.log(
-                        "Realtime refresh product"
-                    );
-
-                    fetchProduct();
-
-                }
-
+        socket.on("product_updated", (data) => {
+            console.log("SOCKET product_updated:", data);
+            if (Number(data.product_id) === Number(id)) {
+                console.log("Realtime refresh product");
+                fetchProduct();
             }
-        );
-
-        // =====================
+        });
         // CLEANUP
-        // =====================
-
         return () => {
-
-            socket.off(
-                "product_updated"
-            );
-
+            socket.off("product_updated");
         };
-
     }, [id]);
 
-    // =========================
-    // DESCRIPTION
-    // =========================
+    // ========================= DESCRIPTION =========================
+    const shortDescription = useMemo(() => {
+        if (!product?.description) return "";
+        return product.description.split("\n").slice(0, 5).join("\n");
+    }, [product]);
 
-    const shortDescription =
-        useMemo(() => {
+    // ========================= ADD TO CART =========================
+    const handleAddToCart = async () => {
+        // CHƯA CHỌN VARIANT
+        if (!selectedVariant) {
+            alert("Vui lòng chọn phân loại");
+            return;
+        }
+        // CHƯA LOGIN
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Vui lòng đăng nhập");
+            return;
+        }
+        try {
+            setAddingCart(true);
+            await addToCart({
+                product_variant_id: selectedVariant.id,
+                quantity: quantity
+            });
+            alert("Đã thêm vào giỏ hàng");
+        } catch (error) {
+            console.log(error);
+            alert(error.response?.data?.message || "Add to cart failed");
+        } finally {
+            setAddingCart(false);
+        }
+    };
 
-            if (
-                !product?.description
-            ) return "";
-
-            return product.description
-                .split("\n")
-                .slice(0, 5)
-                .join("\n");
-
-        }, [product]);
-
-    // =========================
-    // ADD TO CART
-    // =========================
-
-    const handleAddToCart =
-        async () => {
-
-            // CHƯA CHỌN VARIANT
-            if (!selectedVariant) {
-
-                alert(
-                    "Vui lòng chọn phân loại"
-                );
-
-                return;
-            }
-
-            // CHƯA LOGIN
-            const token =
-                localStorage.getItem(
-                    "token"
-                );
-
-            if (!token) {
-
-                alert(
-                    "Vui lòng đăng nhập"
-                );
-
-                return;
-            }
-
-            try {
-
-                setAddingCart(true);
-
-                await addToCart({
-
-                    product_variant_id:
-                        selectedVariant.id,
-
-                    quantity: quantity
-
-                });
-
-                alert(
-                    "Đã thêm vào giỏ hàng"
-                );
-
-            } catch (error) {
-
-                console.log(error);
-
-                alert(
-                    error.response?.data?.message ||
-                    "Add to cart failed"
-                );
-
-            } finally {
-
-                setAddingCart(false);
-
-            }
-
-        };
-
-    // =========================
-    // LOADING
-    // =========================
-
+    // ========================= LOADING =========================
     if (loading) {
-
         return (
-
             <CustomerLayout>
-
-                <div style={styles.loading}>
-                    Loading...
-                </div>
-
+                <div style={styles.loading}>Loading...</div>
             </CustomerLayout>
-
         );
-
     }
 
-    // =========================
-    // NOT FOUND
-    // =========================
-
+    // ========================= NOT FOUND =========================
     if (!product) {
-
         return (
-
             <CustomerLayout>
-
-                <div style={styles.notFound}>
-                    Product not found
-                </div>
-
+                <div style={styles.notFound}>Product not found</div>
             </CustomerLayout>
-
         );
-
     }
 
-    // =========================
-    // PRICE
-    // =========================
-
-    const price =
-        Number(
-            selectedVariant?.price
-        ) || 0;
-
-    const formatPrice = (
-        value
-    ) => {
-
-        return (
-            value.toLocaleString(
-                "vi-VN"
-            ) + "₫"
-        );
-
+    // ========================= PRICE =========================
+    const price = Number(selectedVariant?.price) || 0;
+    const formatPrice = (value) => {
+        return value.toLocaleString("vi-VN") + "₫";
     };
 
     return (
-
         <CustomerLayout>
-
             <div style={styles.page}>
-
                 <div style={styles.container}>
-
                     {/* MAIN */}
                     <div style={styles.main}>
-
                         {/* LEFT */}
                         <div>
-
                             {/* MAIN IMAGE */}
-                            <div
-                                style={
-                                    styles.mainImage
-                                }
-                            >
-
-                                <img
-                                    src={
-                                        selectedImage
-                                    }
-                                    alt={
-                                        product.name
-                                    }
-                                    style={
-                                        styles.mainImageImg
-                                    }
-                                />
-
+                            <div style={styles.mainImage}>
+                                <img src={selectedImage} alt={product.name} style={styles.mainImageImg} />
                             </div>
-
                             {/* THUMBNAILS */}
-                            <div
-                                style={
-                                    styles.thumbnailList
-                                }
-                            >
-
-                                {product.images?.map(
-                                    (
-                                        img
-                                    ) => (
-
-                                        <button
-                                            key={
-                                                img.id
-                                            }
-                                            onClick={() =>
-                                                setSelectedImage(
-                                                    img.image_url
-                                                )
-                                            }
-                                            style={{
-                                                ...styles.thumbnail,
-                                                border:
-                                                    selectedImage ===
-                                                        img.image_url
-                                                        ? "2px solid #ee4d2d"
-                                                        : "2px solid #ddd"
-                                            }}
-                                        >
-
-                                            <img
-                                                src={
-                                                    img.image_url
-                                                }
-                                                alt=""
-                                                style={
-                                                    styles.thumbnailImg
-                                                }
-                                            />
-
-                                        </button>
-
-                                    ))}
-
+                            <div style={styles.thumbnailList}>
+                                {product.images?.map((img) => (
+                                    <button
+                                        key={img.id}
+                                        onClick={() => setSelectedImage(img.image_url)}
+                                        style={{
+                                            ...styles.thumbnail,
+                                            border: selectedImage === img.image_url ? "2px solid #ee4d2d" : "2px solid #ddd"
+                                        }}
+                                    >
+                                        <img src={img.image_url} alt="" style={styles.thumbnailImg} />
+                                    </button>
+                                ))}
                             </div>
-
                         </div>
-
                         {/* RIGHT */}
                         <div>
-
                             {/* NAME */}
-                            <h1
-                                style={
-                                    styles.title
-                                }
-                            >
-                                {product.name}
-                            </h1>
-
+                            <h1 style={styles.title}>{product.name}</h1>
                             {/* INFO */}
-                            <div
-                                style={
-                                    styles.infoBox
-                                }
-                            >
-
-                                <div
-                                    style={
-                                        styles.infoRow
-                                    }
-                                >
-
-                                    <span
-                                        style={
-                                            styles.infoLabel
-                                        }
-                                    >
-                                        Mã sản phẩm:
-                                    </span>
-
-                                    <span>
-                                        {product.product_code || "N/A"}
-                                    </span>
-
+                            <div style={styles.infoBox}>
+                                <div style={styles.infoRow}>
+                                    <span style={styles.infoLabel}>Mã sản phẩm:</span>
+                                    <span>{product.product_code || "N/A"}</span>
                                 </div>
-
-                                <div
-                                    style={
-                                        styles.infoRow
-                                    }
-                                >
-
-                                    <span
-                                        style={
-                                            styles.infoLabel
-                                        }
-                                    >
-                                        Danh mục:
-                                    </span>
-
-                                    <span>
-                                        {product
-                                            ?.category
-                                            ?.name ||
-                                            "Chưa có"}
-                                    </span>
-
+                                <div style={styles.infoRow}>
+                                    <span style={styles.infoLabel}>Danh mục:</span>
+                                    <span>{product?.category?.name || "Chưa có"}</span>
                                 </div>
-
                             </div>
-
                             {/* PRICE */}
-                            <div
-                                style={
-                                    styles.priceBox
-                                }
-                            >
-
-                                <div
-                                    style={
-                                        styles.price
-                                    }
-                                >
-                                    {formatPrice(
-                                        price
-                                    )}
-                                </div>
-
+                            <div style={styles.priceBox}>
+                                <div style={styles.price}>{formatPrice(price)}</div>
                             </div>
-
                             {/* VARIANT */}
-                            <div
-                                style={
-                                    styles.section
-                                }
-                            >
-
-                                <h3
-                                    style={
-                                        styles.sectionTitle
-                                    }
-                                >
-                                    Lựa chọn
-                                </h3>
-
-                                <div
-                                    style={
-                                        styles.variantList
-                                    }
-                                >
-
-                                    {product.variants?.map(
-                                        (
-                                            variant
-                                        ) => (
-
-                                            <button
-                                                key={
-                                                    variant.id
-                                                }
-                                                onClick={() =>
-                                                    setSelectedVariant(
-                                                        variant
-                                                    )
-                                                }
-                                                style={{
-                                                    ...styles.variantBtn,
-                                                    border:
-                                                        selectedVariant?.id ===
-                                                            variant.id
-                                                            ? "1px solid #ee4d2d"
-                                                            : "1px solid #ccc",
-                                                    background:
-                                                        selectedVariant?.id ===
-                                                            variant.id
-                                                            ? "#fff1ee"
-                                                            : "white",
-                                                    color:
-                                                        selectedVariant?.id ===
-                                                            variant.id
-                                                            ? "#ee4d2d"
-                                                            : "#333"
-                                                }}
-                                            >
-
-                                                {
-                                                    variant.variant_name
-                                                }
-
-                                            </button>
-
-                                        ))}
-
+                            <div style={styles.section}>
+                                <h3 style={styles.sectionTitle}>Lựa chọn</h3>
+                                <div style={styles.variantList}>
+                                    {product.variants?.map((variant) => (
+                                        <button
+                                            key={variant.id}
+                                            onClick={() => setSelectedVariant(variant)}
+                                            style={{
+                                                ...styles.variantBtn,
+                                                border: selectedVariant?.id === variant.id ? "1px solid #ee4d2d" : "1px solid #ccc",
+                                                background: selectedVariant?.id === variant.id ? "#fff1ee" : "white",
+                                                color: selectedVariant?.id === variant.id ? "#ee4d2d" : "#333"
+                                            }}
+                                        >
+                                            {variant.variant_name}
+                                        </button>
+                                    ))}
                                 </div>
-
                             </div>
-
                             {/* QUANTITY */}
-                            <div
-                                style={
-                                    styles.section
-                                }
-                            >
-
-                                <h3
-                                    style={
-                                        styles.sectionTitle
-                                    }
-                                >
-                                    Số lượng
-                                </h3>
-
-                                <div
-                                    style={
-                                        styles.quantityWrapper
-                                    }
-                                >
-
-                                    <button
-                                        style={
-                                            styles.qtyBtn
-                                        }
-                                        onClick={() =>
-                                            setQuantity(
-                                                (
-                                                    prev
-                                                ) =>
-                                                    prev >
-                                                        1
-                                                        ? prev -
-                                                        1
-                                                        : 1
-                                            )
-                                        }
-                                    >
-                                        -
-                                    </button>
-
-                                    <div
-                                        style={
-                                            styles.qtyValue
-                                        }
-                                    >
-                                        {
-                                            quantity
-                                        }
-                                    </div>
-
-                                    <button
-                                        style={
-                                            styles.qtyBtn
-                                        }
-                                        onClick={() =>
-                                            setQuantity(
-                                                (
-                                                    prev
-                                                ) =>
-                                                    prev <
-                                                        5
-                                                        ? prev +
-                                                        1
-                                                        : 5
-                                            )
-                                        }
-                                    >
-                                        +
-                                    </button>
-
+                            <div style={styles.section}>
+                                <h3 style={styles.sectionTitle}>Số lượng</h3>
+                                <div style={styles.quantityWrapper}>
+                                    <button style={styles.qtyBtn} onClick={() => setQuantity((prev) => prev > 1 ? prev - 1 : 1)}>-</button>
+                                    <div style={styles.qtyValue}>{quantity}</div>
+                                    <button style={styles.qtyBtn} onClick={() => setQuantity((prev) => prev < 5 ? prev + 1 : 5)}>+</button>
                                 </div>
-
-                                <div
-                                    style={
-                                        styles.qtyNote
-                                    }
-                                >
-                                    Tối đa 5
-                                    sản phẩm
-                                </div>
-
+                                <div style={styles.qtyNote}>Tối đa 5 sản phẩm</div>
                             </div>
-
                             {/* SERVICES */}
-                            <div
-                                style={
-                                    styles.services
-                                }
-                            >
-
-                                <div
-                                    style={
-                                        styles.serviceItem
-                                    }
-                                >
-
+                            <div style={styles.services}>
+                                <div style={styles.serviceItem}>
                                     <FaTruck color="#ee4d2d" />
-
-                                    <span>
-                                        Giao
-                                        hàng
-                                        toàn
-                                        quốc
-                                    </span>
-
+                                    <span>Giao hàng toàn quốc</span>
                                 </div>
-
-                                <div
-                                    style={
-                                        styles.serviceItem
-                                    }
-                                >
-
+                                <div style={styles.serviceItem}>
                                     <FaShieldAlt color="#ee4d2d" />
-
-                                    <span>
-                                        Bảo
-                                        hành
-                                        chính
-                                        hãng
-                                    </span>
-
+                                    <span>Bảo hành chính hãng</span>
                                 </div>
-
                             </div>
-
                             {/* BUTTON */}
-                            <div
-                                style={
-                                    styles.actions
-                                }
-                            >
-
+                            <div style={styles.actions}>
                                 <button
                                     style={{
                                         ...styles.addCartBtn,
-                                        opacity:
-                                            addingCart ? 0.7 : 1,
-                                        cursor:
-                                            addingCart
-                                                ? "not-allowed"
-                                                : "pointer"
+                                        opacity: addingCart ? 0.7 : 1,
+                                        cursor: addingCart ? "not-allowed" : "pointer"
                                     }}
-                                    onClick={
-                                        handleAddToCart
-                                    }
+                                    onClick={handleAddToCart}
                                     disabled={addingCart}
                                 >
-
                                     <FaShoppingCart />
-
-                                    <span>
-
-                                        {
-                                            addingCart
-                                                ? "Đang thêm..."
-                                                : "Thêm vào giỏ hàng"
-                                        }
-
-                                    </span>
-
+                                    <span>{addingCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}</span>
                                 </button>
-
-                                <button
-                                    style={
-                                        styles.buyNowBtn
-                                    }
-                                >
-                                    Mua ngay
-                                </button>
-
+                                <button style={styles.buyNowBtn}>Mua ngay</button>
                             </div>
-
                         </div>
-
                     </div>
-
                     {/* DESCRIPTION */}
-                    <div
-                        style={
-                            styles.descriptionBox
-                        }
-                    >
-
-                        <h2
-                            style={
-                                styles.descriptionTitle
-                            }
-                        >
-                            Mô tả sản phẩm
-                        </h2>
-
-                        <div
-                            style={
-                                styles.descriptionContent
-                            }
-                        >
-
-                            {showFullDescription
-                                ? product.description
-                                : shortDescription}
-
+                    <div style={styles.descriptionBox}>
+                        <h2 style={styles.descriptionTitle}>Mô tả sản phẩm</h2>
+                        <div style={styles.descriptionContent}>
+                            {showFullDescription ? product.description : shortDescription}
                         </div>
-
-                        {product.description &&
-                            product.description.split(
-                                "\n"
-                            ).length >
-                            5 && (
-
-                                <button
-                                    onClick={() =>
-                                        setShowFullDescription(
-                                            !showFullDescription
-                                        )
-                                    }
-                                    style={
-                                        styles.showMoreBtn
-                                    }
-                                >
-
-                                    {showFullDescription
-                                        ? "Thu gọn"
-                                        : "Xem thêm"}
-
-                                </button>
-
-                            )}
-
+                        {product.description && product.description.split("\n").length > 5 && (
+                            <button onClick={() => setShowFullDescription(!showFullDescription)} style={styles.showMoreBtn}>
+                                {showFullDescription ? "Thu gọn" : "Xem thêm"}
+                            </button>
+                        )}
                     </div>
-
                     {/* RELATED PRODUCTS */}
-                    <div
-                        style={
-                            styles.relatedBox
-                        }
-                    >
-
-                        <h2
-                            style={
-                                styles.relatedTitle
-                            }
-                        >
-                            Sản phẩm tương tự
-                        </h2>
-
-                        <div
-                            style={
-                                styles.relatedGrid
-                            }
-                        >
-
-                            {relatedProducts.map(
-                                (
-                                    item
-                                ) => (
-
-                                    <Link
-                                        key={
-                                            item.id
-                                        }
-                                        to={`/product/${item.id}`}
-                                        style={
-                                            styles.relatedCard
-                                        }
-                                    >
-
-                                        <img
-                                            src={
-                                                item
-                                                    .images?.[0]
-                                                    ?.image_url
-                                            }
-                                            alt={
-                                                item.name
-                                            }
-                                            style={
-                                                styles.relatedImage
-                                            }
-                                        />
-
-                                        <div
-                                            style={
-                                                styles.relatedContent
-                                            }
-                                        >
-
-                                            <div
-                                                style={
-                                                    styles.relatedName
-                                                }
-                                            >
-                                                {
-                                                    item.name
-                                                }
-                                            </div>
-
-                                            <div
-                                                style={
-                                                    styles.relatedPrice
-                                                }
-                                            >
-
-                                                {formatPrice(
-                                                    Number(
-                                                        item
-                                                            .variants?.[0]
-                                                            ?.price ||
-                                                        0
-                                                    )
-                                                )}
-
-                                            </div>
-
+                    <div style={styles.relatedBox}>
+                        <h2 style={styles.relatedTitle}>Sản phẩm tương tự</h2>
+                        <div style={styles.relatedGrid}>
+                            {relatedProducts.map((item) => (
+                                <Link key={item.id} to={`/product/${item.id}`} style={styles.relatedCard}>
+                                    <img src={item.images?.[0]?.image_url} alt={item.name} style={styles.relatedImage} />
+                                    <div style={styles.relatedContent}>
+                                        <div style={styles.relatedName}>{item.name}</div>
+                                        <div style={styles.relatedPrice}>
+                                            {formatPrice(Number(item.variants?.[0]?.price || 0))}
                                         </div>
-
-                                    </Link>
-
-                                ))}
-
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </CustomerLayout>
-
     );
-
 }
 
 // =========================

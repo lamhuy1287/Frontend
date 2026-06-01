@@ -14,6 +14,8 @@ import ProductEdit from "../pages/admin/products/ProductEdit";
 import Orders from "../pages/admin/Orders";
 
 import OrderDetail from "../pages/admin/orders/OrderDetail";
+import CreateCoupon from "../pages/admin/coupons/CreateCoupon";
+import CouponList from "../pages/admin/coupons/CouponList";
 
 
 
@@ -64,16 +66,19 @@ function AdminRoutes() {
                     path="products/edit/:id"
                     element={<ProductEdit />}
                 />
-  
-<Route
-    path="orders/:id"
-    element={<OrderDetail />}
-/>
 
-
-
-
-
+                <Route
+                    path="orders/:id"
+                    element={<OrderDetail />}
+                />
+                <Route
+                    path="coupons"
+                    element={<CouponList />}
+                />
+                <Route
+                    path="create-coupon"
+                    element={<CreateCoupon />}
+                />
             </Route>
 
         </Routes>
