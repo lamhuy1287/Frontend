@@ -77,7 +77,35 @@ function Checkout() {
             };
 
             const res = await checkout(payload);
-            const orderId = res.data?.data?.order_id;
+            console.log("CHECKOUT RESPONSE", res);
+
+            if (
+                paymentMethod === "bank_transfer" &&
+                res.data?.checkout_url
+            ) {
+                window.location.href =
+                    res.data.checkout_url;
+
+                return;
+            }
+
+            const orderId = res.data?.order_id;
+
+            if (
+                paymentMethod === "momo" &&
+                res.data?.pay_url
+            ) {
+                window.location.href = res.data.pay_url;
+                return;
+            }
+
+            if (
+                paymentMethod === "vnpay" &&
+                res.data?.pay_url
+            ) {
+                window.location.href = res.data.pay_url;
+                return;
+            }
 
             alert("Đặt hàng thành công");
 

@@ -19,6 +19,8 @@ import ProductDetail from "./pages/customer/ProductDetail";
 import Cart from "./pages/customer/Cart";
 import CategoryProducts from "./pages/customer/CategoryProducts";
 import Checkout from "./pages/customer/Checkout";
+import PaymentSuccess from "./pages/customer/PaymentSuccess";
+import PaymentCancel from "./pages/customer/PaymentCancel";
 import OrderDetail from "./pages/customer/OrderDetail";
 import MyOrders from "./pages/customer/orders/MyOrders";
 
@@ -65,6 +67,14 @@ function App() {
                 <Route
                     path="/checkout"
                     element={<Checkout />}
+                />
+                <Route
+                    path="/payment-success"
+                    element={<PaymentSuccess />}
+                />
+                <Route
+                    path="/payment-cancel"
+                    element={<PaymentCancel />}
                 />
                 <Route
                     path="/my-orders/:id"
