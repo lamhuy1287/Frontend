@@ -16,15 +16,11 @@ import {
 } from "react-router-dom";
 
 import {
-    useEffect,
-    useState
+    useEffect
 } from "react";
 
-import {
-    getAllOrders
-} from "../../services/orderService";
-
 import socket from "../../socket";
+import Swal from "sweetalert2";
 
 function Sidebar() {
 
@@ -33,73 +29,75 @@ function Sidebar() {
     const location = useLocation();
 
     // =========================
-    // STATE
-    // =========================
-
-    const [pendingCount, setPendingCount] = useState(0);
-
-    // =========================
-    // FETCH PENDING ORDERS
-    // =========================
-
-    const fetchPendingOrders = async () => {
-
-        try {
-
-            const response = await getAllOrders();
-
-            const orders = response.data || [];
-
-            if (!Array.isArray(orders)) {
-
-                console.log("Orders không phải mảng:", orders);
-
-                setPendingCount(0);
-
-                return;
-            }
-
-            const pendingOrders = orders.filter(
-                (order) => order.status === "pending"
-            );
-
-            setPendingCount(pendingOrders.length);
-
-        } catch (error) {
-
-            console.log(
-                "LOAD PENDING ORDERS ERROR:",
-                error
-            );
-
-            setPendingCount(0);
-        }
-    };
-
-    // =========================
     // SOCKET REALTIME
     // =========================
 
     useEffect(() => {
 
-        fetchPendingOrders();
+        // =========================
+        // NEW ORDER - HIỂN THỊ TOAST
+        // =========================
 
-        socket.on("order_updated", () => {
-            fetchPendingOrders();
-        });
+        socket.on(
+            "new_order",
+            (order) => {
 
-        socket.on("new_order", () => {
-            fetchPendingOrders();
-        });
+                // Hiển thị toast thông báo
+                Swal.fire({
+
+                    toast: true,
+
+                    position: "top-end",
+
+                    icon: "info",
+
+                    title: `🛒 Đơn hàng mới #${order.id}`,
+
+                    text: `${order.customer_name || "Khách hàng"} vừa đặt hàng`,
+
+                    showConfirmButton: false,
+
+                    timer: 5000,
+
+                    timerProgressBar: true,
+
+                    didOpen: (toast) => {
+
+                        // Thêm hiệu ứng click để chuyển đến trang đơn hàng
+                        toast.onclick = () => {
+
+                            navigate("/admin/orders");
+                            
+                            Swal.close();
+                        };
+                    }
+                });
+
+                // Phát âm thanh thông báo (nếu muốn)
+                try {
+                    const audio = new Audio("/notification.mp3");
+                    audio.play().catch(e => console.log("Audio không hỗ trợ"));
+                } catch (error) {
+                    console.log("Lỗi phát âm thanh:", error);
+                }
+
+                // Thay đổi title để thu hút sự chú ý
+                const originalTitle = document.title;
+                
+                document.title = "🔔 ĐƠN HÀNG MỚI! 🔔";
+                
+                setTimeout(() => {
+                    document.title = originalTitle;
+                }, 5000);
+            }
+        );
 
         return () => {
-
-            socket.off("order_updated");
 
             socket.off("new_order");
         };
 
-    }, []);
+    }, [navigate]);
 
     // =========================
     // LOGOUT
@@ -218,11 +216,6 @@ function Sidebar() {
                 icon={<FaShoppingCart />}
                 text="Đơn hàng"
                 active={isActive("/admin/orders")}
-                badge={
-                    pendingCount > 0
-                        ? String(pendingCount)
-                        : null
-                }
             />
 
             {/* =========================

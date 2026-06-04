@@ -3,7 +3,10 @@ import "./Header.css";
 
 import logo from "../../assets/logo2.png";
 
-import { Link } from "react-router-dom";
+import {
+    Link,
+    useNavigate
+} from "react-router-dom";
 
 import {
     useEffect,
@@ -42,6 +45,17 @@ function Header() {
         setShowDropdown] =
         useState(false);
 
+    const [user,
+        setUser] =
+        useState(null);
+
+    // =========================
+    // NAVIGATE
+    // =========================
+
+    const navigate =
+        useNavigate();
+
     // =========================
     // REF
     // =========================
@@ -58,14 +72,48 @@ function Header() {
     } = useCart();
 
     // =========================
-    // EFFECT
+    // LOAD DATA
     // =========================
 
     useEffect(() => {
 
         loadCategories();
 
+        loadUser();
+
     }, []);
+
+    // =========================
+    // LOAD USER
+    // =========================
+
+    const loadUser = () => {
+
+        try {
+
+            const userData =
+                localStorage.getItem(
+                    "user"
+                );
+
+            if (userData) {
+
+                setUser(
+                    JSON.parse(userData)
+                );
+
+            }
+
+        } catch (error) {
+
+            console.log(
+                "LOAD USER ERROR:",
+                error
+            );
+
+        }
+
+    };
 
     // =========================
     // CLOSE DROPDOWN
@@ -85,7 +133,9 @@ function Header() {
             ) {
 
                 setShowDropdown(false);
+
             }
+
         };
 
         document.addEventListener(
@@ -99,6 +149,7 @@ function Header() {
                 "mousedown",
                 handleClickOutside
             );
+
         };
 
     }, []);
@@ -153,11 +204,15 @@ function Header() {
     const handleLogout = () => {
 
         localStorage.removeItem(
-            "access_token"
+            "token"
         );
 
-        window.location.href =
-            "/";
+        localStorage.removeItem(
+            "user"
+        );
+
+        navigate("/");
+
     };
 
     // =========================
@@ -229,7 +284,11 @@ function Header() {
                                 <FaUser />
 
                                 <span>
-                                    Tài khoản
+                                    {
+                                        user
+                                            ? user.name
+                                            : "Tài khoản"
+                                    }
                                 </span>
 
                             </button>

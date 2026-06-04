@@ -3,6 +3,7 @@ import {
     Routes,
     Route
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 // Đăng ký , đăng nhập
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -29,6 +30,7 @@ function App() {
 
     return (
         <BrowserRouter>
+        <Toaster position="top-right" />
 
             <Routes>
 

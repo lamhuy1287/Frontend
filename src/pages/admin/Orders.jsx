@@ -1,4 +1,3 @@
-
 import "./Orders.css";
 
 import {
@@ -19,40 +18,38 @@ import {
     getAllOrders,
     updateOrderStatus
 } from "../../services/orderService";
+
 import socket from "../../socket";
+import Swal from "sweetalert2";
 
 function Orders() {
 
-
+    // =========================
     // STATES
+    // =========================
 
-
-    const [orders,
-        setOrders] =
+    const [orders, setOrders] =
         useState([]);
 
-    const [loading,
-        setLoading] =
+    const [loading, setLoading] =
         useState(true);
 
-    const [searchTerm,
-        setSearchTerm] =
+    const [searchTerm, setSearchTerm] =
         useState("");
 
-    const [statusFilter,
-        setStatusFilter] =
+    const [statusFilter, setStatusFilter] =
         useState("all");
 
-
+    // =========================
     // NAVIGATE
-
+    // =========================
 
     const navigate =
         useNavigate();
 
-   
-    //FETCH ORDERS
-  
+    // =========================
+    // FETCH ORDERS
+    // =========================
 
     const fetchOrders =
         async () => {
@@ -84,103 +81,97 @@ function Orders() {
             }
         };
 
-    // LOAD DATA
-   
-
-useEffect(() => {
-
-    fetchOrders();
-
     // =========================
-    // ORDER CREATED
+    // LOAD DATA + SOCKET
     // =========================
 
-    const handleOrderCreated =
-        (newOrder) => {
+    useEffect(() => {
 
-            console.log(
-                "SOCKET order_created:",
-                newOrder
-            );
+        fetchOrders();
 
-            setOrders((prev) => [
+        // ORDER CREATED
 
-                newOrder,
-                ...prev
-            ]);
-        };
+        const handleOrderCreated =
+            (newOrder) => {
 
-    // =========================
-    // ORDER UPDATED
-    // =========================
+                console.log(
+                    "SOCKET order_created:",
+                    newOrder
+                );
 
-    const handleOrderUpdated =
-        (updatedOrder) => {
+                setOrders((prev) => [
 
-            console.log(
-                "SOCKET order_updated:",
-                updatedOrder
-            );
+                    newOrder,
+                    ...prev
+                ]);
+            };
 
-            setOrders((prev) => {
+        // ORDER UPDATED
 
-                return prev.map((order) => {
+        const handleOrderUpdated =
+            (updatedOrder) => {
 
-                    if (
-                        Number(order.id)
-                        ===
-                        Number(updatedOrder.order_id)
-                    ) {
+                console.log(
+                    "SOCKET order_updated:",
+                    updatedOrder
+                );
 
-                        return {
-                            ...order,
-                            status:
-                                updatedOrder.status,
-                            payment_status:
-                                updatedOrder.payment_status
-                        };
-                    }
+                setOrders((prev) => {
 
-                    return order;
+                    return prev.map((order) => {
+
+                        if (
+                            Number(order.id)
+                            ===
+                            Number(updatedOrder.order_id)
+                        ) {
+
+                            return {
+                                ...order,
+                                status:
+                                    updatedOrder.status,
+                                payment_status:
+                                    updatedOrder.payment_status
+                            };
+                        }
+
+                        return order;
+                    });
                 });
-            });
-        };
+            };
 
-    // =========================
-    // SOCKET LISTENERS
-    // =========================
+        // SOCKET LISTENERS
 
-    socket.on(
-        "order_created",
-        handleOrderCreated
-    );
-
-    socket.on(
-        "order_updated",
-        handleOrderUpdated
-    );
-
-    // =========================
-    // CLEANUP
-    // =========================
-
-    return () => {
-
-        socket.off(
+        socket.on(
             "order_created",
             handleOrderCreated
         );
 
-        socket.off(
+        socket.on(
             "order_updated",
             handleOrderUpdated
         );
-    };
 
-}, []);
+        // CLEANUP
 
-   // FORMAT PRICE
+        return () => {
 
+            socket.off(
+                "order_created",
+                handleOrderCreated
+            );
+
+            socket.off(
+                "order_updated",
+                handleOrderUpdated
+            );
+        };
+
+    }, []);
+
+    // =========================
+    // FORMAT PRICE
+    // =========================
 
     const formatPrice =
         (price) => {
@@ -191,9 +182,9 @@ useEffect(() => {
                 ) + "đ";
         };
 
-
-    //ORDER STATUS
-  
+    // =========================
+    // STATUS CLASS
+    // =========================
 
     const getStatusClass =
         (status) => {
@@ -215,13 +206,49 @@ useEffect(() => {
                 case "cancelled":
                     return "status cancelled";
 
+                case "returned":
+                    return "status returned";
+
                 default:
                     return "status";
             }
         };
 
-  // NEXT STATUS
-     
+    // =========================
+    // STATUS TEXT
+    // =========================
+
+    const getStatusText =
+        (status) => {
+
+            switch (status) {
+
+                case "pending":
+                    return "Chờ xác nhận";
+
+                case "confirmed":
+                    return "Đã xác nhận";
+
+                case "shipping":
+                    return "Đang giao";
+
+                case "completed":
+                    return "Hoàn thành";
+
+                case "cancelled":
+                    return "Đã huỷ";
+
+                case "returned":
+                    return "Hoàn hàng";
+
+                default:
+                    return status;
+            }
+        };
+
+    // =========================
+    // NEXT STATUS
+    // =========================
 
     const getNextStatus =
         (currentStatus) => {
@@ -242,9 +269,9 @@ useEffect(() => {
             }
         };
 
- // UPDATE STATUS
-   
-
+    // =========================
+    // UPDATE STATUS
+    // =========================
 
 const handleChangeStatus =
     async (
@@ -257,10 +284,40 @@ const handleChangeStatus =
                 currentStatus
             );
 
+        // KHÔNG CÓ STATUS TIẾP THEO
+
         if (
             nextStatus ===
             currentStatus
         ) {
+
+            return;
+        }
+
+        // MODAL XÁC NHẬN
+
+        const result =
+            await Swal.fire({
+
+                title: "Xác nhận chuyển trạng thái",
+
+                text:
+                    `Bạn có muốn chuyển đơn hàng sang "${getStatusText(nextStatus)}" không?`,
+
+                icon: "question",
+
+                showCancelButton: true,
+
+                confirmButtonText: "Đồng ý",
+
+                cancelButtonText: "Huỷ",
+
+                reverseButtons: true
+            });
+
+        // BẤM HUỶ
+
+        if (!result.isConfirmed) {
 
             return;
         }
@@ -272,7 +329,19 @@ const handleChangeStatus =
                 nextStatus
             );
 
+            // SUCCESS
 
+            await Swal.fire({
+
+                title: "Thành công",
+
+                text:
+                    `Đơn hàng đã chuyển sang "${getStatusText(nextStatus)}"`,
+
+                icon: "success",
+
+                confirmButtonText: "OK"
+            });
 
         } catch (error) {
 
@@ -280,13 +349,25 @@ const handleChangeStatus =
                 "UPDATE STATUS ERROR:",
                 error
             );
+
+            // ERROR
+
+            Swal.fire({
+
+                title: "Thất bại",
+
+                text:
+                    "Cập nhật trạng thái thất bại",
+
+                icon: "error",
+
+                confirmButtonText: "OK"
+            });
         }
     };
-
-
-
- // PAYMENT METHOD
-
+    // =========================
+    // PAYMENT METHOD
+    // =========================
 
     const getPaymentMethodText =
         (method) => {
@@ -303,7 +384,7 @@ const handleChangeStatus =
                     return "MoMo";
 
                 case "bank_transfer":
-                    return "Bank";
+                    return "Chuyển khoản";
 
                 default:
                     return (
@@ -314,8 +395,9 @@ const handleChangeStatus =
             }
         };
 
-//FILTER ORDERS
-
+    // =========================
+    // FILTER ORDERS
+    // =========================
 
     const filteredOrders =
         orders.filter((order) => {
@@ -350,10 +432,7 @@ const handleChangeStatus =
 
                 ||
 
-                (
-                    order.status
-                    || ""
-                )
+                getStatusText(order.status)
                     .toLowerCase()
                     .includes(keyword)
 
@@ -384,8 +463,9 @@ const handleChangeStatus =
             );
         });
 
-// LOADING
-
+    // =========================
+    // LOADING
+    // =========================
 
     if (loading) {
 
@@ -631,7 +711,9 @@ const handleChangeStatus =
                                         >
 
                                             {
-                                                order.status
+                                                getStatusText(
+                                                    order.status
+                                                )
                                             }
 
                                         </button>
@@ -705,4 +787,3 @@ const handleChangeStatus =
 }
 
 export default Orders;
-

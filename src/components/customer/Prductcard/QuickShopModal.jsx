@@ -7,6 +7,7 @@ import {
 import {
     useCart
 } from "../../../context/CartContext";
+import { useNavigate } from "react-router-dom";
 
 
 function QuickShopModal({
@@ -40,7 +41,10 @@ function QuickShopModal({
         setLoading] =
         useState(false);
 
+
     if (!product) return null;
+
+    const navigate = useNavigate();
 
     // =========================
     // FORMAT PRICE
@@ -56,6 +60,23 @@ function QuickShopModal({
             + "₫"
         );
 
+    };
+
+    // =========================
+    // CHECK STOCK AVAILABILITY
+    // =========================
+
+    const isVariantOutOfStock = (variant) => {
+        return variant?.quantity === 0 || variant?.stock === 0;
+    };
+
+    const handleVariantChange = (variant) => {
+        if (isVariantOutOfStock(variant)) {
+            alert("Biến thể này đã hết hàng. Vui lòng chọn phân loại khác.");
+            return;
+        }
+        setSelectedVariant(variant);
+        setQuantity(1); // Reset quantity when variant changes
     };
 
     // =========================
@@ -90,6 +111,19 @@ function QuickShopModal({
 
                 return;
 
+            }
+
+            // CHECK STOCK
+            if (isVariantOutOfStock(selectedVariant)) {
+                alert("Sản phẩm này đã hết hàng!");
+                return;
+            }
+
+            // CHECK QUANTITY AGAINST STOCK
+            const availableStock = selectedVariant.quantity || selectedVariant.stock || 0;
+            if (quantity > availableStock) {
+                alert(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
+                return;
             }
 
             try {
@@ -134,13 +168,280 @@ function QuickShopModal({
             }
 
         };
+    const handleBuyNow = async () => {
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            alert("Vui lòng đăng nhập");
+            return;
+        }
+
+        if (!selectedVariant) {
+            alert("Vui lòng chọn phân loại");
+            return;
+        }
+
+        // CHECK STOCK
+        if (isVariantOutOfStock(selectedVariant)) {
+            alert("Sản phẩm này đã hết hàng!");
+            return;
+        }
+
+        // CHECK QUANTITY AGAINST STOCK
+        const availableStock = selectedVariant.quantity || selectedVariant.stock || 0;
+        if (quantity > availableStock) {
+            alert(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // thêm vào giỏ hàng trước
+            await addToCart({
+                product_variant_id: selectedVariant.id,
+                quantity
+            });
+
+            increaseCartCount(quantity);
+
+            // chuyển sang trang checkout
+            navigate("/checkout");
+
+        } catch (error) {
+            console.log("BUY NOW ERROR:", error);
+
+            alert(
+                error.response?.data?.message ||
+                "Buy now failed"
+            );
+
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
 
         <>
-            {/* =========================
-                CSS
-            ========================= */}
+            <div
+                className="quickshop-overlay"
+                onClick={onClose}
+            >
+
+                <div
+                    className="quickshop-modal"
+                    onClick={(e) =>
+                        e.stopPropagation()
+                    }
+                >
+
+                    {/* CLOSE */}
+
+                    <button
+                        className="quickshop-close"
+                        onClick={onClose}
+                    >
+                        ✕
+                    </button>
+
+                    <div className="quickshop-content">
+
+                        {/* LEFT */}
+
+                        <div className="quickshop-left">
+
+                            <img
+                                src={
+                                    product.images?.[0]
+                                        ?.image_url
+                                }
+                                alt={product.name}
+                                className="quickshop-image"
+                            />
+
+                        </div>
+
+                        {/* RIGHT */}
+
+                        <div className="quickshop-right">
+
+                            <h2>
+                                {product.name}
+                            </h2>
+
+                            {/* PRICE */}
+
+                            <div className="quickshop-price">
+
+                                {
+                                    formatPrice(
+                                        selectedVariant?.price
+                                    )
+                                }
+
+                            </div>
+
+                            {/* VARIANTS */}
+
+                            {
+                                product.variants?.length > 0 && (
+
+                                    <div className="quickshop-section">
+
+                                        <h4>
+                                            Phân loại
+                                        </h4>
+
+                                        <div className="quickshop-variants">
+
+                                            {
+                                                product.variants.map(
+                                                    (
+                                                        variant
+                                                    ) => {
+
+                                                        const isOutOfStock = isVariantOutOfStock(variant);
+                                                        
+                                                        return (
+                                                            <button
+                                                                key={
+                                                                    variant.id
+                                                                }
+                                                                className={
+                                                                    selectedVariant?.id ===
+                                                                        variant.id
+                                                                        ? "variant-btn active"
+                                                                        : "variant-btn"
+                                                                }
+                                                                onClick={() =>
+                                                                    handleVariantChange(variant)
+                                                                }
+                                                                disabled={isOutOfStock}
+                                                                style={{
+                                                                    opacity: isOutOfStock ? 0.5 : 1,
+                                                                    cursor: isOutOfStock ? "not-allowed" : "pointer",
+                                                                    textDecoration: isOutOfStock ? "line-through" : "none"
+                                                                }}
+                                                            >
+
+                                                                {variant.variant_name}
+                                                                {isOutOfStock && " (Hết hàng)"}
+
+                                                            </button>
+                                                        );
+                                                    }
+                                                )
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                )
+                            }
+
+                            {/* QUANTITY */}
+
+                            <div className="quickshop-section">
+
+                                <h4>
+                                    Số lượng
+                                </h4>
+
+                                <div className="qty-wrapper">
+
+                                    <button
+                                        onClick={() =>
+                                            setQuantity(
+                                                (
+                                                    prev
+                                                ) =>
+                                                    prev > 1
+                                                        ? prev - 1
+                                                        : 1
+                                            )
+                                        }
+                                        disabled={isVariantOutOfStock(selectedVariant)}
+                                    >
+                                        -
+                                    </button>
+
+                                    <span>
+                                        {quantity}
+                                    </span>
+
+                                    <button
+                                        onClick={() => {
+                                            const maxStock = selectedVariant?.quantity || selectedVariant?.stock || Infinity;
+                                            if (quantity < maxStock) {
+                                                setQuantity(prev => prev + 1);
+                                            } else {
+                                                alert(`Chỉ còn ${maxStock} sản phẩm`);
+                                            }
+                                        }}
+                                        disabled={isVariantOutOfStock(selectedVariant)}
+                                    >
+                                        +
+                                    </button>
+
+                                </div>
+
+                                {/* Show stock info */}
+                                {selectedVariant && (
+                                    <div style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
+                                        {isVariantOutOfStock(selectedVariant) ? (
+                                            <span style={{ color: "#ee4d2d", fontWeight: "bold" }}>Hết hàng</span>
+                                        ) : (
+                                            <span>Còn lại: {selectedVariant.quantity || selectedVariant.stock || 0} sản phẩm</span>
+                                        )}
+                                    </div>
+                                )}
+
+                            </div>
+
+                            {/* ACTIONS */}
+
+                            <div className="quickshop-actions">
+
+                                {/* ADD TO CART */}
+
+                                <button
+                                    className="add-cart-btn"
+                                    onClick={
+                                        handleAddToCart
+                                    }
+                                    disabled={loading || isVariantOutOfStock(selectedVariant)}
+                                >
+
+                                    {
+                                        loading
+                                            ? "Đang thêm..."
+                                            : (isVariantOutOfStock(selectedVariant) ? "Hết hàng" : "Thêm vào giỏ")
+                                    }
+
+                                </button>
+
+                                {/* BUY NOW */}
+
+                                <button
+                                    className="buy-now-btn"
+                                    onClick={handleBuyNow}
+                                    disabled={loading || isVariantOutOfStock(selectedVariant)}
+                                >
+                                    {loading ? "Đang xử lý..." : (isVariantOutOfStock(selectedVariant) ? "Hết hàng" : "Mua ngay")}
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
             <style>
 
@@ -298,7 +599,7 @@ function QuickShopModal({
     transition: all 0.25s ease;
 }
 
-.variant-btn:hover {
+.variant-btn:hover:not(:disabled) {
     border-color: #ee4d2d;
     color: #ee4d2d;
 }
@@ -309,6 +610,11 @@ function QuickShopModal({
     color: #ee4d2d;
 
     font-weight: 700;
+}
+
+.variant-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* =========================
@@ -340,8 +646,13 @@ function QuickShopModal({
     transition: 0.2s;
 }
 
-.qty-wrapper button:hover {
+.qty-wrapper button:hover:not(:disabled) {
     background: #f5f5f5;
+}
+
+.qty-wrapper button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .qty-wrapper span {
@@ -388,7 +699,7 @@ function QuickShopModal({
     border: 1px solid #ee4d2d;
 }
 
-.add-cart-btn:hover {
+.add-cart-btn:hover:not(:disabled) {
     background: #ffe4dc;
 }
 
@@ -397,8 +708,13 @@ function QuickShopModal({
     color: white;
 }
 
-.buy-now-btn:hover {
+.buy-now-btn:hover:not(:disabled) {
     background: #d93f21;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* =========================
@@ -503,210 +819,6 @@ function QuickShopModal({
                 `}
 
             </style>
-
-            {/* =========================
-                MODAL
-            ========================= */}
-
-            <div
-                className="quickshop-overlay"
-                onClick={onClose}
-            >
-
-                <div
-                    className="quickshop-modal"
-                    onClick={(e) =>
-                        e.stopPropagation()
-                    }
-                >
-
-                    {/* CLOSE */}
-
-                    <button
-                        className="quickshop-close"
-                        onClick={onClose}
-                    >
-                        ✕
-                    </button>
-
-                    <div className="quickshop-content">
-
-                        {/* LEFT */}
-
-                        <div className="quickshop-left">
-
-                            <img
-                                src={
-                                    product.images?.[0]
-                                        ?.image_url
-                                }
-                                alt={product.name}
-                                className="quickshop-image"
-                            />
-
-                        </div>
-
-                        {/* RIGHT */}
-
-                        <div className="quickshop-right">
-
-                            <h2>
-                                {product.name}
-                            </h2>
-
-                            {/* PRICE */}
-
-                            <div className="quickshop-price">
-
-                                {
-                                    formatPrice(
-                                        selectedVariant?.price
-                                    )
-                                }
-
-                            </div>
-
-                            {/* VARIANTS */}
-
-                            {
-                                product.variants?.length > 0 && (
-
-                                    <div className="quickshop-section">
-
-                                        <h4>
-                                            Phân loại
-                                        </h4>
-
-                                        <div className="quickshop-variants">
-
-                                            {
-                                                product.variants.map(
-                                                    (
-                                                        variant
-                                                    ) => (
-
-                                                        <button
-                                                            key={
-                                                                variant.id
-                                                            }
-                                                            className={
-                                                                selectedVariant?.id ===
-                                                                    variant.id
-                                                                    ? "variant-btn active"
-                                                                    : "variant-btn"
-                                                            }
-                                                            onClick={() =>
-                                                                setSelectedVariant(
-                                                                    variant
-                                                                )
-                                                            }
-                                                        >
-
-                                                            {
-                                                                variant.variant_name
-                                                            }
-
-                                                        </button>
-
-                                                    )
-                                                )
-                                            }
-
-                                        </div>
-
-                                    </div>
-
-                                )
-                            }
-
-                            {/* QUANTITY */}
-
-                            <div className="quickshop-section">
-
-                                <h4>
-                                    Số lượng
-                                </h4>
-
-                                <div className="qty-wrapper">
-
-                                    <button
-                                        onClick={() =>
-                                            setQuantity(
-                                                (
-                                                    prev
-                                                ) =>
-                                                    prev > 1
-                                                        ? prev - 1
-                                                        : 1
-                                            )
-                                        }
-                                    >
-                                        -
-                                    </button>
-
-                                    <span>
-                                        {quantity}
-                                    </span>
-
-                                    <button
-                                        onClick={() =>
-                                            setQuantity(
-                                                (
-                                                    prev
-                                                ) =>
-                                                    prev + 1
-                                            )
-                                        }
-                                    >
-                                        +
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                            {/* ACTIONS */}
-
-                            <div className="quickshop-actions">
-
-                                {/* ADD TO CART */}
-
-                                <button
-                                    className="add-cart-btn"
-                                    onClick={
-                                        handleAddToCart
-                                    }
-                                    disabled={loading}
-                                >
-
-                                    {
-                                        loading
-                                            ? "Đang thêm..."
-                                            : "Thêm vào giỏ"
-                                    }
-
-                                </button>
-
-                                {/* BUY NOW */}
-
-                                <button
-                                    className="buy-now-btn"
-                                >
-
-                                    Mua ngay
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </>
 
     );

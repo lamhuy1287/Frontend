@@ -1,3 +1,4 @@
+
 import {
     useEffect,
     useState
@@ -18,35 +19,141 @@ import {
     checkout
 } from "../../services/orderService";
 
+import {
+    FaUser,
+    FaPhone,
+    FaMapMarkerAlt,
+    FaCreditCard,
+    FaStickyNote
+} from "react-icons/fa";
+
+import "./Checkout.css";
+
 function Checkout() {
 
-    const navigate = useNavigate();
-    const location = useLocation();
+    const navigate =
+        useNavigate();
 
-    const [cart, setCart] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [customerName, setCustomerName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [address, setAddress] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("cod");
-    const [couponCode, setCouponCode] = useState("");
-    const [discountAmount, setDiscountAmount] = useState(0);
+    const location =
+        useLocation();
 
-    const fetchCart = async () => {
-        try {
-            const res = await getCart();
-            setCart(res.data.data);
-        } catch (err) {
-            console.error(err);
-            alert(err.response?.data?.message || "Không thể tải giỏ hàng");
-        } finally {
-            setLoading(false);
-        }
+    // =========================
+    // STATE
+    // =========================
+
+    const [cart,
+        setCart] =
+        useState(null);
+
+    const [buyNowItem,
+        setBuyNowItem] =
+        useState(null);
+
+    const [loading,
+        setLoading] =
+        useState(true);
+
+    const [customerName,
+        setCustomerName] =
+        useState("");
+
+    const [phone,
+        setPhone] =
+        useState("");
+
+    const [address,
+        setAddress] =
+        useState("");
+
+    const [paymentMethod,
+        setPaymentMethod] =
+        useState("cod");
+
+    const [couponCode,
+        setCouponCode] =
+        useState("");
+
+    const [discountAmount,
+        setDiscountAmount] =
+        useState(0);
+
+    const [rememberInfo,
+        setRememberInfo] =
+        useState(true);
+    
+    const [note,
+        setNote] =
+        useState("");
+
+
+
+    // =========================
+    // LIMIT TEXT
+    // =========================
+
+    const limitText = (
+        text,
+        max = 55
+    ) => {
+
+        if (!text) return "";
+
+        return text.length > max
+            ? text.slice(0, max) + "..."
+            : text;
+
     };
+
+    // =========================
+    // FETCH CART
+    // =========================
+
+    const fetchCart =
+        async () => {
+
+            try {
+
+                const res =
+                    await getCart();
+
+                setCart(
+                    res.data.data
+                );
+
+            } catch (err) {
+
+                alert(
+                    err.response?.data?.message ||
+                    "Không thể tải giỏ hàng"
+                );
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+    // =========================
+    // LOAD DATA
+    // =========================
 
     useEffect(() => {
 
         fetchCart();
+
+        // BUY NOW
+
+        if (location.state?.buyNow) {
+
+            setBuyNowItem(
+                location.state
+            );
+
+        }
+
+        // COUPON
 
         if (location.state) {
 
@@ -57,360 +164,527 @@ function Checkout() {
             setDiscountAmount(
                 location.state.discountAmount || 0
             );
+
+        }
+
+        // USER PROFILE
+
+        const userData =
+            localStorage.getItem("user");
+
+        if (userData) {
+
+            const user =
+                JSON.parse(userData);
+
+            setCustomerName(
+                user.name || ""
+            );
+
+            setPhone(
+                user.phone || ""
+            );
+
+            setAddress(
+                user.address || ""
+            );
+
         }
 
     }, []);
 
-    const handlePlaceOrder = async () => {
-        try {
-            const payload = {
+    // =========================
+    // PLACE ORDER
+    // =========================
 
-                customer_name: customerName,
+    const handlePlaceOrder =
+        async () => {
 
-                phone,
+            try {
 
-                address,
+                const payload = {
 
-                payment_method: paymentMethod,
+                    customer_name:
+                        customerName,
 
-                coupon_code: couponCode
-            };
+                    phone,
 
-            const res = await checkout(payload);
-            console.log("CHECKOUT RESPONSE", res);
+                    address,
 
-            if (
-                paymentMethod === "bank_transfer" &&
-                res.data?.checkout_url
-            ) {
-                window.location.href =
-                    res.data.checkout_url;
+                    payment_method:
+                        paymentMethod,
 
-                return;
+                    coupon_code:
+                        couponCode,
+
+
+                    remember_info:
+                        rememberInfo,
+
+                    note
+
+
+                };
+
+                const res =
+                    await checkout(payload);
+
+                // =====================
+                // PAYMENT REDIRECT
+                // =====================
+
+                if (
+                    paymentMethod ===
+                    "bank_transfer" &&
+                    res.data?.checkout_url
+                ) {
+
+                    window.location.href =
+                        res.data.checkout_url;
+
+                    return;
+
+                }
+
+                if (
+                    ["momo", "vnpay"]
+                        .includes(paymentMethod)
+                    &&
+                    res.data?.pay_url
+                ) {
+
+                    window.location.href =
+                        res.data.pay_url;
+
+                    return;
+
+                }
+
+                alert(
+                    "Đặt hàng thành công"
+                );
+
+                const orderId =
+                    res.data?.order_id;
+
+                navigate(
+                    orderId
+                        ? `/my-orders/${orderId}`
+                        : "/user"
+                );
+
+            } catch (err) {
+
+                alert(
+                    err.response?.data?.message ||
+                    "Đặt hàng thất bại"
+                );
+
             }
 
-            const orderId = res.data?.order_id;
+        };
 
-            if (
-                paymentMethod === "momo" &&
-                res.data?.pay_url
-            ) {
-                window.location.href = res.data.pay_url;
-                return;
-            }
+    // =========================
+    // TOTAL
+    // =========================
 
-            if (
-                paymentMethod === "vnpay" &&
-                res.data?.pay_url
-            ) {
-                window.location.href = res.data.pay_url;
-                return;
-            }
+    const getTotal = () => {
 
-            alert("Đặt hàng thành công");
+        const base =
+            buyNowItem
+                ? buyNowItem.price *
+                buyNowItem.quantity
+                : cart?.total_price || 0;
 
-            if (orderId) {
-                navigate(`/my-orders/${orderId}`);
-            } else {
-                navigate("/user");
-            }
-        } catch (err) {
-            alert(err.response?.data?.message || "Đặt hàng thất bại");
-        }
+        return base - discountAmount;
+
     };
 
-    if (loading) {
-        return (
-            <CustomerLayout>
-                <div className="checkout-loading">
-                    Loading...
+    // =========================
+    // RENDER ITEM
+    // =========================
+
+    const renderItem = (
+        image,
+        name,
+        variant,
+        price,
+        quantity
+    ) => (
+
+        <div className="checkout-item">
+
+            <div className="checkout-item-left">
+
+                <img
+                    src={image}
+                    alt={name}
+                />
+
+                <div className="checkout-item-info">
+
+                    <div className="checkout-item-name">
+
+                        {limitText(name)}
+
+                    </div>
+
+                    <div className="checkout-item-variant">
+
+                        {variant}
+
+                    </div>
+
                 </div>
-            </CustomerLayout>
+
+            </div>
+
+            <div className="checkout-item-right">
+
+                <div className="checkout-item-price">
+
+                    {Number(price)
+                        .toLocaleString("vi-VN")}đ
+
+                </div>
+
+                <div className="checkout-item-quantity">
+
+                    x{quantity}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+    // =========================
+    // ITEMS
+    // =========================
+
+    const renderItems = () => {
+
+        if (buyNowItem) {
+
+            return (
+
+                <div className="checkout-items">
+
+                    {
+                        renderItem(
+                            buyNowItem.product.image,
+                            buyNowItem.product.name,
+                            buyNowItem.variant?.variant_name,
+                            buyNowItem.price,
+                            buyNowItem.quantity
+                        )
+                    }
+
+                </div>
+
+            );
+
+        }
+
+        if (cart?.items?.length > 0) {
+
+            return (
+
+                <div className="checkout-items">
+
+                    {
+                        cart.items.map((item) => (
+
+                            <div key={item.id}>
+
+                                {
+                                    renderItem(
+                                        item.product.thumbnail,
+                                        item.product.name,
+                                        item.variant?.variant_name,
+                                        item.subtotal,
+                                        item.quantity
+                                    )
+                                }
+
+                            </div>
+
+                        ))
+                    }
+
+                </div>
+
+            );
+
+        }
+
+        return (
+
+            <div className="empty-order">
+
+                Giỏ hàng trống
+
+            </div>
+
         );
+
+    };
+
+    // =========================
+    // LOADING
+    // =========================
+
+    if (loading) {
+
+        return (
+
+            <CustomerLayout>
+
+                <div className="checkout-loading">
+
+                    Loading...
+
+                </div>
+
+            </CustomerLayout>
+
+        );
+
     }
 
     return (
+
         <CustomerLayout>
-            <>
-                <style>{checkoutStyles}</style>
 
-                <div className="checkout-page">
-                    <div className="checkout-wrapper">
-                        <div className="checkout-header">
-                            <h1>Thanh toán</h1>
-                            <p>Kiểm tra giỏ hàng và hoàn tất thông tin giao hàng.</p>
+            <div className="checkout-page">
+
+                <div className="checkout-container">
+
+                    {/* LEFT */}
+
+                    <div className="checkout-left">
+
+                        <div className="checkout-card">
+
+                            <h2>
+                                Thông tin giao hàng
+                            </h2>
+
+                            {/* NAME */}
+
+                            <div className="checkout-input-group">
+
+                                <FaUser />
+
+                                <input
+                                    type="text"
+                                    placeholder="Họ và tên"
+                                    value={customerName}
+                                    onChange={(e) =>
+                                        setCustomerName(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+                            {/* PHONE */}
+
+                            <div className="checkout-input-group">
+
+                                <FaPhone />
+
+                                <input
+                                    type="text"
+                                    placeholder="Số điện thoại"
+                                    value={phone}
+                                    onChange={(e) =>
+                                        setPhone(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+                            {/* ADDRESS */}
+
+                            <div className="checkout-input-group textarea-group">
+
+                                <FaMapMarkerAlt />
+
+                                <textarea
+                                    placeholder="Địa chỉ giao hàng"
+                                    value={address}
+                                    onChange={(e) =>
+                                        setAddress(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+                            {/* NOTE */}
+
+                            <div className="checkout-input-group textarea-group">
+
+                                <FaStickyNote />
+
+                                <textarea
+                                    placeholder="Ghi chú cho đơn hàng (không bắt buộc)"
+                                    value={note}
+                                    onChange={(e) =>
+                                        setNote(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+
+
+                            {/* REMEMBER */}
+
+                            <label className="remember-info">
+
+                                <input
+                                    type="checkbox"
+                                    checked={rememberInfo}
+                                    onChange={() =>
+                                        setRememberInfo(
+                                            !rememberInfo
+                                        )
+                                    }
+                                />
+
+                                <span>
+                                    Lưu thông tin cho lần mua sau
+                                </span>
+
+                            </label>
+
                         </div>
 
-                        <div className="checkout-grid">
-                            <div className="checkout-form-card">
-                                <h2>Thông tin giao hàng</h2>
+                        {/* PAYMENT */}
 
-                                <label>
-                                    Họ tên
-                                    <input
-                                        type="text"
-                                        value={customerName}
-                                        onChange={(e) => setCustomerName(e.target.value)}
-                                        placeholder="Nhập họ tên"
-                                    />
-                                </label>
+                        <div className="checkout-card">
 
-                                <label>
-                                    Số điện thoại
-                                    <input
-                                        type="text"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="Nhập số điện thoại"
-                                    />
-                                </label>
+                            <h2>
+                                Phương thức thanh toán
+                            </h2>
 
-                                <label>
-                                    Địa chỉ
-                                    <textarea
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                        placeholder="Nhập địa chỉ giao hàng"
-                                    />
-                                </label>
+                            <div className="checkout-payment">
 
-                                <label>
-                                    Phương thức thanh toán
-                                    <select
-                                        value={paymentMethod}
-                                        onChange={(e) => setPaymentMethod(e.target.value)}
-                                    >
-                                        <option value="cod">COD</option>
-                                        <option value="vnpay">VNPAY</option>
-                                        <option value="momo">MOMO</option>
-                                        <option value="bank_transfer">Chuyển khoản</option>
-                                    </select>
-                                </label>
+                                <FaCreditCard />
 
-                                <button
-                                    className="place-order-btn"
-                                    onClick={handlePlaceOrder}
+                                <select
+                                    value={paymentMethod}
+                                    onChange={(e) =>
+                                        setPaymentMethod(
+                                            e.target.value
+                                        )
+                                    }
                                 >
-                                    Đặt hàng
-                                </button>
+
+                                    <option value="cod">
+                                        Thanh toán khi nhận hàng
+                                    </option>
+
+                                    <option value="vnpay">
+                                        VNPAY
+                                    </option>
+
+                                    <option value="momo">
+                                        MOMO
+                                    </option>
+
+                                    <option value="bank_transfer">
+                                        Chuyển khoản ngân hàng
+                                    </option>
+
+                                </select>
+
                             </div>
 
-                            <div className="checkout-summary-card">
-                                <h2>Đơn hàng</h2>
-
-                                {cart?.items?.length > 0 ? (
-                                    <>
-                                        <div className="order-items">
-                                            {cart.items.map((item) => (
-                                                <div key={item.id} className="order-item">
-                                                    <div className="order-item-left">
-                                                        <img src={item.product.thumbnail} alt={item.product.name} />
-                                                        <div>
-                                                            <div className="order-item-name">{item.product.name}</div>
-                                                            <div className="order-item-variant">{item.variant.variant_name}</div>
-                                                            <div className="order-item-quantity">Số lượng: {item.quantity}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="order-item-price">
-                                                        {Number(item.subtotal).toLocaleString("vi-VN")}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        {
-                                            discountAmount > 0 && (
-
-                                                <div className="order-total-box">
-
-                                                    <div>
-
-                                                        <span>
-                                                            Giảm giá
-                                                        </span>
-
-                                                        <strong
-                                                            style={{
-                                                                color: "red"
-                                                            }}
-                                                        >
-                                                            -
-                                                            {Number(
-                                                                discountAmount
-                                                            ).toLocaleString("vi-VN")}
-                                                        </strong>
-
-                                                    </div>
-
-                                                </div>
-                                            )
-                                        }
-
-                                        <div className="order-total-box">
-                                            <div>
-                                                <span>Tổng tiền</span>
-                                                <strong>
-                                                    {Number(
-                                                        cart.total_price - discountAmount
-                                                    ).toLocaleString("vi-VN")}
-                                                </strong>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="empty-order">
-                                        Giỏ hàng của bạn hiện đang trống.
-                                    </div>
-                                )}
-                            </div>
                         </div>
+
                     </div>
+
+                    {/* RIGHT */}
+
+                    <div className="checkout-right">
+
+                        <div className="checkout-card">
+
+                            <h2>
+                                Đơn hàng của bạn
+                            </h2>
+
+                            {renderItems()}
+
+                            {
+                                discountAmount > 0 && (
+
+                                    <div className="checkout-total-row discount">
+
+                                        <span>
+                                            Giảm giá
+                                        </span>
+
+                                        <strong>
+
+                                            -{discountAmount
+                                                .toLocaleString("vi-VN")}đ
+
+                                        </strong>
+
+                                    </div>
+
+                                )
+                            }
+
+                            <div className="checkout-total-row total">
+
+                                <span>
+                                    Tổng thanh toán
+                                </span>
+
+                                <strong>
+
+                                    {getTotal()
+                                        .toLocaleString("vi-VN")}đ
+
+                                </strong>
+
+                            </div>
+
+                            <button
+                                className="checkout-btn"
+                                onClick={handlePlaceOrder}
+                            >
+
+                                Đặt hàng
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
                 </div>
-            </>
+
+            </div>
+
         </CustomerLayout>
+
     );
-}
 
-const checkoutStyles = `
-.checkout-page {
-    min-height: 100vh;
-    background: #f5f5f5;
-    padding: 24px 16px;
 }
-
-.checkout-wrapper {
-    max-width: 1180px;
-    margin: auto;
-}
-
-.checkout-header {
-    margin-bottom: 24px;
-}
-
-.checkout-header h1 {
-    font-size: 32px;
-    margin-bottom: 8px;
-}
-
-.checkout-header p {
-    color: #555;
-}
-
-.checkout-grid {
-    display: grid;
-    gap: 20px;
-    grid-template-columns: 1.1fr 0.9fr;
-}
-
-.checkout-form-card,
-.checkout-summary-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-}
-
-.checkout-form-card h2,
-.checkout-summary-card h2 {
-    margin-bottom: 18px;
-}
-
-.checkout-form-card label {
-    display: block;
-    margin-bottom: 16px;
-    color: #333;
-}
-
-.checkout-form-card input,
-.checkout-form-card textarea,
-.checkout-form-card select {
-    width: 100%;
-    margin-top: 8px;
-    padding: 12px 14px;
-    border: 1px solid #ddd;
-    border-radius: 14px;
-    font-size: 14px;
-}
-
-.checkout-form-card textarea {
-    min-height: 120px;
-    resize: vertical;
-}
-
-.place-order-btn {
-    width: 100%;
-    border: none;
-    background: #2563eb;
-    color: white;
-    padding: 14px 0;
-    font-size: 16px;
-    border-radius: 14px;
-    cursor: pointer;
-    margin-top: 16px;
-}
-
-.order-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 0;
-    border-bottom: 1px solid #eef2ff;
-}
-
-.order-item:last-child {
-    border-bottom: none;
-}
-
-.order-item-left {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.order-item-left img {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    border-radius: 14px;
-}
-
-.order-item-name {
-    font-weight: 600;
-}
-
-.order-item-variant,
-.order-item-quantity {
-    color: #666;
-    font-size: 14px;
-    margin-top: 4px;
-}
-
-.order-item-price {
-    font-weight: 700;
-}
-
-.order-total-box {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eef2ff;
-}
-
-.order-total-box div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 18px;
-}
-
-.empty-order {
-    color: #555;
-    padding: 20px 0;
-}
-
-.checkout-loading {
-    padding: 40px;
-    font-size: 18px;
-}
-`;
 
 export default Checkout;
+

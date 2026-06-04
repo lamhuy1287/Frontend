@@ -312,7 +312,12 @@ return (
                                         {category.id}
                                     </td>
 
-                                    <td style={tdStyle}>
+                                    <td
+    style={{
+        ...tdStyle,
+        textAlign: "left"
+    }}
+>
 
                                         {
                                             "-- ".repeat(
