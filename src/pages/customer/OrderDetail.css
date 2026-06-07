@@ -84,16 +84,13 @@
     line-height: 1.5;
 }
 
-/* =========================
-   ORDER ITEMS
-========================= */
-
-.order-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
+    .cancel-note-box {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        background: #fff3cd;
+        border: 1px solid #ffe69c;
+    }
 .order-item {
     display: grid;
     grid-template-columns: 1fr 100px 150px;

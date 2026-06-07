@@ -31,6 +31,21 @@ export const cancelOrder = async (orderId) => {
     return response.data;
 };
 
+export const requestReturnOrder = async (
+    orderId,
+    note
+) => {
+
+    const response = await api.put(
+        `/orders/${orderId}/return`,
+        {
+            note
+        }
+    );
+
+    return response.data;
+};
+
 /*
 |--------------------------------------------------------------------------
 | USER - GET MY ORDERS
@@ -101,13 +116,32 @@ export const getAdminOrderDetail = async (
 
 export const updateOrderStatus = async (
     orderId,
-    status
+    data
 ) => {
 
     const response = await api.put(
         `/orders/admin/${orderId}/status`,
+        data
+    );
+
+    return response.data;
+};
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN - CANCEL ORDER
+|--------------------------------------------------------------------------
+*/
+
+export const adminCancelOrder = async (
+    orderId,
+    admin_note
+) => {
+
+    const response = await api.put(
+        `/orders/admin/${orderId}/cancel`,
         {
-            status
+            admin_note
         }
     );
 

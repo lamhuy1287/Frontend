@@ -11,7 +11,9 @@ import CustomerLayout
     from "../../layouts/CustomerLayout";
 
 import {
-    getOrderDetail
+    getOrderDetail,
+    cancelOrder,
+    requestReturnOrder
 } from "../../services/orderService";
 
 import "./OrderDetail.css";
@@ -38,6 +40,10 @@ function OrderDetail() {
 
     const [cancelling,
         setCancelling] =
+        useState(false);
+
+    const [returning,
+        setReturning] =
         useState(false);
 
     // =========================
@@ -134,6 +140,44 @@ function OrderDetail() {
         }
     };
 
+    const handleReturn = async () => {
+
+        const note = window.prompt(
+            "Nhập lý do hoàn hàng"
+        );
+
+        if (!note) {
+            return;
+        }
+
+        try {
+
+            setReturning(true);
+
+            await requestReturnOrder(
+                order.id,
+                note
+            );
+
+            alert(
+                "Đã gửi yêu cầu hoàn hàng"
+            );
+
+            fetchOrderDetail();
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message
+                || "Gửi yêu cầu hoàn thất bại"
+            );
+
+        } finally {
+
+            setReturning(false);
+        }
+    };
+
     // =========================
     // LOADING
     // =========================
@@ -189,6 +233,15 @@ function OrderDetail() {
     // =========================
     // RENDER
     // =========================
+
+    const statusMap = {
+        pending: "Chờ xác nhận",
+        confirmed: "Đã xác nhận",
+        shipping: "Đang giao",
+        return_requested: "Đang yêu cầu hoàn",
+        completed: "Hoàn thành",
+        cancelled: "Đã hủy"
+    };
 
     return (
 
@@ -252,8 +305,91 @@ function OrderDetail() {
                         </strong>
 
                         {" "}
-                        {order.status}
+                        {statusMap[order.status] || order.status}
                     </p>
+
+                    {
+                        order.note && (
+
+                            <div className="cancel-note-box">
+
+                                <p>
+                                    <strong>
+                                        Ghi chú khách:
+                                    </strong>
+                                </p>
+
+                                <p>
+                                    {order.note}
+                                </p>
+
+                            </div>
+
+                        )
+                    }
+
+                    {
+                        order.status === "return_requested"
+                        &&
+                        order.admin_note && (
+
+                            <div className="cancel-note-box">
+
+                                <p>
+                                    <strong>
+                                        Lý do hoàn hàng:
+                                    </strong>
+                                </p>
+
+                                <p>
+                                    {order.admin_note}
+                                </p>
+
+                            </div>
+
+                        )
+                    }
+
+                    {
+                        order.status === "shipping" && (
+
+                            <button
+                                type="button"
+                                className="cancel-order-button"
+                                onClick={handleReturn}
+                                disabled={returning}
+                            >
+                                {
+                                    returning
+                                        ? "Đang gửi..."
+                                        : "Yêu cầu hoàn hàng"
+                                }
+                            </button>
+
+                        )
+                    }
+
+                    {
+                        order.status === "cancelled"
+                        &&
+                        order.admin_note && (
+
+                            <div className="cancel-note-box">
+
+                                <p>
+                                    <strong>
+                                        Lý do huỷ đơn:
+                                    </strong>
+                                </p>
+
+                                <p>
+                                    {order.admin_note}
+                                </p>
+
+                            </div>
+
+                        )
+                    }
 
                     <p>
                         <strong>
@@ -273,6 +409,24 @@ function OrderDetail() {
 
                         {" "}
                         {order.payment_status}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Đơn vị vận chuyển:
+                        </strong>
+
+                        {" "}
+                        {order.shipping_provider || "Chưa có"}
+                    </p>
+
+                    <p>
+                        <strong>
+                            Mã vận đơn:
+                        </strong>
+
+                        {" "}
+                        {order.tracking_code || "Chưa có"}
                     </p>
 
                 </div>

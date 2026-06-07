@@ -189,7 +189,8 @@ function MyOrders() {
             "confirmed": "Đã xác nhận",
             "shipping": "Đang giao hàng",
             "completed": "Hoàn thành",
-            "cancelled": "Đã hủy"
+            "cancelled": "Đã hủy",
+            "return_requested": "Yêu cầu hoàn hàng"
         };
         return statusMap[status] || status;
     };

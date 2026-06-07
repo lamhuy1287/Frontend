@@ -9,7 +9,8 @@ import {
 } from "react-router-dom";
 
 import {
-    getAdminOrderDetail
+    getAdminOrderDetail,
+    adminCancelOrder
 } from "../../../services/orderService";
 
 import "./OrderDetail.css";
@@ -33,6 +34,14 @@ function OrderDetail() {
     const [loading,
         setLoading] =
         useState(true);
+
+    const [cancelNote,
+        setCancelNote] =
+        useState("");
+
+    const [cancelLoading,
+        setCancelLoading] =
+        useState(false);
 
     // =========================
     // EFFECT
@@ -80,6 +89,50 @@ function OrderDetail() {
             } finally {
 
                 setLoading(false);
+            }
+        };
+
+    const handleCancelOrder =
+        async () => {
+
+            if (!cancelNote.trim()) {
+
+                alert(
+                    "Vui lòng nhập lý do huỷ"
+                );
+
+                return;
+            }
+
+            try {
+
+                setCancelLoading(true);
+
+                await adminCancelOrder(
+                    order.id,
+                    cancelNote
+                );
+
+                alert(
+                    "Huỷ đơn thành công"
+                );
+
+                setCancelNote("");
+
+                fetchOrder();
+
+            } catch (error) {
+
+                console.log(error);
+
+                alert(
+                    error?.response?.data?.message
+                    || "Huỷ đơn thất bại"
+                );
+
+            } finally {
+
+                setCancelLoading(false);
             }
         };
 
@@ -258,71 +311,123 @@ function OrderDetail() {
 
     </div>
 
+    {
+        order.note && (
+
+            <div>
+
+                <strong>
+                    Ghi chú:
+                </strong>
+
+                <p>
+                    {order.note}
+                </p>
+
+            </div>
+
+        )
+    }
+
+    {
+        order.status === "cancelled"
+        &&
+        order.admin_note && (
+
+            <div>
+
+                <strong>
+                    Lý do huỷ đơn:
+                </strong>
+
+                <p>
+                    {order.admin_note}
+                </p>
+
+            </div>
+
+        )
+    }
+
 </div>
 
             </div>
 
-            {/* ITEMS */}
-
             <div className="detail-card">
 
                 <h3>
-                    Sản phẩm
+                    Thông tin vận chuyển
                 </h3>
 
-                <div className="order-items">
+                <div className="detail-grid">
 
-                    {
-                        order.items?.map((item) => (
+                    <div>
 
-                            <div
-                                className="order-item"
-                                key={item.id}
-                            >
+                        <strong>
+                            Đơn vị vận chuyển:
+                        </strong>
 
-                                <div className="item-left">
+                        <p>
+                            {order.shipping_provider || "Chưa có"}
+                        </p>
 
-                                    <h4>
-                                        {
-                                            item.product_name
-                                        }
-                                    </h4>
+                    </div>
 
-                                    <p>
-                                        {
-                                            item.variant_name
-                                        }
-                                    </p>
+                    <div>
 
-                                </div>
+                        <strong>
+                            Mã vận đơn:
+                        </strong>
 
-                                <div className="item-right">
+                        <p>
+                            {order.tracking_code || "Chưa có"}
+                        </p>
 
-                                    <span>
-
-                                        x{item.quantity}
-
-                                    </span>
-
-                                    <strong>
-
-                                        {
-                                            Number(item.price)
-                                                .toLocaleString()
-                                        }đ
-
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-                        ))
-                    }
+                    </div>
 
                 </div>
 
             </div>
+
+            {
+                (
+                    order.status === "pending"
+                    ||
+                    order.status === "confirmed"
+                ) && (
+
+                    <div className="detail-card cancel-block">
+
+                        <h3>
+                            Huỷ đơn hàng
+                        </h3>
+
+                        <textarea
+                            value={cancelNote}
+                            onChange={(e) =>
+                                setCancelNote(
+                                    e.target.value
+                                )
+                            }
+                            placeholder="Nhập lý do huỷ đơn..."
+                        />
+
+                        <button
+                            type="button"
+                            onClick={handleCancelOrder}
+                            disabled={cancelLoading}
+                        >
+                            {
+                                cancelLoading
+                                    ? "Đang huỷ..."
+                                    : "Huỷ đơn"
+                            }
+                        </button>
+
+                    </div>
+
+                )
+            }
 
             {/* TOTAL */}
 

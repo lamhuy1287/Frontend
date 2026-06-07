@@ -131,7 +131,11 @@ function Orders() {
                                 status:
                                     updatedOrder.status,
                                 payment_status:
-                                    updatedOrder.payment_status
+                                    updatedOrder.payment_status,
+                                shipping_provider:
+                                    updatedOrder.shipping_provider,
+                                tracking_code:
+                                    updatedOrder.tracking_code
                             };
                         }
 
@@ -238,7 +242,7 @@ function Orders() {
                 case "cancelled":
                     return "Đã huỷ";
 
-                case "returned":
+                case "return_requested":
                     return "Hoàn hàng";
 
                 default:
@@ -324,10 +328,55 @@ const handleChangeStatus =
 
         try {
 
-            await updateOrderStatus(
-                orderId,
-                nextStatus
-            );
+            if (nextStatus === "shipping") {
+                const result = await Swal.fire({
+                    title: "Thông tin vận chuyển",
+                    html: `
+                        <label for="shipping_provider">Đơn vị vận chuyển</label>
+                        <input id="shipping_provider" class="swal2-input" placeholder="GHN" />
+                        <label for="tracking_code">Mã vận đơn</label>
+                        <input id="tracking_code" class="swal2-input" placeholder="GHN123456789" />
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: "Xác nhận",
+                    cancelButtonText: "Huỷ",
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const shipping_provider = document.getElementById("shipping_provider").value;
+                        const tracking_code = document.getElementById("tracking_code").value;
+
+                        if (!shipping_provider || !tracking_code) {
+                            Swal.showValidationMessage("Vui lòng nhập đầy đủ đơn vị vận chuyển và mã vận đơn.");
+                        }
+
+                        return {
+                            status: "shipping",
+                            shipping_provider,
+                            tracking_code
+                        };
+                    }
+                });
+
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                await updateOrderStatus(
+                    orderId,
+                    {
+                        status: "shipping",
+                        shipping_provider: result.value.shipping_provider,
+                        tracking_code: result.value.tracking_code
+                    }
+                );
+            } else {
+                await updateOrderStatus(
+                    orderId,
+                    {
+                        status: nextStatus
+                    }
+                );
+            }
 
             // SUCCESS
 
