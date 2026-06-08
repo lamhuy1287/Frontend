@@ -68,6 +68,10 @@ function CategoryProducts() {
         setSelectedPrice] =
         useState(null);
 
+    const [sortBy,
+        setSortBy] =
+        useState("newest");
+
     // =========================
     // LOAD FILTER DATA
     // =========================
@@ -88,11 +92,6 @@ function CategoryProducts() {
 
             const brandRes =
                 await getBrands();
-
-            console.log(
-                "BRAND RESPONSE:",
-                brandRes.data
-            );
 
             const brandData =
 
@@ -130,13 +129,9 @@ function CategoryProducts() {
 
             if (currentCategory) {
 
-                // CATEGORY NAME
-
                 setCategoryName(
                     currentCategory.name
                 );
-
-                // CHILD CATEGORY
 
                 setChildCategories(
 
@@ -177,7 +172,8 @@ function CategoryProducts() {
         id,
         selectedBrand,
         selectedChildCategory,
-        selectedPrice
+        selectedPrice,
+        sortBy
     ]);
 
     const fetchProducts = async () => {
@@ -195,7 +191,9 @@ function CategoryProducts() {
                 category_id:
                     selectedChildCategory || id,
 
-                limit: 50
+                limit: 50,
+
+                sort: sortBy
             };
 
             // =====================
@@ -251,11 +249,6 @@ function CategoryProducts() {
                     params
                 );
 
-            console.log(
-                "FILTER PRODUCTS:",
-                res.data
-            );
-
             // =====================
             // DATA
             // =====================
@@ -280,6 +273,22 @@ function CategoryProducts() {
 
             setLoading(false);
         }
+    };
+
+    // =========================
+    // CLEAR FILTER
+    // =========================
+
+    const clearFilters = () => {
+
+        setSelectedBrand(null);
+
+        setSelectedChildCategory(null);
+
+        setSelectedPrice(null);
+
+        setSortBy("newest");
+
     };
 
     // =========================
@@ -313,16 +322,21 @@ function CategoryProducts() {
 
                 {/* HEADER */}
 
-                <div style={styles.header}>
+<div
+    style={{
+        ...styles.header,
+        textAlign: "center"
+    }}
+>
 
-                    <h2 style={styles.title}>
+    <h2 style={styles.title}>
 
-                        {categoryName ||
-                            "Danh mục"}
+        {categoryName ||
+            "Danh mục"}
 
-                    </h2>
+    </h2>
 
-                </div>
+</div>
 
                 {/* CONTENT */}
 
@@ -330,42 +344,127 @@ function CategoryProducts() {
 
                     {/* SIDEBAR */}
 
-                    <FilterSidebar
+                    <div style={styles.sidebar}>
 
-                        brands={brands}
+                        <FilterSidebar
 
-                        childCategories={
-                            childCategories
-                        }
+                            brands={brands}
 
-                        selectedBrand={
-                            selectedBrand
-                        }
+                            childCategories={
+                                childCategories
+                            }
 
-                        setSelectedBrand={
-                            setSelectedBrand
-                        }
+                            selectedBrand={
+                                selectedBrand
+                            }
 
-                        selectedChildCategory={
-                            selectedChildCategory
-                        }
+                            setSelectedBrand={
+                                setSelectedBrand
+                            }
 
-                        setSelectedChildCategory={
-                            setSelectedChildCategory
-                        }
+                            selectedChildCategory={
+                                selectedChildCategory
+                            }
 
-                        selectedPrice={
-                            selectedPrice
-                        }
+                            setSelectedChildCategory={
+                                setSelectedChildCategory
+                            }
 
-                        setSelectedPrice={
-                            setSelectedPrice
-                        }
-                    />
+                            selectedPrice={
+                                selectedPrice
+                            }
+
+                            setSelectedPrice={
+                                setSelectedPrice
+                            }
+                        />
+
+                        {/* CLEAR FILTER */}
+
+                        <button
+                            style={
+                                styles.clearFilterBtn
+                            }
+                            onClick={
+                                clearFilters
+                            }
+                        >
+
+                            Xóa bộ lọc
+
+                        </button>
+
+                    </div>
 
                     {/* PRODUCTS */}
 
                     <div style={styles.productsSection}>
+
+                        {/* TOOLBAR */}
+
+                        <div style={styles.toolbar}>
+
+                            <div
+                                style={
+                                    styles.resultCount
+                                }
+                            >
+
+                                {
+                                    products.length
+                                } sản phẩm
+
+                            </div>
+
+                            <div
+                                style={
+                                    styles.sortBox
+                                }
+                            >
+
+                                <span
+                                    style={
+                                        styles.sortLabel
+                                    }
+                                >
+
+                                    Sắp xếp:
+
+                                </span>
+
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) =>
+                                        setSortBy(
+                                            e.target.value
+                                        )
+                                    }
+                                    style={
+                                        styles.sortSelect
+                                    }
+                                >
+
+                                    <option value="newest">
+                                        Mới nhất
+                                    </option>
+
+                                    <option value="price_asc">
+                                        Giá tăng dần
+                                    </option>
+
+                                    <option value="price_desc">
+                                        Giá giảm dần
+                                    </option>
+
+                                    <option value="best_selling">
+                                        Bán chạy
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
 
                         {/* EMPTY */}
 
@@ -434,26 +533,27 @@ const styles = {
 
     container: {
 
-        width: "100%",
+        width: "95%",
 
-        maxWidth: "1400px",
+        maxWidth: "1500px",
 
         margin: "0 auto",
 
-        padding: "30px 20px"
+        padding: "30px 0"
     },
 
     header: {
 
-        marginBottom: "30px",
-        textAlign: "center"
+        marginBottom: "30px"
     },
 
     title: {
 
-        fontSize: "32px",
+        fontSize: "28px",
 
         fontWeight: "700",
+
+        color: "#111",
 
         marginBottom: "8px"
     },
@@ -475,13 +575,13 @@ const styles = {
 
         border: "1px solid #eee",
 
-        borderRadius: "12px",
+        borderRadius: "16px",
 
         padding: "40px",
 
         textAlign: "center",
 
-        fontSize: "18px",
+        fontSize: "16px",
 
         color: "#777"
     },
@@ -490,9 +590,18 @@ const styles = {
 
         display: "flex",
 
-        gap: "25px",
+        gap: "24px",
 
         alignItems: "flex-start"
+    },
+
+    sidebar: {
+
+        width: "260px",
+
+        position: "sticky",
+
+        top: "20px"
     },
 
     productsSection: {
@@ -500,12 +609,101 @@ const styles = {
         flex: 1
     },
 
+    toolbar: {
+
+        width: "100%",
+
+        display: "flex",
+
+        justifyContent: "space-between",
+
+        alignItems: "center",
+
+        marginBottom: "20px",
+
+        background: "#fff",
+
+        padding: "16px 20px",
+
+        borderRadius: "16px",
+
+        border:
+            "1px solid #f3e8df"
+    },
+
+    resultCount: {
+
+        fontSize: "14px",
+
+        fontWeight: "600",
+
+        color: "#444"
+    },
+
+    sortBox: {
+
+        display: "flex",
+
+        alignItems: "center",
+
+        gap: "10px"
+    },
+
+    sortLabel: {
+
+        fontSize: "14px",
+
+        color: "#666"
+    },
+
+    sortSelect: {
+
+        height: "40px",
+
+        padding: "0 14px",
+
+        borderRadius: "10px",
+
+        border: "1px solid #ddd",
+
+        background: "#fff",
+
+        outline: "none",
+
+        cursor: "pointer",
+
+        fontSize: "13px"
+    },
+
+    clearFilterBtn: {
+
+        width: "100%",
+
+        height: "44px",
+
+        border: "none",
+
+        borderRadius: "12px",
+
+        background: "#ff6b00",
+
+        color: "white",
+
+        fontWeight: "600",
+
+        cursor: "pointer",
+
+        marginTop: "16px",
+
+        fontSize: "14px"
+    },
+
     grid: {
 
         display: "grid",
 
         gridTemplateColumns:
-            "repeat(auto-fill, minmax(250px, 1fr))",
+            "repeat(auto-fill, minmax(220px, 1fr))",
 
         gap: "20px"
     },

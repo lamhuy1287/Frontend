@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { Toaster } from "react-hot-toast";
 
 import App from "./App.jsx";
 
@@ -18,7 +19,14 @@ createRoot(
 
         <CartProvider>
 
-            <App />
+<>
+    <App />
+
+    <Toaster
+        position="top-right"
+        reverseOrder={false}
+    />
+</>
 
         </CartProvider>
 

@@ -15,14 +15,35 @@ import {
     XAxis,
     YAxis
 } from "recharts";
+import {
+    FiPackage,
+    FiShoppingCart,
+    FiUsers,
+    FiDollarSign,
+    FiTrendingUp,
+    FiTrendingDown,
+    FiCalendar,
+    FiClock,
+    FiAward,
+    FiList
+} from "react-icons/fi";
 
 const statusColors = {
     pending: "#f59e0b",
     confirmed: "#3b82f6",
-    shipping: "#0ea5e9",
+    shipping: "#06b6d4",
     completed: "#10b981",
     cancelled: "#ef4444",
     return_requested: "#8b5cf6"
+};
+
+const statusLabels = {
+    pending: "Chờ xử lý",
+    confirmed: "Đã xác nhận",
+    shipping: "Đang giao",
+    completed: "Hoàn thành",
+    cancelled: "Đã hủy",
+    return_requested: "Yêu cầu hoàn trả"
 };
 
 const currencyFormatter = (value) =>
@@ -30,14 +51,17 @@ const currencyFormatter = (value) =>
         style: "currency",
         currency: "VND",
         maximumFractionDigits: 0
-    }).format(value);
+    }).format(value || 0);
+
+// Hàm cắt ngắn tên sản phẩm
+const truncateProductName = (name, maxLength = 25) => {
+    if (!name) return "";
+    return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+};
 
 function Dashboard() {
     const [stats, setStats] = useState({
-        report_period: {
-            from: "",
-            to: ""
-        },
+        report_period: { from: "", to: "" },
         summary: {
             total_products: 0,
             total_orders: 0,
@@ -60,8 +84,7 @@ function Dashboard() {
         daily_revenue: [],
         order_status_report: [],
         top_products: [],
-        low_products: [],
-        status_summary: {}
+        low_products: []
     });
 
     useEffect(() => {
@@ -78,381 +101,590 @@ function Dashboard() {
     };
 
     const orderStatusData = stats.order_status_report || [];
-
-    const renderStatusLabel = ({ x, y, percent }) => {
-        if (x == null || y == null) {
-            return null;
-        }
-
-        return (
-            <text
-                x={x}
-                y={y}
-                fill="#ffffff"
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={12}
-                fontWeight={600}
-            >
-                {`${(percent * 100).toFixed(0)}%`}
-            </text>
-        );
-    };
-
-    const ordersByMonth = stats.orders_by_month.map((item) => ({
+    const ordersByMonth = stats.orders_by_month?.map((item) => ({
         label: item.label,
         count: item.count
-    }));
+    })) || [];
 
-    const revenueCompareData =
-        stats.revenue_compare?.map((item) => ({
-            month: `T${item.month}`,
-            previous_year: item.previous_year,
-            current_year: item.current_year
-        })) || [];
+    const revenueCompareData = stats.revenue_compare?.map((item) => ({
+        month: `T${item.month}`,
+        previous_year: item.previous_year,
+        current_year: item.current_year
+    })) || [];
 
-    const dailyRevenueData =
-        stats.daily_revenue?.map((item) => ({
-            date: item.date.slice(5),
-            revenue: item.revenue
-        })) || [];
-
-    const formatDate = (date) =>
-        date
-            ? new Date(date).toLocaleDateString("vi-VN")
-            : "";
-
-    const reportRange =
-        stats.report_period?.from && stats.report_period?.to
-            ? `${formatDate(stats.report_period.from)} → ${formatDate(stats.report_period.to)}`
-            : "30 ngày gần nhất";
-
-    const previousYearLabel = stats.previous_year || "Năm trước";
-    const currentYearLabel = stats.current_year || "Năm hiện tại";
+    const dailyRevenueData = stats.daily_revenue?.map((item) => ({
+        date: item.date.slice(5),
+        revenue: item.revenue
+    })) || [];
 
     return (
-        <div style={pageStyle}>
-            <div style={headerStyle}>
-                <h1>Dashboard</h1>
-                <p>Bảng điều khiển quản trị viên với số liệu tổng quan và biểu đồ.</p>
-            </div>
-
-            <div style={gridStyle}>
-                <StatCard title="Sản phẩm" value={stats.summary.total_products} />
-                <StatCard title="Đơn hàng" value={stats.summary.total_orders} />
-                <StatCard title="Người dùng" value={stats.summary.total_users} />
-                <StatCard
-                    title="Doanh thu"
-                    value={currencyFormatter(stats.summary.total_revenue)}
-                />
-            </div>
-
-            <div style={gridStyle}>
-                <StatCard
-                    title="Đơn mới"
-                    value={stats.recent_orders.new_orders}
-                    subtitle={reportRange}
-                />
-                <StatCard
-                    title="Đơn hoàn"
-                    value={stats.recent_orders.returned_orders}
-                    subtitle={reportRange}
-                />
-                <StatCard
-                    title="Đơn huỷ"
-                    value={stats.recent_orders.cancelled_orders}
-                    subtitle={reportRange}
-                />
-            </div>
-
-            <div style={secondaryGridStyle}>
-                <div style={cardStyle}>
-                    <h3>Doanh thu</h3>
-                    <p style={{ color: "#6b7280", marginTop: "8px", marginBottom: "20px" }}>
-                        {reportRange}
+        <div className="dashboard-container">
+            {/* Header Section */}
+            <div className="header-section">
+                <div className="header-left">
+                    <div className="welcome-badge">
+                        <FiAward className="welcome-icon" />
+                        <span>ADMIN PANEL</span>
+                    </div>
+                    <h1 className="header-title">Tổng quan hệ thống</h1>
+                    <p className="header-description">
+                        Theo dõi doanh thu, đơn hàng và hiệu suất bán hàng theo thời gian thực
                     </p>
-
-                    <div style={metricRowStyle}>
-                        <div>
-                            <span>30 ngày gần nhất</span>
-                            <strong>{currencyFormatter(stats.revenue.last_30_days)}</strong>
-                        </div>
-                        <div>
-                            <span>Tháng này</span>
-                            <strong>{currencyFormatter(stats.revenue.current_month)}</strong>
-                        </div>
-                        <div>
-                            <span>Tháng trước</span>
-                            <strong>{currencyFormatter(stats.revenue.previous_month)}</strong>
-                        </div>
-                        <div>
-                            <span>Tăng trưởng</span>
-                            <strong
-                                style={{
-                                    color:
-                                        stats.revenue.growth_percent >= 0
-                                            ? "#10b981"
-                                            : "#ef4444"
-                                }}
-                            >
-                                {stats.revenue.growth_percent}%
-                            </strong>
-                        </div>
-                    </div>
                 </div>
-
-                <div style={cardStyle}>
-                    <h3>Trạng thái đơn hàng</h3>
-                    <ResponsiveContainer width="100%" height={260}>
-                        <PieChart>
-                            <Pie
-                                data={orderStatusData}
-                                dataKey="count"
-                                nameKey="label"
-                                innerRadius={60}
-                                outerRadius={90}
-                                paddingAngle={4}
-                                labelLine={false}
-                                label={renderStatusLabel}
-                            >
-                                {orderStatusData.map((entry) => (
-                                    <Cell
-                                        key={entry.status || entry.label}
-                                        fill={statusColors[entry.status] || "#8884d8"}
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                formatter={(value, name, props) => {
-                                    const percent =
-                                        props?.payload?.percent ??
-                                        props?.payload?.payload?.percent ??
-                                        0;
-                                    return [`${value} đơn`, `${percent}%`];
-                                }}
-                            />
-                            <Legend verticalAlign="bottom" height={36} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div style={statusTableWrapStyle}>
-                        <h4>Trạng thái đơn hàng 30 ngày</h4>
-                        <table style={statusTableStyle}>
-                            <thead>
-                                <tr>
-                                    <th style={statusTableHeaderStyle}>Trạng thái</th>
-                                    <th style={statusTableHeaderStyle}>Số lượng</th>
-                                    <th style={statusTableHeaderStyle}>%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats.order_status_report.map((item) => (
-                                    <tr key={item.label}>
-                                        <td style={statusTableCellStyle}>{item.label}</td>
-                                        <td style={statusTableCellStyle}>{item.count}</td>
-                                        <td style={statusTableCellStyle}>{item.percent}%</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="revenue-card">
+                    <div className="revenue-header">
+                        <FiCalendar className="revenue-icon" />
+                        <span>Doanh thu 30 ngày</span>
+                    </div>
+                    <h2 className="revenue-amount">
+                        {currencyFormatter(stats.revenue.last_30_days)}
+                    </h2>
+                    <div className={`growth-badge ${stats.revenue.growth_percent >= 0 ? 'positive' : 'negative'}`}>
+                        {stats.revenue.growth_percent >= 0 ? <FiTrendingUp /> : <FiTrendingDown />}
+                        <span>{Math.abs(stats.revenue.growth_percent)}%</span>
                     </div>
                 </div>
             </div>
 
-            <div style={chartCardStyle}>
-                <h3>Doanh thu 30 ngày gần nhất</h3>
-                <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart
-                        data={dailyRevenueData}
-                        margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis tickFormatter={(value) => `${Math.round(value / 1000000)}M`} />
-                        <Tooltip formatter={(value) => [currencyFormatter(value), "Doanh thu"]} />
+            {/* Stats Grid */}
+            <div className="stats-grid">
+                <StatCard
+                    title="Tổng sản phẩm"
+                    value={stats.summary.total_products}
+                    icon={<FiPackage />}
+                    gradient="linear-gradient(135deg, #3b82f6, #2563eb)"
+                />
+                <StatCard
+                    title="Tổng đơn hàng"
+                    value={stats.summary.total_orders}
+                    icon={<FiShoppingCart />}
+                    gradient="linear-gradient(135deg, #06b6d4, #0891b2)"
+                />
+                <StatCard
+                    title="Khách hàng"
+                    value={stats.summary.total_users}
+                    icon={<FiUsers />}
+                    gradient="linear-gradient(135deg, #8b5cf6, #7c3aed)"
+                />
+                <StatCard
+                    title="Tổng doanh thu"
+                    value={currencyFormatter(stats.summary.total_revenue)}
+                    icon={<FiDollarSign />}
+                    gradient="linear-gradient(135deg, #10b981, #059669)"
+                />
+            </div>
+
+            {/* Order Status Cards - Hiển thị tất cả trạng thái đơn hàng */}
+            <div className="card full-width">
+                <div className="card-header">
+                    <h3 className="card-title">
+                        <FiList className="inline-icon" />
+                        Tất cả trạng thái đơn hàng
+                    </h3>
+                    <div className="date-range">
+                        <FiClock />
+                        <span>{`${formatDate(stats.report_period?.from)} → ${formatDate(stats.report_period?.to)}`}</span>
+                    </div>
+                </div>
+                <div className="all-status-grid">
+                    {orderStatusData.map((status) => (
+                        <OrderStatusCard
+                            key={status.status}
+                            label={statusLabels[status.status]}
+                            value={status.count}
+                            color={statusColors[status.status]}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* Revenue Trend - Hàng 1 */}
+            <div className="card full-width">
+                <div className="card-header">
+                    <div>
+                        <h3 className="card-title">Xu hướng doanh thu</h3>
+                        <p className="card-subtitle">Biến động doanh thu theo ngày trong 30 ngày gần nhất</p>
+                    </div>
+                </div>
+                <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={dailyRevenueData}>
+                        <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/>
+                        <XAxis dataKey="date" stroke="#94a3b8"/>
+                        <YAxis tickFormatter={(value) => `${Math.round(value / 1000000)}M`} stroke="#94a3b8"/>
+                        <Tooltip formatter={(value) => [currencyFormatter(value), "Doanh thu"]}/>
                         <Area
                             type="monotone"
                             dataKey="revenue"
-                            stroke="#0ea5e9"
-                            fill="#0ea5e9"
-                            fillOpacity={0.2}
+                            stroke="#3b82f6"
+                            strokeWidth={3}
+                            fill="url(#revenueGradient)"
                         />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
 
-            <div style={chartsGridStyle}>
-                <div style={chartCardStyle}>
-                    <h3>Đơn hàng theo tháng</h3>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={ordersByMonth} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="label" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => [value, "Đơn hàng"]} />
-                            <Bar dataKey="count" fill="#2563eb" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+            {/* Orders by Month - Hàng 2 */}
+            <div className="card full-width">
+                <div className="card-header">
+                    <h3 className="card-title">Đơn hàng theo tháng</h3>
+                </div>
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={ordersByMonth}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/>
+                        <XAxis dataKey="label" stroke="#94a3b8"/>
+                        <YAxis stroke="#94a3b8"/>
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]}>
+                            {ordersByMonth.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill="#3b82f6" />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+
+            {/* Revenue Comparison - Hàng 3 */}
+            <div className="card full-width">
+                <div className="card-header">
+                    <h3 className="card-title">So sánh doanh thu theo năm</h3>
+                </div>
+                <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={revenueCompareData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/>
+                        <XAxis dataKey="month" stroke="#94a3b8"/>
+                        <YAxis stroke="#94a3b8"/>
+                        <Tooltip formatter={(value) => [currencyFormatter(value), "Doanh thu"]}/>
+                        <Legend />
+                        <Bar dataKey="previous_year" fill="#94a3b8" radius={[8, 8, 0, 0]} name="Năm trước"/>
+                        <Bar dataKey="current_year" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Năm nay"/>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+
+            {/* Product Tables */}
+            <div className="two-column-grid">
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">
+                            <FiAward className="inline-icon" />
+                            Top sản phẩm bán chạy
+                        </h3>
+                    </div>
+                    <ProductTable products={stats.top_products} type="top" />
                 </div>
 
-                <div style={chartCardStyle}>
-                    <h3>So sánh doanh thu 2 năm gần nhất</h3>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart
-                            data={revenueCompareData}
-                            margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => [currencyFormatter(value), "Doanh thu"]} />
-                            <Legend verticalAlign="bottom" height={36} />
-                            <Bar
-                                dataKey="previous_year"
-                                name={previousYearLabel}
-                                fill="#8884d8"
-                                radius={[8, 8, 0, 0]}
-                            />
-                            <Bar
-                                dataKey="current_year"
-                                name={currentYearLabel}
-                                fill="#2563eb"
-                                radius={[8, 8, 0, 0]}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <div className="card">
+                    <div className="card-header">
+                        <h3 className="card-title">
+                            Top sản phẩm bán chậm
+                        </h3>
+                    </div>
+                    <ProductTable products={stats.low_products} type="low" />
                 </div>
             </div>
 
-            <div style={bottomGridStyle}>
-                <div style={chartCardStyle}>
-                    <h3>Top 5 sản phẩm bán chạy</h3>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart
-                            data={stats.top_products}
-                            layout="vertical"
-                            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis type="category" dataKey="name" width={170} />
-                            <Tooltip formatter={(value) => [value, "Đã bán"]} />
-                            <Bar dataKey="sold" fill="#2563eb" radius={[8, 0, 0, 8]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+            <style jsx>{`
+                .dashboard-container {
+                    padding: 28px;
+                    background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
+                    min-height: 100vh;
+                }
 
-                <div style={chartCardStyle}>
-                    <h3>Top 5 sản phẩm bán chậm</h3>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart
-                            data={stats.low_products}
-                            layout="vertical"
-                            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis type="category" dataKey="name" width={170} />
-                            <Tooltip formatter={(value) => [value, "Đã bán"]} />
-                            <Bar dataKey="sold" fill="#f59e0b" radius={[8, 0, 0, 8]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
+                .header-section {
+                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                    border-radius: 28px;
+                    padding: 36px;
+                    margin-bottom: 28px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1);
+                }
+
+                .header-left {
+                    flex: 1;
+                }
+
+                .welcome-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: rgba(255,255,255,0.1);
+                    padding: 6px 14px;
+                    border-radius: 100px;
+                    margin-bottom: 16px;
+                }
+
+                .welcome-icon {
+                    color: #3b82f6;
+                }
+
+                .welcome-badge span {
+                    color: #94a3b8;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    letter-spacing: 1px;
+                }
+
+                .header-title {
+                    color: white;
+                    font-size: 2rem;
+                    margin-bottom: 8px;
+                    font-weight: 700;
+                }
+
+                .header-description {
+                    color: #94a3b8;
+                    max-width: 450px;
+                    line-height: 1.5;
+                    font-size: 0.9rem;
+                }
+
+                .revenue-card {
+                    background: rgba(255,255,255,0.05);
+                    backdrop-filter: blur(10px);
+                    border-radius: 20px;
+                    padding: 24px;
+                    min-width: 280px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                }
+
+                .revenue-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    color: #94a3b8;
+                    margin-bottom: 12px;
+                    font-size: 0.9rem;
+                }
+
+                .revenue-icon {
+                    color: #3b82f6;
+                }
+
+                .revenue-amount {
+                    color: white;
+                    font-size: 1.8rem;
+                    margin-bottom: 16px;
+                    font-weight: 700;
+                }
+
+                .growth-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 14px;
+                    border-radius: 100px;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                }
+
+                .growth-badge.positive {
+                    background: rgba(16, 185, 129, 0.2);
+                    color: #10b981;
+                }
+
+                .growth-badge.negative {
+                    background: rgba(239, 68, 68, 0.2);
+                    color: #ef4444;
+                }
+
+                .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 28px;
+                }
+
+                .two-column-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 20px;
+                    margin-bottom: 28px;
+                }
+
+                .full-width {
+                    grid-column: 1 / -1;
+                    margin-bottom: 28px;
+                }
+
+                .card {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 28px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                    transition: all 0.3s ease;
+                }
+
+                .card:hover {
+                    box-shadow: 0 12px 20px -8px rgba(0,0,0,0.1);
+                    transform: translateY(-2px);
+                }
+
+                .card-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 24px;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                }
+
+                .card-title {
+                    font-size: 1.2rem;
+                    font-weight: 700;
+                    color: #0f172a;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 0;
+                }
+
+                .card-subtitle {
+                    color: #64748b;
+                    font-size: 0.8rem;
+                    margin-top: 4px;
+                }
+
+                .date-range {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    color: #64748b;
+                    font-size: 0.85rem;
+                    background: #f8fafc;
+                    padding: 6px 12px;
+                    border-radius: 12px;
+                }
+
+                .inline-icon {
+                    color: #3b82f6;
+                }
+
+                .all-status-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                    gap: 16px;
+                }
+
+                @media (max-width: 768px) {
+                    .dashboard-container {
+                        padding: 16px;
+                    }
+                    .header-section {
+                        flex-direction: column;
+                        gap: 20px;
+                        padding: 24px;
+                    }
+                    .revenue-card {
+                        width: 100%;
+                    }
+                    .two-column-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    .all-status-grid {
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                }
+            `}</style>
         </div>
     );
 }
 
-function StatCard({ title, value, subtitle }) {
+function StatCard({ title, value, icon, gradient }) {
     return (
-        <div style={cardStyle}>
-            <p style={{ color: "#6b7280", marginBottom: "10px" }}>{title}</p>
-            {subtitle && (
-                <p style={{ color: "#9ca3af", fontSize: "0.95rem", marginBottom: "12px" }}>
-                    {subtitle}
-                </p>
-            )}
-            <h2 style={{ margin: 0, fontSize: "2rem" }}>{value}</h2>
+        <div className="stat-card">
+            <div className="stat-icon" style={{ background: gradient }}>
+                {icon}
+            </div>
+            <div className="stat-info">
+                <p className="stat-title">{title}</p>
+                <h3 className="stat-value">{value}</h3>
+            </div>
+            <style jsx>{`
+                .stat-card {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                }
+                
+                .stat-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 12px 20px -8px rgba(0,0,0,0.1);
+                }
+                
+                .stat-icon {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                    color: white;
+                }
+                
+                .stat-info {
+                    flex: 1;
+                }
+                
+                .stat-title {
+                    color: #64748b;
+                    font-size: 0.8rem;
+                    margin-bottom: 6px;
+                }
+                
+                .stat-value {
+                    color: #0f172a;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    margin: 0;
+                }
+            `}</style>
         </div>
     );
 }
 
-const pageStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "24px",
-    padding: "24px"
-};
+function OrderStatusCard({ label, value, color }) {
+    return (
+        <div className="order-status-card">
+            <div className="status-header">
+                <div className="status-dot" style={{ background: color }}></div>
+                <span className="status-label">{label}</span>
+            </div>
+            <div className="status-value" style={{ color }}>
+                {value}
+            </div>
+            <style jsx>{`
+                .order-status-card {
+                    background: #f8fafc;
+                    border-radius: 16px;
+                    padding: 20px;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                
+                .order-status-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 16px -6px rgba(0,0,0,0.1);
+                    background: #f1f5f9;
+                }
+                
+                .status-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 12px;
+                }
+                
+                .status-dot {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                }
+                
+                .status-label {
+                    color: #64748b;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                }
+                
+                .status-value {
+                    font-size: 2rem;
+                    font-weight: 800;
+                    line-height: 1;
+                }
+            `}</style>
+        </div>
+    );
+}
 
-const headerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px"
-};
+function ProductTable({ products, type }) {
+    return (
+        <div className="product-table-container">
+            <table className="product-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đã bán</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products?.map((product, index) => (
+                        <tr key={index}>
+                            <td className="product-name" title={product.name}>
+                                {truncateProductName(product.name, 25)}
+                            </td>
+                            <td className={`product-sold ${type}`}>{product.sold}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <style jsx>{`
+                .product-table-container {
+                    overflow-x: auto;
+                }
+                
+                .product-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                
+                .product-table th {
+                    text-align: left;
+                    padding: 12px 8px;
+                    color: #64748b;
+                    font-weight: 600;
+                    font-size: 0.8rem;
+                    border-bottom: 2px solid #e2e8f0;
+                }
+                
+                .product-table td {
+                    padding: 12px 8px;
+                    border-bottom: 1px solid #f1f5f9;
+                }
+                
+                .product-name {
+                    font-weight: 500;
+                    color: #0f172a;
+                    font-size: 0.85rem;
+                }
+                
+                .product-sold {
+                    font-weight: 700;
+                }
+                
+                .product-sold.top {
+                    color: #10b981;
+                }
+                
+                .product-sold.low {
+                    color: #f59e0b;
+                }
+                
+                .product-table tbody tr:hover {
+                    background: #f8fafc;
+                }
+            `}</style>
+        </div>
+    );
+}
 
-const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "20px"
-};
-
-const secondaryGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: "20px",
-    alignItems: "stretch"
-};
-
-const chartsGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: "20px"
-};
-
-const bottomGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "20px"
-};
-
-const metricRowStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: "16px",
-    marginTop: "20px"
-};
-
-const cardStyle = {
-    background: "white",
-    padding: "28px",
-    borderRadius: "24px",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.06)",
-    minHeight: "180px"
-};
-
-const chartCardStyle = {
-    ...cardStyle,
-    minHeight: "360px"
-};
-
-const statusTableWrapStyle = {
-    marginTop: "24px"
-};
-
-const statusTableStyle = {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "12px"
-};
-
-const statusTableHeaderStyle = {
-    textAlign: "left",
-    padding: "12px",
-    borderBottom: "2px solid #e5e7eb"
-};
-
-const statusTableCellStyle = {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb"
-};
+// Helper function
+function formatDate(date) {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString("vi-VN");
+}
 
 export default Dashboard;

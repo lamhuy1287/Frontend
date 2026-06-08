@@ -379,13 +379,12 @@ function ProductCard({ product }) {
 
                     {product.product_code && (
 
-                        <p className="product-code">
+<p className="product-code">
 
-                            {
-                                product.product_code
-                            }
+    #
+    {product.product_code}
 
-                        </p>
+</p>
 
                     )}
 

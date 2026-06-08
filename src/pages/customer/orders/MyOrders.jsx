@@ -12,8 +12,9 @@ import CustomerLayout
 
 import {
     getMyOrders,
-    cancelOrder  
+    cancelOrder
 } from "../../../services/orderService";
+
 import socket from "../../../socket";
 
 function MyOrders() {
@@ -24,8 +25,14 @@ function MyOrders() {
     const [loading, setLoading] =
         useState(true);
 
-    const [cancellingId, setCancellingId] = 
+    const [cancellingId, setCancellingId] =
         useState(null);
+
+    // PAGINATION
+    const [currentPage, setCurrentPage] =
+        useState(1);
+
+    const ordersPerPage = 5;
 
     const fetchOrders = async () => {
 
@@ -51,29 +58,40 @@ function MyOrders() {
         }
     };
 
-
-
     const canCancelOrder = (orderStatus) => {
         return orderStatus === "pending";
     };
 
     const isCancelLocked = (orderStatus) => {
-        return ["confirmed", "shipping"].includes(orderStatus);
+        return ["confirmed", "shipping"]
+            .includes(orderStatus);
     };
 
-    const handleCancel = async (orderId, orderStatus) => {
+    const handleCancel = async (
+        orderId,
+        orderStatus
+    ) => {
 
-        // Kiểm tra có thể hủy không
         if (!canCancelOrder(orderStatus)) {
-            if (isCancelLocked(orderStatus)) {
-                alert("Đơn hàng đã được shop xử lý, không thể hủy ở trạng thái này.");
+
+            if (
+                isCancelLocked(orderStatus)
+            ) {
+
+                alert(
+                    "Đơn hàng đã được shop xử lý, không thể hủy ở trạng thái này."
+                );
+
             } else {
-                alert("Đơn hàng không thể hủy ở trạng thái hiện tại.");
+
+                alert(
+                    "Đơn hàng không thể hủy ở trạng thái hiện tại."
+                );
             }
+
             return;
         }
 
-        // Xác nhận hủy đơn
         if (
             !window.confirm(
                 "Bạn chắc chắn muốn hủy đơn hàng này?"
@@ -84,13 +102,12 @@ function MyOrders() {
 
         try {
 
-            setCancellingId(orderId); // Đánh dấu đơn hàng đang được hủy
+            setCancellingId(orderId);
 
             await cancelOrder(orderId);
 
             alert("Đã hủy đơn thành công");
 
-            // Refresh lại danh sách đơn hàng
             await fetchOrders();
 
         } catch (err) {
@@ -102,7 +119,7 @@ function MyOrders() {
 
         } finally {
 
-            setCancellingId(null); // Xóa trạng thái đang hủy
+            setCancellingId(null);
         }
     };
 
@@ -111,49 +128,51 @@ function MyOrders() {
         fetchOrders();
 
     }, []);
+
     useEffect(() => {
 
-    const handleOrderUpdate = (data) => {
+        const handleOrderUpdate = (data) => {
 
-        console.log(
-            "SOCKET order_updated:",
-            data
-        );
+            console.log(
+                "SOCKET order_updated:",
+                data
+            );
 
-        setOrders((prevOrders) => {
+            setOrders((prevOrders) => {
 
-            return prevOrders.map((order) => {
+                return prevOrders.map((order) => {
 
-                if (
-                    Number(order.id)
-                    === Number(data.order_id)
-                ) {
+                    if (
+                        Number(order.id)
+                        === Number(data.order_id)
+                    ) {
 
-                    return {
-                        ...order,
-                        status: data.status
-                    };
-                }
+                        return {
+                            ...order,
+                            status: data.status
+                        };
+                    }
 
-                return order;
+                    return order;
+                });
             });
-        });
-    };
+        };
 
-    socket.on(
-        "order_updated",
-        handleOrderUpdate
-    );
-
-    return () => {
-
-        socket.off(
+        socket.on(
             "order_updated",
             handleOrderUpdate
         );
-    };
 
-}, []);
+        return () => {
+
+            socket.off(
+                "order_updated",
+                handleOrderUpdate
+            );
+        };
+
+    }, []);
+
     const formatPrice = (price) => {
 
         return Number(price)
@@ -183,7 +202,9 @@ function MyOrders() {
                 return "status";
         }
     };
+
     const getStatusText = (status) => {
+
         const statusMap = {
             "pending": "Chờ xác nhận",
             "confirmed": "Đã xác nhận",
@@ -192,8 +213,25 @@ function MyOrders() {
             "cancelled": "Đã hủy",
             "return_requested": "Yêu cầu hoàn hàng"
         };
+
         return statusMap[status] || status;
     };
+
+    // PAGINATION LOGIC
+
+    const totalPages = Math.ceil(
+        orders.length / ordersPerPage
+    );
+
+    const startIndex =
+        (currentPage - 1) * ordersPerPage;
+
+    const currentOrders =
+        orders.slice(
+            startIndex,
+            startIndex + ordersPerPage
+        );
+
     if (loading) {
 
         return (
@@ -263,117 +301,219 @@ function MyOrders() {
                 <div className="orders-list">
 
                     {
-                        orders.map((order, index) => (
+                        currentOrders.map(
+                            (order, index) => (
 
-                            <div
-                                className="order-card"
-                                key={order.id}
-                            >
+                                <div
+                                    className="order-card"
+                                    key={order.id}
+                                >
 
-                                {/* TOP */}
+                                    {/* TOP */}
 
-                                <div className="order-top">
+                                    <div className="order-top">
 
-                                    <div>
+                                        <div>
 
-                                        <h3>
-                                            Đơn hàng #{index + 1}
-                                        </h3>
+                                            <h3>
 
-                                        <span>
-                                            {
-                                                new Date(
-                                                    order.created_at
-                                                ).toLocaleDateString(
-                                                    "vi-VN"
+                                                Đơn hàng #
+                                                {
+                                                    startIndex
+                                                    + index
+                                                    + 1
+                                                }
+
+                                            </h3>
+
+                                            <span>
+
+                                                {
+                                                    new Date(
+                                                        order.created_at
+                                                    ).toLocaleDateString(
+                                                        "vi-VN"
+                                                    )
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+                                        <div
+                                            className={
+                                                getStatusClass(
+                                                    order.status
                                                 )
                                             }
-                                        </span>
+                                        >
+
+                                            {
+                                                getStatusText(
+                                                    order.status
+                                                )
+                                            }
+
+                                        </div>
 
                                     </div>
 
-                                    <div
-                                        className={
-                                            getStatusClass(
-                                                order.status
+                                    {/* BODY */}
+
+                                    <div className="order-body">
+
+                                        <div>
+
+                                            <p>
+                                                Phương thức thanh toán
+                                            </p>
+
+                                            <strong>
+
+                                                {
+                                                    order.payment_method
+                                                }
+
+                                            </strong>
+
+                                        </div>
+
+                                        <div>
+
+                                            <p>
+                                                Tổng tiền
+                                            </p>
+
+                                            <strong className="price">
+
+                                                {
+                                                    formatPrice(
+                                                        order.total_price
+                                                    )
+                                                }
+
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+                                    {/* FOOTER */}
+
+                                    <div className="order-footer">
+
+                                        <Link
+                                            to={`/my-orders/${order.id}`}
+                                            className="view-detail-btn"
+                                        >
+
+                                            Xem chi tiết
+
+                                        </Link>
+
+                                        {
+                                            order.status === "pending" && (
+
+                                                <button
+                                                    className="cancel-order-btn"
+                                                    onClick={() =>
+                                                        handleCancel(
+                                                            order.id,
+                                                            order.status
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        cancellingId
+                                                        === order.id
+                                                    }
+                                                >
+
+                                                    {
+                                                        cancellingId
+                                                            === order.id
+                                                            ? "Đang hủy..."
+                                                            : "Hủy đơn"
+                                                    }
+
+                                                </button>
                                             )
                                         }
-                                    >
-                                        {getStatusText(order.status)}
-                                    </div>
-
-                                </div>
-
-                                {/* BODY */}
-
-                                <div className="order-body">
-
-                                    <div>
-
-                                        <p>
-                                            Phương thức thanh toán
-                                        </p>
-
-                                        <strong>
-                                            {
-                                                order.payment_method
-                                            }
-                                        </strong>
-
-                                    </div>
-
-                                    <div>
-
-                                        <p>
-                                            Tổng tiền
-                                        </p>
-
-                                        <strong className="price">
-
-                                            {
-                                                formatPrice(
-                                                    order.total_price
-                                                )
-                                            }
-
-                                        </strong>
 
                                     </div>
 
                                 </div>
-
-                                {/* FOOTER - Thêm nút hủy đơn hàng */}
-
-                                <div className="order-footer">
-
-                                    <Link
-                                        to={`/my-orders/${order.id}`}
-                                        className="view-detail-btn"
-                                    >
-
-                                        Xem chi tiết
-
-                                    </Link>
-
-                                    {/* Nút hủy đơn hàng - chỉ hiển thị khi trạng thái là pending */}
-                                    {order.status === "pending" && (
-                                        <button
-                                            className="cancel-order-btn"
-                                            onClick={() => handleCancel(order.id, order.status)}
-                                            disabled={cancellingId === order.id}
-                                        >
-                                            {cancellingId === order.id ? "Đang hủy..." : "Hủy đơn"}
-                                        </button>
-                                    )}
-
-                                </div>
-
-
-                            </div>
-                        ))
+                            )
+                        )
                     }
 
                 </div>
+
+                {/* PAGINATION */}
+
+                {
+                    totalPages > 1 && (
+
+                        <div className="pagination">
+
+                            {/* PREV */}
+
+                            <button
+                                onClick={() =>
+                                    setCurrentPage(
+                                        prev => prev - 1
+                                    )
+                                }
+                                disabled={currentPage === 1}
+                            >
+                                ←
+                            </button>
+
+                            {/* PAGE NUMBERS */}
+
+                            {
+                                [...Array(totalPages)]
+                                    .map((_, index) => (
+
+                                        <button
+                                            key={index}
+                                            className={
+                                                currentPage
+                                                    === index + 1
+                                                    ? "active"
+                                                    : ""
+                                            }
+                                            onClick={() =>
+                                                setCurrentPage(
+                                                    index + 1
+                                                )
+                                            }
+                                        >
+
+                                            {index + 1}
+
+                                        </button>
+                                    ))
+                            }
+
+                            {/* NEXT */}
+
+                            <button
+                                onClick={() =>
+                                    setCurrentPage(
+                                        prev => prev + 1
+                                    )
+                                }
+                                disabled={
+                                    currentPage
+                                    === totalPages
+                                }
+                            >
+                                →
+                            </button>
+
+                        </div>
+                    )
+                }
 
             </div>
 

@@ -1,14 +1,7 @@
-import {
-    useEffect,
-    useState
-} from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-import {
-    useParams
-} from "react-router-dom";
-
-import CustomerLayout
-    from "../../layouts/CustomerLayout";
+import CustomerLayout from "../../layouts/CustomerLayout";
 
 import {
     getOrderDetail,
@@ -20,494 +13,303 @@ import "./OrderDetail.css";
 
 function OrderDetail() {
 
-    // =========================
-    // PARAMS
-    // =========================
-
     const { id } = useParams();
 
-    // =========================
-    // STATES
-    // =========================
+    const [order, setOrder] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const [order,
-        setOrder] =
-        useState(null);
+    const [cancelling, setCancelling] = useState(false);
+    const [returning, setReturning] = useState(false);
 
-    const [loading,
-        setLoading] =
-        useState(true);
+    // RETURN MODAL
+    const [returnModalOpen, setReturnModalOpen] = useState(false);
+    const [returnNote, setReturnNote] = useState("");
 
-    const [cancelling,
-        setCancelling] =
-        useState(false);
+    // TOAST
+    const [toast, setToast] = useState({
+        open: false,
+        message: "",
+        type: "success"
+    });
 
-    const [returning,
-        setReturning] =
-        useState(false);
+    const showToast = (message, type = "success") => {
+        setToast({ open: true, message, type });
 
-    // =========================
-    // EFFECT
-    // =========================
-
-    useEffect(() => {
-
-        if (id) {
-
-            fetchOrderDetail();
-        }
-
-    }, [id]);
-
-    // =========================
-    // FETCH DETAIL
-    // =========================
-
-    const fetchOrderDetail =
-        async () => {
-
-            try {
-
-                setLoading(true);
-
-                const res =
-                    await getOrderDetail(id);
-
-                console.log(
-                    "ORDER DETAIL:",
-                    res
-                );
-
-                setOrder(
-                    res?.data || null
-                );
-
-            } catch (error) {
-
-                console.log(
-                    "LOAD ORDER DETAIL ERROR:",
-                    error
-                );
-
-            } finally {
-
-                setLoading(false);
-            }
-        };
-
-    // =========================
-    // CANCEL ORDER
-    // =========================
-
-    const canCancelOrder =
-        order?.status === "pending";
-
-    const isCancelLocked =
-        ["confirmed", "shipping"].includes(
-            order?.status
-        );
-
-    const handleCancel = async () => {
-
-        if (
-            !window.confirm(
-                "Bạn chắc chắn muốn hủy đơn?"
-            )
-        ) {
-            return;
-        }
-
-        try {
-
-            setCancelling(true);
-
-            await cancelOrder(order.id);
-
-            alert("Đã hủy đơn");
-
-            fetchOrderDetail();
-
-        } catch (err) {
-
-            alert(
-                err.response?.data?.message
-                || "Hủy đơn thất bại"
-            );
-
-        } finally {
-
-            setCancelling(false);
-        }
+        setTimeout(() => {
+            setToast({ open: false, message: "", type: "success" });
+        }, 2500);
     };
-
-    const handleReturn = async () => {
-
-        const note = window.prompt(
-            "Nhập lý do hoàn hàng"
-        );
-
-        if (!note) {
-            return;
-        }
-
-        try {
-
-            setReturning(true);
-
-            await requestReturnOrder(
-                order.id,
-                note
-            );
-
-            alert(
-                "Đã gửi yêu cầu hoàn hàng"
-            );
-
-            fetchOrderDetail();
-
-        } catch (err) {
-
-            alert(
-                err.response?.data?.message
-                || "Gửi yêu cầu hoàn thất bại"
-            );
-
-        } finally {
-
-            setReturning(false);
-        }
-    };
-
-    // =========================
-    // LOADING
-    // =========================
-
-    if (loading) {
-
-        return (
-
-            <CustomerLayout>
-
-                <div
-                    style={{
-                        padding: "40px"
-                    }}
-                >
-
-                    <h2>
-                        Loading...
-                    </h2>
-
-                </div>
-
-            </CustomerLayout>
-        );
-    }
-
-    // =========================
-    // NOT FOUND
-    // =========================
-
-    if (!order) {
-
-        return (
-
-            <CustomerLayout>
-
-                <div
-                    style={{
-                        padding: "40px"
-                    }}
-                >
-
-                    <h2>
-                        Không tìm thấy đơn hàng
-                    </h2>
-
-                </div>
-
-            </CustomerLayout>
-        );
-    }
-
-    // =========================
-    // RENDER
-    // =========================
 
     const statusMap = {
         pending: "Chờ xác nhận",
         confirmed: "Đã xác nhận",
         shipping: "Đang giao",
-        return_requested: "Đang yêu cầu hoàn",
+        return_requested: "Yêu cầu hoàn",
         completed: "Hoàn thành",
-        cancelled: "Đã hủy"
+        cancelled: "Đã huỷ"
     };
 
-    return (
+    const paymentStatusMap = {
+        pending: "Chờ thanh toán",
+        paid: "Đã thanh toán",
+        failed: "Thanh toán thất bại"
+    };
 
+    useEffect(() => {
+        if (id) fetchOrderDetail();
+    }, [id]);
+
+    const fetchOrderDetail = async () => {
+        try {
+            setLoading(true);
+
+            const res = await getOrderDetail(id);
+            setOrder(res?.data || null);
+
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // =========================
+    // CANCEL ORDER
+    // =========================
+    const handleCancel = async () => {
+        if (!window.confirm("Bạn chắc chắn muốn huỷ đơn?")) return;
+
+        try {
+            setCancelling(true);
+
+            await cancelOrder(order.id);
+
+            showToast("Huỷ đơn thành công", "success");
+
+            fetchOrderDetail();
+
+        } catch (err) {
+            showToast(
+                err.response?.data?.message || "Huỷ đơn thất bại",
+                "error"
+            );
+        } finally {
+            setCancelling(false);
+        }
+    };
+
+    // =========================
+    // OPEN RETURN MODAL
+    // =========================
+    const handleReturn = () => {
+        setReturnNote("");
+        setReturnModalOpen(true);
+    };
+
+    // =========================
+    // SUBMIT RETURN
+    // =========================
+    const submitReturn = async () => {
+        if (!returnNote.trim()) return;
+
+        try {
+            setReturning(true);
+
+            await requestReturnOrder(order.id, returnNote);
+
+            setReturnModalOpen(false);
+            setReturnNote("");
+
+            showToast("Gửi yêu cầu hoàn hàng thành công", "success");
+
+            fetchOrderDetail();
+
+        } catch (err) {
+            showToast(
+                err.response?.data?.message || "Gửi yêu cầu thất bại",
+                "error"
+            );
+        } finally {
+            setReturning(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <CustomerLayout>
+                <div className="order-loading">Loading...</div>
+            </CustomerLayout>
+        );
+    }
+
+    if (!order) {
+        return (
+            <CustomerLayout>
+                <div className="order-loading">Không tìm thấy đơn hàng</div>
+            </CustomerLayout>
+        );
+    }
+
+    return (
         <CustomerLayout>
 
-            <div className="order-detail-page">
+            <div className="order-detail-wrapper">
 
-                <h1>
-                    Chi tiết đơn hàng
-                    #{order.id}
-                </h1>
+                {/* HEADER */}
+                <div className="order-header">
+                    <div>
+                        <h1>Đơn hàng </h1>
+                        <p>Theo dõi trạng thái đơn hàng</p>
+                    </div>
 
-                {/* CUSTOMER */}
-
-                <div className="detail-card">
-
-                    <h3>
-                        Thông tin nhận hàng
-                    </h3>
-
-                    <p>
-                        <strong>
-                            Người nhận:
-                        </strong>
-
-                        {" "}
-                        {order.customer_name}
-                    </p>
-
-                    <p>
-                        <strong>
-                            Số điện thoại:
-                        </strong>
-
-                        {" "}
-                        {order.phone}
-                    </p>
-
-                    <p>
-                        <strong>
-                            Địa chỉ:
-                        </strong>
-
-                        {" "}
-                        {order.address}
-                    </p>
-
+                    <div className={`order-status-badge ${order.status}`}>
+                        {statusMap[order.status]}
+                    </div>
                 </div>
 
-                {/* ORDER INFO */}
+                {/* INFO */}
+                <div className="order-info-grid">
 
-                <div className="detail-card">
-
-                    <h3>
-                        Thông tin đơn hàng
-                    </h3>
-
-                    <p>
-                        <strong>
-                            Trạng thái:
-                        </strong>
-
-                        {" "}
-                        {statusMap[order.status] || order.status}
-                    </p>
-
-                    {
-                        order.note && (
-
-                            <div className="cancel-note-box">
-
-                                <p>
-                                    <strong>
-                                        Ghi chú khách:
-                                    </strong>
-                                </p>
-
-                                <p>
-                                    {order.note}
-                                </p>
-
+                    <div className="order-card">
+                        <h3>Thông tin nhận hàng</h3>
+                        <div className="info-list">
+                            <div>
+                                <span>Người nhận</span>
+                                <strong>{order.customer_name}</strong>
                             </div>
-
-                        )
-                    }
-
-                    {
-                        order.status === "return_requested"
-                        &&
-                        order.admin_note && (
-
-                            <div className="cancel-note-box">
-
-                                <p>
-                                    <strong>
-                                        Lý do hoàn hàng:
-                                    </strong>
-                                </p>
-
-                                <p>
-                                    {order.admin_note}
-                                </p>
-
+                            <div>
+                                <span>SĐT</span>
+                                <strong>{order.phone}</strong>
                             </div>
-
-                        )
-                    }
-
-                    {
-                        order.status === "shipping" && (
-
-                            <button
-                                type="button"
-                                className="cancel-order-button"
-                                onClick={handleReturn}
-                                disabled={returning}
-                            >
-                                {
-                                    returning
-                                        ? "Đang gửi..."
-                                        : "Yêu cầu hoàn hàng"
-                                }
-                            </button>
-
-                        )
-                    }
-
-                    {
-                        order.status === "cancelled"
-                        &&
-                        order.admin_note && (
-
-                            <div className="cancel-note-box">
-
-                                <p>
-                                    <strong>
-                                        Lý do huỷ đơn:
-                                    </strong>
-                                </p>
-
-                                <p>
-                                    {order.admin_note}
-                                </p>
-
+                            <div>
+                                <span>Địa chỉ</span>
+                                <strong>{order.address}</strong>
                             </div>
+                        </div>
+                    </div>
 
-                        )
-                    }
-
-                    <p>
-                        <strong>
-                            Thanh toán:
-                        </strong>
-
-                        {" "}
-                        {order.payment_method}
-                    </p>
-
-
-
-                    <p>
-                        <strong>
-                            Trạng thái thanh toán:
-                        </strong>
-
-                        {" "}
-                        {order.payment_status}
-                    </p>
-
-                    <p>
-                        <strong>
-                            Đơn vị vận chuyển:
-                        </strong>
-
-                        {" "}
-                        {order.shipping_provider || "Chưa có"}
-                    </p>
-
-                    <p>
-                        <strong>
-                            Mã vận đơn:
-                        </strong>
-
-                        {" "}
-                        {order.tracking_code || "Chưa có"}
-                    </p>
-
-                </div>
-
-                {/* ITEMS */}
-
-                <div className="detail-card">
-
-                    <h3>
-                        Sản phẩm
-                    </h3>
-
-                    <div className="order-items">
-
-                        {
-                            order.items?.map((item) => (
-
-                                <div
-                                    className="order-item"
-                                    key={item.id}
-                                >
-
-                                    <div>
-
-                                        <h4>
-                                            {item.product_name}
-                                        </h4>
-
-                                        <p>
-                                            {item.variant_name}
-                                        </p>
-
-                                    </div>
-
-                                    <div>
-
-                                        x{item.quantity}
-
-                                    </div>
-
-                                    <div>
-
-                                        {
-                                            Number(item.price)
-                                                .toLocaleString()
-                                        }đ
-
-                                    </div>
-
-                                </div>
-
-                            ))
-                        }
-
+                    <div className="order-card">
+                        <h3>Thanh toán</h3>
+                        <div className="info-list">
+                            <div>
+                                <span>Phương thức</span>
+                                <strong>{order.payment_method}</strong>
+                            </div>
+                            <div>
+                                <span>Trạng thái</span>
+                                <strong>
+                                    {paymentStatusMap[order.payment_status]}
+                                </strong>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
 
+                {/* PRODUCTS */}
+                <div className="order-card">
+                    <h3>Sản phẩm</h3>
+
+                    <div className="minimal-product-list">
+                        {order.items?.map((item) => (
+                            <div key={item.id} className="minimal-product-item">
+
+                                <div>
+                                    <h4>{item.product_name}</h4>
+                                    <p>{item.variant_name}</p>
+                                </div>
+
+                                <div>x{item.quantity}</div>
+
+                                <div>
+                                    <strong>
+                                        {(item.price * item.quantity).toLocaleString()}đ
+                                    </strong>
+                                </div>
+
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* TOTAL */}
+                <div className="order-total-card">
+                    <span>Tổng tiền</span>
+                    <h2>{Number(order.total_price).toLocaleString()}đ</h2>
+                </div>
 
-                <div className="order-total-box">
+                {/* ACTIONS */}
+                <div className="order-actions">
 
-                    Tổng tiền:
+                    {order.status === "pending" && (
+                        <button
+                            onClick={handleCancel}
+                            disabled={cancelling}
+                            className="cancel-btn"
+                        >
+                            {cancelling ? "Đang huỷ..." : "Huỷ đơn"}
+                        </button>
+                    )}
 
-                    <span>
-
-                        {
-                            Number(order.total_price)
-                                .toLocaleString()
-                        }đ
-
-                    </span>
+                    {order.status === "shipping" && (
+                        <button
+                            onClick={handleReturn}
+                            className="return-btn"
+                        >
+                            Hoàn hàng
+                        </button>
+                    )}
 
                 </div>
 
             </div>
 
-        </CustomerLayout>
+            {/* ================= MODAL ================= */}
+            {returnModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-box">
 
+                        <h3>Lý do hoàn hàng</h3>
+
+                        <textarea
+                            value={returnNote}
+                            onChange={(e) => setReturnNote(e.target.value)}
+                            placeholder="Nhập lý do..."
+                            rows={5}
+                        />
+
+                        <div className="modal-actions">
+
+                            <button
+                                className="btn-cancel"
+                                onClick={() => setReturnModalOpen(false)}
+                            >
+                                Huỷ
+                            </button>
+
+                            <button
+                                className="btn-submit"
+                                onClick={submitReturn}
+                                disabled={returning}
+                            >
+                                {returning ? "Đang gửi..." : "Gửi"}
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {/* ================= TOAST ================= */}
+            {toast.open && (
+                <div className={`toast ${toast.type}`}>
+                    {toast.message}
+                </div>
+            )}
+
+        </CustomerLayout>
     );
 }
 
 export default OrderDetail;
-

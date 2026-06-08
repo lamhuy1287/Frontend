@@ -37,12 +37,7 @@ function FilterSidebar({
                     Bộ lọc
                 </h2>
 
-                <button
-                    style={styles.resetBtn}
-                    onClick={resetFilters}
-                >
-                    Reset
-                </button>
+
 
             </div>
 

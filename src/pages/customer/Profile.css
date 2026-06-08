@@ -1,26 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* =========================
+   PAGE
+========================= */
 
 .profile-page {
-    min-height: 100vh;
-    background: #f5f5f5;
 
-    padding: 40px 20px;
+    min-height: 100vh;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #f8f5f2,
+            #ffffff
+        );
+
+
 
     display: flex;
+
     justify-content: center;
+
+    font-family: "Inter", sans-serif;
 }
 
+/* =========================
+   CARD
+========================= */
+
 .profile-card {
+
     width: 100%;
-    max-width: 750px;
 
-    background: white;
+    max-width: 820px;
 
-    border-radius: 20px;
+    background: #ffffff;
+
+    border-radius: 28px;
 
     overflow: hidden;
 
+    border: 1px solid #ece5df;
+
     box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.08);
+        0 10px 30px rgba(0,0,0,0.04);
 }
 
 /* =========================
@@ -28,46 +51,98 @@
 ========================= */
 
 .profile-header {
-    background: linear-gradient(
-        135deg,
-        #111,
-        #333
-    );
+
+    background:
+        linear-gradient(
+            135deg,
+            #d96a1d,
+            #b95614
+        );
 
     color: white;
 
-    padding: 50px 30px;
+    padding: 55px 35px;
 
     text-align: center;
+
+    position: relative;
+
+    overflow: hidden;
+}
+
+.profile-header::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 260px;
+    height: 260px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,0.06);
+
+    top: -120px;
+    right: -80px;
 }
 
 .profile-avatar {
+
     width: 110px;
     height: 110px;
 
     border-radius: 50%;
 
     background: white;
-    color: black;
+
+    color: #c15a16;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
-    font-size: 42px;
-    font-weight: bold;
+    font-size: 38px;
 
-    margin: 0 auto 20px;
+    font-weight: 700;
+
+    margin: 0 auto 22px;
+
+    border: 4px solid rgba(255,255,255,0.2);
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,0.12);
+
+    position: relative;
+
+    z-index: 2;
 }
 
 .profile-header h1 {
-    font-size: 32px;
+
+    font-size: 28px;
+
+    font-weight: 700;
+
     margin-bottom: 10px;
+
+    position: relative;
+
+    z-index: 2;
 }
 
 .profile-header p {
-    opacity: 0.8;
-    font-size: 15px;
+
+    font-size: 14px;
+
+    opacity: 0.9;
+
+    position: relative;
+
+    z-index: 2;
 }
 
 /* =========================
@@ -75,43 +150,63 @@
 ========================= */
 
 .profile-body {
-    padding: 35px 30px;
+
+    padding: 38px 35px;
 }
 
 .profile-item {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
 
-    gap: 20px;
+    gap: 25px;
 
     padding: 22px 0;
 
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.profile-item:last-child {
+
+    border-bottom: none;
 }
 
 .profile-label {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
+
+    min-width: 190px;
+
+    font-size: 14px;
 
     font-weight: 600;
 
-    color: #555;
-
-    min-width: 180px;
+    color: #444;
 }
 
 .profile-label svg {
-    font-size: 18px;
+
+    font-size: 17px;
+
+    color: #c15a16;
 }
 
 .profile-value {
+
     flex: 1;
 
     text-align: right;
 
-    color: #111;
+    color: #111827;
+
+    font-size: 14px;
 
     font-weight: 500;
 
@@ -119,33 +214,46 @@
 }
 
 /* =========================
-   INPUTS
+   INPUT
 ========================= */
 
 .profile-input,
 .profile-textarea {
+
     width: 100%;
-    max-width: 350px;
 
-    padding: 12px 14px;
+    max-width: 380px;
 
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    padding: 13px 15px;
 
-    font-size: 15px;
+    border-radius: 14px;
+
+    border: 1px solid #e5e7eb;
+
+    background: #fff;
+
+    font-size: 14px;
+
+    color: #111827;
 
     outline: none;
 
-    transition: 0.3s;
+    transition: all 0.25s ease;
 }
 
 .profile-input:focus,
 .profile-textarea:focus {
-    border-color: #111;
+
+    border-color: #c15a16;
+
+    box-shadow:
+        0 0 0 4px rgba(193, 90, 22, 0.08);
 }
 
 .profile-textarea {
-    min-height: 100px;
+
+    min-height: 120px;
+
     resize: vertical;
 }
 
@@ -154,68 +262,88 @@
 ========================= */
 
 .profile-footer {
-    padding: 30px;
+
+    padding: 0 35px 35px;
 }
+
+/* =========================
+   BUTTONS
+========================= */
 
 .edit-btn,
 .save-btn,
 .logout-btn {
+
     width: 100%;
 
-    padding: 15px;
+    height: 52px;
 
     border: none;
-    border-radius: 14px;
 
-    font-size: 16px;
+    border-radius: 16px;
+
+    font-size: 14px;
+
     font-weight: 600;
 
     cursor: pointer;
 
-    transition: 0.3s;
+    transition: all 0.25s ease;
 }
 
-/* EDIT */
+/* =========================
+   EDIT / SAVE
+========================= */
 
-.edit-btn {
-    background: #111;
-    color: white;
-
-    margin-bottom: 15px;
-}
-
-.edit-btn:hover {
-    opacity: 0.9;
-}
-
-/* SAVE */
-
+.edit-btn,
 .save-btn {
-    background: #111;
+
+    background: #d96a1d;
+
     color: white;
 
-    margin-bottom: 15px;
+    margin-bottom: 16px;
+
+    box-shadow:
+        0 8px 20px rgba(217, 106, 29, 0.16);
 }
 
+.edit-btn:hover,
 .save-btn:hover {
-    opacity: 0.9;
+
+    background: #b95614;
+
+    transform: translateY(-2px);
 }
 
-/* LOGOUT */
+/* =========================
+   LOGOUT
+========================= */
 
 .logout-btn {
-    background: #f3f3f3;
-    color: #111;
+
+    background: #f5ede7;
+
+    color: #c15a16;
+
+    border: 1px solid #e8d2c4;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     gap: 10px;
 }
 
 .logout-btn:hover {
-    background: red;
+
+    background: #c15a16;
+
     color: white;
+
+    border-color: #c15a16;
 }
 
 /* =========================
@@ -225,31 +353,62 @@
 @media (max-width: 768px) {
 
     .profile-page {
-        padding: 20px 10px;
+
+        padding: 25px 12px;
+    }
+
+    .profile-card {
+
+        border-radius: 22px;
+    }
+
+    .profile-header {
+
+        padding: 45px 20px;
+    }
+
+    .profile-avatar {
+
+        width: 95px;
+        height: 95px;
+
+        font-size: 32px;
+    }
+
+    .profile-header h1 {
+
+        font-size: 24px;
     }
 
     .profile-body {
-        padding: 25px 20px;
+
+        padding: 28px 20px;
     }
 
     .profile-item {
+
         flex-direction: column;
+
         align-items: flex-start;
+
+        gap: 12px;
     }
 
     .profile-value {
-        text-align: left;
+
         width: 100%;
+
+        text-align: left;
     }
 
     .profile-input,
     .profile-textarea {
+
         max-width: 100%;
     }
 
-    .profile-header h1 {
-        font-size: 26px;
+    .profile-footer {
+
+        padding: 0 20px 24px;
     }
-
 }
-

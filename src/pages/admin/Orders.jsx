@@ -40,6 +40,37 @@ function Orders() {
     const [statusFilter, setStatusFilter] =
         useState("all");
 
+    // Bộ lọc tháng/năm
+    const [monthFilter, setMonthFilter] = useState("all");
+    const [yearFilter, setYearFilter] = useState("all");
+
+    // Lấy danh sách năm có trong đơn hàng
+    const getAvailableYears = () => {
+        const years = orders.map(order => {
+            if (order.created_at) {
+                return new Date(order.created_at).getFullYear();
+            }
+            return null;
+        }).filter(year => year !== null);
+        
+        return [...new Set(years)].sort((a, b) => b - a);
+    };
+
+    // Lấy danh sách tháng có trong đơn hàng theo năm được chọn
+    const getAvailableMonths = () => {
+        if (yearFilter === "all") return [];
+        
+        const months = orders.filter(order => {
+            if (!order.created_at) return false;
+            const orderYear = new Date(order.created_at).getFullYear();
+            return orderYear === parseInt(yearFilter);
+        }).map(order => {
+            return new Date(order.created_at).getMonth() + 1;
+        });
+        
+        return [...new Set(months)].sort((a, b) => a - b);
+    };
+
     // =========================
     // NAVIGATE
     // =========================
@@ -242,8 +273,11 @@ function Orders() {
                 case "cancelled":
                     return "Đã huỷ";
 
-                case "return_requested":
+                case "returned":
                     return "Hoàn hàng";
+
+                case "return_requested":
+                    return "Yêu cầu hoàn hàng";
 
                 default:
                     return status;
@@ -331,12 +365,15 @@ const handleChangeStatus =
             if (nextStatus === "shipping") {
                 const result = await Swal.fire({
                     title: "Thông tin vận chuyển",
-                    html: `
-                        <label for="shipping_provider">Đơn vị vận chuyển</label>
-                        <input id="shipping_provider" class="swal2-input" placeholder="GHN" />
-                        <label for="tracking_code">Mã vận đơn</label>
-                        <input id="tracking_code" class="swal2-input" placeholder="GHN123456789" />
-                    `,
+html: `
+    <div class="swal-form">
+        <label for="shipping_provider">Đơn vị vận chuyển</label>
+        <input id="shipping_provider" class="swal2-input" placeholder="GHN" />
+
+        <label for="tracking_code">Mã vận đơn</label>
+        <input id="tracking_code" class="swal2-input" placeholder="GHN123456789" />
+    </div>
+`,
                     showCancelButton: true,
                     confirmButtonText: "Xác nhận",
                     cancelButtonText: "Huỷ",
@@ -451,6 +488,7 @@ const handleChangeStatus =
     const filteredOrders =
         orders.filter((order) => {
 
+            // Lọc theo từ khoá tìm kiếm
             const keyword =
                 searchTerm
                     .trim()
@@ -495,6 +533,7 @@ const handleChangeStatus =
                     .includes(keyword)
             );
 
+            // Lọc theo trạng thái
             const matchStatus =
 
                 statusFilter ===
@@ -505,10 +544,31 @@ const handleChangeStatus =
                 order.status ===
                 statusFilter;
 
+            // Lọc theo tháng và năm
+            let matchDate = true;
+            
+            if (order.created_at) {
+                const orderDate = new Date(order.created_at);
+                const orderYear = orderDate.getFullYear();
+                const orderMonth = orderDate.getMonth() + 1;
+                
+                if (yearFilter !== "all") {
+                    matchDate = matchDate && (orderYear === parseInt(yearFilter));
+                }
+                
+                if (monthFilter !== "all" && yearFilter !== "all") {
+                    matchDate = matchDate && (orderMonth === parseInt(monthFilter));
+                }
+            } else if (yearFilter !== "all" || monthFilter !== "all") {
+                matchDate = false;
+            }
+
             return (
                 matchKeyword
                 &&
                 matchStatus
+                &&
+                matchDate
             );
         });
 
@@ -550,111 +610,201 @@ const handleChangeStatus =
 
             </div>
 
+            {/* ========================= */}
             {/* TOOLBAR */}
+            {/* ========================= */}
 
             <div className="orders-toolbar">
 
-                {/* SEARCH */}
+                {/* 1. TÌM KIẾM - TRÊN CÙNG */}
 
-                <div className="search-box">
+                <div className="search-section">
 
-                    <FaSearch />
+                    <div className="search-box">
 
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm mã đơn, tên, SĐT..."
-                        value={searchTerm}
-                        onChange={(e) =>
-                            setSearchTerm(
-                                e.target.value
-                            )
-                        }
-                    />
+                        <FaSearch />
+
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm mã đơn, tên khách hàng, SĐT..."
+                            value={searchTerm}
+                            onChange={(e) =>
+                                setSearchTerm(
+                                    e.target.value
+                                )
+                            }
+                        />
+
+                    </div>
 
                 </div>
 
-                {/* FILTERS */}
+                {/* 2. LỌC THEO TRẠNG THÁI - Ở GIỮA */}
 
-                <div className="status-filters">
+                <div className="filter-section">
 
-                    <button
-                        className={
-                            statusFilter === "all"
-                                ? "filter-btn active"
-                                : "filter-btn"
-                        }
-                        onClick={() =>
-                            setStatusFilter("all")
-                        }
-                    >
-                        Tất cả
-                    </button>
+                    <div className="filter-label">
+                        📌 Lọc theo trạng thái
+                    </div>
 
-                    <button
-                        className={
-                            statusFilter === "pending"
-                                ? "filter-btn active"
-                                : "filter-btn"
-                        }
-                        onClick={() =>
-                            setStatusFilter(
-                                "pending"
-                            )
-                        }
-                    >
-                        Chờ xác nhận
-                    </button>
+                    <div className="status-filters">
 
-                    <button
-                        className={
-                            statusFilter === "confirmed"
-                                ? "filter-btn active"
-                                : "filter-btn"
-                        }
-                        onClick={() =>
-                            setStatusFilter(
-                                "confirmed"
-                            )
-                        }
-                    >
-                        Đã xác nhận
-                    </button>
+                        <button
+                            className={
+                                statusFilter === "all"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter("all")
+                            }
+                        >
+                            Tất cả
+                        </button>
 
-                    <button
-                        className={
-                            statusFilter === "shipping"
-                                ? "filter-btn active"
-                                : "filter-btn"
-                        }
-                        onClick={() =>
-                            setStatusFilter(
-                                "shipping"
-                            )
-                        }
-                    >
-                        Đang giao
-                    </button>
+                        <button
+                            className={
+                                statusFilter === "pending"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "pending"
+                                )
+                            }
+                        >
+                            Chờ xác nhận
+                        </button>
 
-                    <button
-                        className={
-                            statusFilter === "completed"
-                                ? "filter-btn active"
-                                : "filter-btn"
-                        }
-                        onClick={() =>
-                            setStatusFilter(
-                                "completed"
-                            )
-                        }
-                    >
-                        Hoàn thành
-                    </button>
+                        <button
+                            className={
+                                statusFilter === "confirmed"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "confirmed"
+                                )
+                            }
+                        >
+                            Đã xác nhận
+                        </button>
+
+                        <button
+                            className={
+                                statusFilter === "shipping"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "shipping"
+                                )
+                            }
+                        >
+                            Đang giao
+                        </button>
+
+                        <button
+                            className={
+                                statusFilter === "completed"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "completed"
+                                )
+                            }
+                        >
+                            Hoàn thành
+                        </button>
+
+                        <button
+                            className={
+                                statusFilter === "cancelled"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "cancelled"
+                                )
+                            }
+                        >
+                            Đã huỷ
+                        </button>
+
+                        <button
+                            className={
+                                statusFilter === "returned"
+                                    ? "filter-btn active"
+                                    : "filter-btn"
+                            }
+                            onClick={() =>
+                                setStatusFilter(
+                                    "returned"
+                                )
+                            }
+                        >
+                            Hoàn hàng
+                        </button>
+
+                    </div>
+
+                </div>
+
+                {/* 3. LỌC THEO THÁNG - NĂM - DƯỚI CÙNG */}
+
+                <div className="filter-section">
+
+                    <div className="filter-label">
+                        📅 Lọc theo thời gian
+                    </div>
+
+                    <div className="date-filters">
+
+                        <select
+                            className="date-filter-select"
+                            value={yearFilter}
+                            onChange={(e) => {
+                                setYearFilter(e.target.value);
+                                setMonthFilter("all");
+                            }}
+                        >
+                            <option value="all">📆 Tất cả năm</option>
+                            {getAvailableYears().map(year => (
+                                <option key={year} value={year}>
+                                    Năm {year}
+                                </option>
+                            ))}
+                        </select>
+
+                        <select
+                            className="date-filter-select"
+                            value={monthFilter}
+                            onChange={(e) => setMonthFilter(e.target.value)}
+                            disabled={yearFilter === "all"}
+                        >
+                            <option value="all">📅 Tất cả tháng</option>
+                            {getAvailableMonths().map(month => (
+                                <option key={month} value={month}>
+                                    Tháng {month}
+                                </option>
+                            ))}
+                        </select>
+
+                    </div>
 
                 </div>
 
             </div>
 
+            {/* ========================= */}
             {/* TABLE */}
+            {/* ========================= */}
 
             <div className="orders-table-wrapper">
 
@@ -663,6 +813,8 @@ const handleChangeStatus =
                     <thead>
 
                     <tr>
+
+                        <th>STT</th>
 
                         <th>Mã đơn</th>
 
@@ -689,28 +841,32 @@ const handleChangeStatus =
                     {
                         filteredOrders.length > 0 ? (
 
-                            filteredOrders.map((order) => (
+                            filteredOrders.map((order, index) => (
 
                                 <tr key={order.id}>
 
-                                    {/* ID */}
+                                    {/* STT */}
 
                                     <td>
+                                        {index + 1}
+                                    </td>
+
+                                    {/* MÃ ĐƠN */}
+
+                                    <td className="order-id">
                                         #{order.id}
                                     </td>
 
                                     {/* CUSTOMER */}
 
                                     <td>
-                                        {
-                                            order.customer_name
-                                        }
+                                        {order.customer_name || "—"}
                                     </td>
 
                                     {/* PHONE */}
 
                                     <td>
-                                        {order.phone}
+                                        {order.phone || "—"}
                                     </td>
 
                                     {/* PRICE */}
@@ -812,7 +968,7 @@ const handleChangeStatus =
                             <tr>
 
                                 <td
-                                    colSpan="8"
+                                    colSpan="9"
                                     className="empty-orders"
                                 >
 
