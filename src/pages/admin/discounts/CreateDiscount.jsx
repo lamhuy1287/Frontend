@@ -1,217 +1,738 @@
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
+
     createDiscount,
-    getVariantOptions,
+
+    getParentCategories,
+
+    getChildCategories,
+
+    getProductsByCategory,
+
+    getVariantsByProduct,
+
 } from "../../../services/discountService";
+
 import "./CreateDiscount.css";
 
 export default function CreateDiscount() {
+
     const navigate = useNavigate();
-    const [variants, setVariants] = useState([]);
+
+    // =========================
+    // STATES
+    // =========================
+
     const [loading, setLoading] = useState(false);
+
     const [error, setError] = useState("");
 
+    const [parentCategories, setParentCategories] =
+        useState([]);
+
+    const [childCategories, setChildCategories] =
+        useState([]);
+
+    const [products, setProducts] =
+        useState([]);
+
+    const [variants, setVariants] =
+        useState([]);
+
+    // =========================
+    // FORM DATA
+    // =========================
+
     const [formData, setFormData] = useState({
+
+        parent_category_id: "",
+
+        child_category_id: "",
+
+        product_id: "",
+
         product_variant_id: "",
+
         discount_type: "percent",
+
         discount_value: "",
+
         start_at: "",
+
         end_at: "",
+
         priority: 0,
+
         is_active: true,
     });
 
+    // =========================
+    // FETCH PARENT CATEGORY
+    // =========================
+
     useEffect(() => {
-        fetchVariants();
+
+        fetchParentCategories();
+
     }, []);
 
-    const fetchVariants = async () => {
+    const fetchParentCategories = async () => {
+
         try {
+
             setLoading(true);
-            const res = await getVariantOptions();
-            setVariants(res.data.data || []);
+
+            const res =
+                await getParentCategories();
+
+            setParentCategories(
+                res.data.data || []
+            );
+
         } catch (err) {
-            setError("Lỗi tải danh sách variant");
+
             console.error(err);
+
+            setError(
+                "Không thể tải danh mục cha"
+            );
+
         } finally {
+
             setLoading(false);
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    // =========================
+    // HANDLE CHANGE
+    // =========================
+
+    const handleChange = async (e) => {
+
+        const {
+
+            name,
+
+            value,
+
+            type,
+
+            checked
+
+        } = e.target;
+
+        const newValue =
+            type === "checkbox"
+                ? checked
+                : value;
+
         setFormData((prev) => ({
+
             ...prev,
-            [name]: type === "checkbox" ? checked : value,
+
+            [name]: newValue,
         }));
+
+        // =========================
+        // PARENT CATEGORY
+        // =========================
+
+        if (name === "parent_category_id") {
+
+            setFormData((prev) => ({
+
+                ...prev,
+
+                parent_category_id: value,
+
+                child_category_id: "",
+
+                product_id: "",
+
+                product_variant_id: "",
+            }));
+
+            setChildCategories([]);
+
+            setProducts([]);
+
+            setVariants([]);
+
+            if (value) {
+
+                try {
+
+                    const res =
+                        await getChildCategories(value);
+
+                    setChildCategories(
+                        res.data.data || []
+                    );
+
+                } catch (err) {
+
+                    console.error(err);
+                }
+            }
+        }
+
+        // =========================
+        // CHILD CATEGORY
+        // =========================
+
+        if (name === "child_category_id") {
+
+            setFormData((prev) => ({
+
+                ...prev,
+
+                child_category_id: value,
+
+                product_id: "",
+
+                product_variant_id: "",
+            }));
+
+            setProducts([]);
+
+            setVariants([]);
+
+            if (value) {
+
+                try {
+
+                    const res =
+                        await getProductsByCategory(value);
+
+                    setProducts(
+                        res.data.data || []
+                    );
+
+                } catch (err) {
+
+                    console.error(err);
+                }
+            }
+        }
+
+        // =========================
+        // PRODUCT
+        // =========================
+
+        if (name === "product_id") {
+
+            setFormData((prev) => ({
+
+                ...prev,
+
+                product_id: value,
+
+                product_variant_id: "",
+            }));
+
+            setVariants([]);
+
+            if (value) {
+
+                try {
+
+                    const res =
+                        await getVariantsByProduct(value);
+
+                    setVariants(
+                        res.data.data || []
+                    );
+
+                } catch (err) {
+
+                    console.error(err);
+                }
+            }
+        }
     };
 
+    // =========================
+    // SUBMIT
+    // =========================
+
     const handleSubmit = async (e) => {
+
         e.preventDefault();
+
         try {
+
             setLoading(true);
+
             setError("");
 
             const payload = {
-                ...formData,
-                product_variant_id: Number(formData.product_variant_id),
-                discount_value: Number(formData.discount_value),
-                priority: Number(formData.priority),
-                start_at: formData.start_at || null,
-                end_at: formData.end_at || null,
+
+                product_variant_id:
+                    Number(
+                        formData.product_variant_id
+                    ),
+
+                discount_type:
+                    formData.discount_type,
+
+                discount_value:
+                    Number(
+                        formData.discount_value
+                    ),
+
+                priority:
+                    Number(formData.priority),
+
+                start_at:
+                    formData.start_at || null,
+
+                end_at:
+                    formData.end_at || null,
+
+                is_active:
+                    formData.is_active,
             };
 
             await createDiscount(payload);
+
             navigate("/admin/discounts");
+
         } catch (err) {
-            setError(err.response?.data?.message || "Lỗi tạo discount");
+
             console.error(err);
+
+            setError(
+
+                err.response?.data?.message ||
+
+                "Lỗi tạo discount"
+            );
+
         } finally {
+
             setLoading(false);
         }
     };
 
     return (
+
         <div className="create-discount">
-            <h1>Tạo Discount</h1>
 
-            {error && <div className="error-message">{error}</div>}
+            {/* HEADER */}
 
-            <form onSubmit={handleSubmit} className="discount-form">
-                <div className="form-group">
-                    <label htmlFor="product_variant_id">
-                        Chọn Variant <span className="required">*</span>
-                    </label>
-                    <select
-                        id="product_variant_id"
-                        name="product_variant_id"
-                        value={formData.product_variant_id}
-                        onChange={handleChange}
-                        required
-                        disabled={loading}
-                    >
-                        <option value="">-- Chọn variant --</option>
-                        {variants.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.product_name} - {item.variant_name}
-                            </option>
-                        ))}
-                    </select>
+            <div className="discount-header">
+
+                <div>
+
+                    <h1>
+                        Tạo Discount
+                    </h1>
+
+                    <p>
+                        Tạo chương trình giảm giá
+                        cho sản phẩm
+                    </p>
+
                 </div>
 
+            </div>
+
+            {/* ERROR */}
+
+            {
+                error && (
+
+                    <div className="error-message">
+
+                        {error}
+
+                    </div>
+                )
+            }
+
+            {/* FORM */}
+
+            <form
+                onSubmit={handleSubmit}
+                className="discount-form"
+            >
+
+                {/* CATEGORY PARENT */}
+
+                <div className="form-group">
+
+                    <label>
+                        Danh mục cha
+                    </label>
+
+                    <select
+
+                        name="parent_category_id"
+
+                        value={
+                            formData.parent_category_id
+                        }
+
+                        onChange={handleChange}
+                    >
+
+                        <option value="">
+                            -- Chọn danh mục cha --
+                        </option>
+
+                        {
+                            parentCategories.map((item) => (
+
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {item.name}
+                                </option>
+                            ))
+                        }
+
+                    </select>
+
+                </div>
+
+                {/* CATEGORY CHILD */}
+
+                <div className="form-group">
+
+                    <label>
+                        Danh mục con
+                    </label>
+
+                    <select
+
+                        name="child_category_id"
+
+                        value={
+                            formData.child_category_id
+                        }
+
+                        onChange={handleChange}
+
+                        disabled={
+                            !formData.parent_category_id
+                        }
+                    >
+
+                        <option value="">
+                            -- Chọn danh mục con --
+                        </option>
+
+                        {
+                            childCategories.map((item) => (
+
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {item.name}
+                                </option>
+                            ))
+                        }
+
+                    </select>
+
+                </div>
+
+                {/* PRODUCT */}
+
+                <div className="form-group">
+
+                    <label>
+                        Sản phẩm
+                    </label>
+
+                    <select
+
+                        name="product_id"
+
+                        value={formData.product_id}
+
+                        onChange={handleChange}
+
+                        disabled={
+                            !formData.child_category_id
+                        }
+                    >
+
+                        <option value="">
+                            -- Chọn sản phẩm --
+                        </option>
+
+                        {
+                            products.map((item) => (
+
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {item.name}
+                                </option>
+                            ))
+                        }
+
+                    </select>
+
+                </div>
+
+                {/* VARIANT */}
+
+                <div className="form-group">
+
+                    <label>
+                        Variant sản phẩm
+                    </label>
+
+                    <select
+
+                        name="product_variant_id"
+
+                        value={
+                            formData.product_variant_id
+                        }
+
+                        onChange={handleChange}
+
+                        required
+
+                        disabled={
+                            !formData.product_id
+                        }
+                    >
+
+                        <option value="">
+                            -- Chọn variant --
+                        </option>
+
+                        {
+                            variants.map((item) => (
+
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {item.variant_name}
+                                </option>
+                            ))
+                        }
+
+                    </select>
+
+                </div>
+
+                {/* DISCOUNT */}
+
                 <div className="form-row">
+
                     <div className="form-group">
-                        <label htmlFor="discount_type">
-                            Loại Discount <span className="required">*</span>
+
+                        <label>
+                            Loại discount
                         </label>
+
                         <select
-                            id="discount_type"
+
                             name="discount_type"
-                            value={formData.discount_type}
+
+                            value={
+                                formData.discount_type
+                            }
+
                             onChange={handleChange}
-                            disabled={loading}
                         >
-                            <option value="percent">Phần trăm (%)</option>
-                            <option value="fixed">Cố định (đ)</option>
+
+                            <option value="percent">
+                                Phần trăm (%)
+                            </option>
+
+                            <option value="fixed">
+                                Cố định (VNĐ)
+                            </option>
+
                         </select>
+
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="discount_value">
-                            Giá trị Discount{" "}
-                            <span className="required">*</span>
+
+                        <label>
+                            Giá trị giảm
                         </label>
+
                         <input
+
                             type="number"
-                            id="discount_value"
+
                             name="discount_value"
-                            value={formData.discount_value}
+
+                            value={
+                                formData.discount_value
+                            }
+
                             onChange={handleChange}
+
                             min="0"
-                            step="0.01"
+
                             required
-                            disabled={loading}
+
                             placeholder={
-                                formData.discount_type === "percent"
+                                formData.discount_type ===
+                                "percent"
+
                                     ? "Ví dụ: 10"
+
                                     : "Ví dụ: 50000"
                             }
                         />
+
                     </div>
+
                 </div>
 
-                <div className="form-row">
-                    <div className="form-group">
-                        <label htmlFor="start_at">Bắt đầu từ</label>
-                        <input
-                            type="datetime-local"
-                            id="start_at"
-                            name="start_at"
-                            value={formData.start_at}
-                            onChange={handleChange}
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="end_at">Kết thúc lúc</label>
-                        <input
-                            type="datetime-local"
-                            id="end_at"
-                            name="end_at"
-                            value={formData.end_at}
-                            onChange={handleChange}
-                            disabled={loading}
-                        />
-                    </div>
-                </div>
+                {/* DATE */}
 
                 <div className="form-row">
+
                     <div className="form-group">
-                        <label htmlFor="priority">
-                            Độ ưu tiên <span className="required">*</span>
+
+                        <label>
+                            Bắt đầu
                         </label>
+
                         <input
-                            type="number"
-                            id="priority"
-                            name="priority"
-                            value={formData.priority}
+
+                            type="datetime-local"
+
+                            name="start_at"
+
+                            value={formData.start_at}
+
                             onChange={handleChange}
-                            min="0"
-                            disabled={loading}
-                            placeholder="0"
                         />
+
+                    </div>
+
+                    <div className="form-group">
+
+                        <label>
+                            Kết thúc
+                        </label>
+
+                        <input
+
+                            type="datetime-local"
+
+                            name="end_at"
+
+                            value={formData.end_at}
+
+                            onChange={handleChange}
+                        />
+
+                    </div>
+
+                </div>
+
+                {/* PRIORITY */}
+
+                <div className="form-row">
+
+                    <div className="form-group">
+
+                        <label>
+                            Độ ưu tiên
+                        </label>
+
+                        <input
+
+                            type="number"
+
+                            name="priority"
+
+                            value={formData.priority}
+
+                            onChange={handleChange}
+
+                            min="0"
+                        />
+
                     </div>
 
                     <div className="form-group checkbox-group">
-                        <label htmlFor="is_active">
+
+                        <label className="checkbox-label">
+
                             <input
+
                                 type="checkbox"
-                                id="is_active"
+
                                 name="is_active"
-                                checked={formData.is_active}
+
+                                checked={
+                                    formData.is_active
+                                }
+
                                 onChange={handleChange}
-                                disabled={loading}
                             />
+
                             Kích hoạt
+
                         </label>
+
                     </div>
+
                 </div>
 
+                {/* ACTIONS */}
+
                 <div className="form-actions">
+
                     <button
+
                         type="button"
-                        onClick={() => navigate("/admin/discounts")}
-                        disabled={loading}
+
+                        className="btn-cancel"
+
+                        onClick={() =>
+                            navigate(
+                                "/admin/discounts"
+                            )
+                        }
                     >
                         Hủy
                     </button>
-                    <button type="submit" disabled={loading}>
-                        {loading ? "Đang tạo..." : "Tạo Discount"}
+
+                    <button
+
+                        type="submit"
+
+                        className="btn-submit"
+
+                        disabled={loading}
+                    >
+
+                        {
+                            loading
+                                ? "Đang tạo..."
+                                : "Tạo Discount"
+                        }
+
                     </button>
+
                 </div>
+
             </form>
+
         </div>
     );
 }
+

@@ -46,10 +46,6 @@ function QuickShopModal({
     if (!product) return null;
 
     // =========================
-    // FORMAT PRICE
-    // =========================
-
-    // =========================
     // CHECK STOCK AVAILABILITY
     // =========================
 
@@ -63,7 +59,7 @@ function QuickShopModal({
             return;
         }
         setSelectedVariant(variant);
-        setQuantity(1); // Reset quantity when variant changes
+        setQuantity(1);
     };
 
     const originalPrice =
@@ -92,35 +88,21 @@ function QuickShopModal({
                     "token"
                 );
 
-            // CHƯA LOGIN
             if (!token) {
-
-                alert(
-                    "Vui lòng đăng nhập"
-                );
-
+                alert("Vui lòng đăng nhập");
                 return;
-
             }
 
-            // CHƯA CHỌN VARIANT
             if (!selectedVariant) {
-
-                alert(
-                    "Vui lòng chọn phân loại"
-                );
-
+                alert("Vui lòng chọn phân loại");
                 return;
-
             }
 
-            // CHECK STOCK
             if (isVariantOutOfStock(selectedVariant)) {
                 alert("Sản phẩm này đã hết hàng!");
                 return;
             }
 
-            // CHECK QUANTITY AGAINST STOCK
             const availableStock = selectedVariant.quantity || selectedVariant.stock || 0;
             if (quantity > availableStock) {
                 alert(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
@@ -132,31 +114,17 @@ function QuickShopModal({
                 setLoading(true);
 
                 await addToCart({
-
-                    product_variant_id:
-                        selectedVariant.id,
-
+                    product_variant_id: selectedVariant.id,
                     quantity
-
                 });
 
-                increaseCartCount(
-                    quantity
-                );
-
-                alert(
-                    "Đã thêm vào giỏ hàng"
-                );
-
+                increaseCartCount(quantity);
+                alert("Đã thêm vào giỏ hàng");
                 onClose();
 
             } catch (error) {
 
-                console.log(
-                    "ADD CART ERROR:",
-                    error
-                );
-
+                console.log("ADD CART ERROR:", error);
                 alert(
                     error.response?.data?.message ||
                     "Add to cart failed"
@@ -169,6 +137,11 @@ function QuickShopModal({
             }
 
         };
+
+    // =========================
+    // BUY NOW - ĐÃ SỬA LỖI
+    // =========================
+
     const handleBuyNow = async () => {
 
         const token = localStorage.getItem("token");
@@ -183,13 +156,11 @@ function QuickShopModal({
             return;
         }
 
-        // CHECK STOCK
         if (isVariantOutOfStock(selectedVariant)) {
             alert("Sản phẩm này đã hết hàng!");
             return;
         }
 
-        // CHECK QUANTITY AGAINST STOCK
         const availableStock = selectedVariant.quantity || selectedVariant.stock || 0;
         if (quantity > availableStock) {
             alert(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
@@ -199,25 +170,31 @@ function QuickShopModal({
         try {
             setLoading(true);
 
-            // thêm vào giỏ hàng trước
-            await addToCart({
-                product_variant_id: selectedVariant.id,
-                quantity
-            });
+            // TẠO DỮ LIỆU CHO CHECKOUT
+            const finalPrice = salePrice || originalPrice;
+            
+            const buyNowData = {
+                buyNow: true,
+                product: {
+                    id: product.id,
+                    name: product.name,
+                    image: product.images?.[0]?.image_url || product.thumbnail || "",
+                },
+                variant: {
+                    id: selectedVariant.id,
+                    variant_name: selectedVariant.variant_name,
+                },
+                price: finalPrice,
+                quantity: quantity,
+                subtotal: finalPrice * quantity
+            };
 
-            increaseCartCount(quantity);
-
-            // chuyển sang trang checkout
-            navigate("/checkout");
+            // CHUYỂN SANG CHECKOUT KÈM DATA
+            navigate("/checkout", { state: buyNowData });
 
         } catch (error) {
             console.log("BUY NOW ERROR:", error);
-
-            alert(
-                error.response?.data?.message ||
-                "Buy now failed"
-            );
-
+            alert(error.response?.data?.message || "Mua ngay thất bại");
         } finally {
             setLoading(false);
         }
@@ -238,8 +215,6 @@ function QuickShopModal({
                     }
                 >
 
-                    {/* CLOSE */}
-
                     <button
                         className="quickshop-close"
                         onClick={onClose}
@@ -248,8 +223,6 @@ function QuickShopModal({
                     </button>
 
                     <div className="quickshop-content">
-
-                        {/* LEFT */}
 
                         <div className="quickshop-left">
 
@@ -264,15 +237,11 @@ function QuickShopModal({
 
                         </div>
 
-                        {/* RIGHT */}
-
                         <div className="quickshop-right">
 
                             <h2>
                                 {product.name}
                             </h2>
-
-                            {/* PRICE */}
 
                             <div className="quick-price">
                                 {hasDiscount ? (
@@ -291,8 +260,6 @@ function QuickShopModal({
                                     </span>
                                 )}
                             </div>
-
-                            {/* VARIANTS */}
 
                             {
                                 product.variants?.length > 0 && (
@@ -351,8 +318,6 @@ function QuickShopModal({
                                 )
                             }
 
-                            {/* QUANTITY */}
-
                             <div className="quickshop-section">
 
                                 <h4>
@@ -397,7 +362,6 @@ function QuickShopModal({
 
                                 </div>
 
-                                {/* Show stock info */}
                                 {selectedVariant && (
                                     <div style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
                                         {isVariantOutOfStock(selectedVariant) ? (
@@ -410,11 +374,7 @@ function QuickShopModal({
 
                             </div>
 
-                            {/* ACTIONS */}
-
                             <div className="quickshop-actions">
-
-                                {/* ADD TO CART */}
 
                                 <button
                                     className="add-cart-btn"
@@ -431,8 +391,6 @@ function QuickShopModal({
                                     }
 
                                 </button>
-
-                                {/* BUY NOW */}
 
                                 <button
                                     className="buy-now-btn"
@@ -878,6 +836,7 @@ button:disabled {
                 `}
 
             </style>
+
         </>
 
     );

@@ -286,7 +286,7 @@ function MyOrders() {
                             </p>
 
                             <Link
-                                to="/products"
+                                to="/user"
                                 className="shop-btn"
                             >
                                 Mua sắm ngay

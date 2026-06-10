@@ -219,7 +219,7 @@ function ProductDetail() {
 
             if (!selectedVariant) {
 
-toast.error("Vui lòng chọn phân loại");
+                toast.error("Vui lòng chọn phân loại");
 
                 return;
 
@@ -231,7 +231,7 @@ toast.error("Vui lòng chọn phân loại");
                 )
             ) {
 
-toast.error("Sản phẩm đã hết hàng");
+                toast.error("Sản phẩm đã hết hàng");
 
                 return;
 
@@ -255,6 +255,7 @@ toast.error("Sản phẩm đã hết hàng");
             } catch (error) {
 
                 console.log(error);
+                toast.error(error.response?.data?.message || "Thêm giỏ hàng thất bại");
 
             } finally {
 
@@ -265,33 +266,54 @@ toast.error("Sản phẩm đã hết hàng");
         };
 
     // =========================
-    // BUY NOW
+    // BUY NOW - ĐÃ SỬA LỖI
     // =========================
 
-    const handleBuyNow =
-        async () => {
+    const handleBuyNow = async () => {
+        
+        if (!selectedVariant) {
+            toast.error("Vui lòng chọn phân loại");
+            return;
+        }
 
-            if (!selectedVariant)
-                return;
+        if (isVariantOutOfStock(selectedVariant)) {
+            toast.error("Sản phẩm đã hết hàng");
+            return;
+        }
 
-            navigate("/checkout", {
+        if (quantity > getAvailableStock(selectedVariant)) {
+            toast.error(`Số lượng không đủ. Chỉ còn ${getAvailableStock(selectedVariant)} sản phẩm`);
+            return;
+        }
 
-                state: {
+        // TÍNH GIÁ BÁN CUỐI CÙNG
+        const originalPriceNum = Number(selectedVariant?.price) || 0;
+        const salePriceNum = Number(selectedVariant?.sale_price ?? selectedVariant?.price) || 0;
+        const finalPrice = selectedVariant?.discount ? salePriceNum : originalPriceNum;
+        const subtotal = finalPrice * quantity;
 
-                    buyNow: true,
+        // LẤY ẢNH SẢN PHẨM
+        const productImage = selectedImage || product.images?.[0]?.image_url || "";
 
-                    product,
-
-                    variant:
-                        selectedVariant,
-
-                    quantity
-
-                }
-
-            });
-
+        // TẠO DỮ LIỆU CHO CHECKOUT
+        const buyNowData = {
+            buyNow: true,
+            product: {
+                id: product.id,
+                name: product.name,
+                image: productImage,
+            },
+            variant: {
+                id: selectedVariant.id,
+                variant_name: selectedVariant.variant_name,
+            },
+            price: finalPrice,
+            quantity: quantity,
+            subtotal: subtotal
         };
+
+        navigate("/checkout", { state: buyNowData });
+    };
 
     // =========================
     // LOADING
@@ -403,9 +425,9 @@ toast.error("Sản phẩm đã hết hàng");
                                                 )
                                             }
                                             className={`pd-thumb ${selectedImage ===
-                                                    img.image_url
-                                                    ? "active"
-                                                    : ""
+                                                img.image_url
+                                                ? "active"
+                                                : ""
                                                 }`}
                                         >
 
@@ -441,19 +463,19 @@ toast.error("Sản phẩm đã hết hàng");
                                 <div>
                                     Mã SP:
                                     {" "}
-                                    {
-                                        product.product_code
-                                    }
+                                    {product.product_code}
                                 </div>
 
                                 <div>
                                     Danh mục:
                                     {" "}
-                                    {
-                                        product
-                                            ?.category
-                                            ?.name
-                                    }
+                                    {product?.category?.name}
+                                </div>
+
+                                <div>
+                                    Thương hiệu:
+                                    {" "}
+                                    {product?.brand?.name || "Đang cập nhật"}
                                 </div>
 
                             </div>
@@ -748,57 +770,57 @@ toast.error("Sản phẩm đã hết hàng");
                                             className="pd-related-card"
                                         >
 
-                                        <img
-                                            src={
-                                                item
-                                                    .images?.[0]
-                                                    ?.image_url
-                                            }
-                                            alt={
-                                                item.name
-                                            }
-                                            className="pd-related-image"
-                                        />
-
-                                        <div className="pd-related-content">
-
-                                            <div className="pd-related-name">
-
-                                                {
-                                                    item.name.length > 10
-                                                        ? item.name.slice(0, 10) + "..."
-                                                        : item.name
+                                            <img
+                                                src={
+                                                    item
+                                                        .images?.[0]
+                                                        ?.image_url
                                                 }
+                                                alt={
+                                                    item.name
+                                                }
+                                                className="pd-related-image"
+                                            />
+
+                                            <div className="pd-related-content">
+
+                                                <div className="pd-related-name">
+
+                                                    {
+                                                        item.name.length > 10
+                                                            ? item.name.slice(0, 10) + "..."
+                                                            : item.name
+                                                    }
+
+                                                </div>
+
+                                                <div className="pd-related-price">
+                                                    {variant?.discount ? (
+                                                        <>
+                                                            <div className="pd-old-price">
+                                                                {formatPrice(
+                                                                    variant.price
+                                                                )}
+                                                            </div>
+                                                            <div className="pd-sale-price">
+                                                                {formatPrice(
+                                                                    variant.sale_price
+                                                                )}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        formatPrice(
+                                                            variant?.price
+                                                        )
+                                                    )}
+                                                </div>
 
                                             </div>
 
-                                            <div className="pd-related-price">
-                                                {variant?.discount ? (
-                                                    <>
-                                                        <div className="pd-old-price">
-                                                            {formatPrice(
-                                                                variant.price
-                                                            )}
-                                                        </div>
-                                                        <div className="pd-sale-price">
-                                                            {formatPrice(
-                                                                variant.sale_price
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    formatPrice(
-                                                        variant?.price
-                                                    )
-                                                )}
-                                            </div>
+                                        </Link>
 
-                                        </div>
-
-                                    </Link>
-
-                                )
-                            })}
+                                    )
+                                })}
 
                         </div>
 

@@ -1,4 +1,3 @@
-
 import {
     useEffect,
     useState
@@ -89,8 +88,6 @@ function Checkout() {
         setNote] =
         useState("");
 
-
-
     // =========================
     // LIMIT TEXT
     // =========================
@@ -140,43 +137,35 @@ function Checkout() {
         };
 
     // =========================
-    // LOAD DATA
+    // LOAD DATA - ĐÃ SỬA LỖI
     // =========================
 
     useEffect(() => {
 
         fetchCart();
 
-        // BUY NOW
-
-        if (location.state?.buyNow) {
-
-            setBuyNowItem(
-                location.state
-            );
-
-        }
-
-        // COUPON
-
-        if (location.state) {
-
-            setSelectedIds(
-                location.state.selectedItems || []
-            );
-
-            setCouponCode(
-                location.state.couponCode || ""
-            );
-
-            setDiscountAmount(
-                location.state.discountAmount || 0
-            );
-
+        // LẤY DỮ LIỆU TỪ NAVIGATION STATE
+        const state = location.state;
+        
+        // KIỂM TRA MUA NGAY (BUY NOW)
+        if (state?.buyNow) {
+            setBuyNowItem({
+                product: state.product,
+                variant: state.variant,
+                price: state.price,
+                quantity: state.quantity,
+                subtotal: state.subtotal
+            });
+        } else {
+            // TRƯỜNG HỢP TỪ GIỎ HÀNG
+            if (state) {
+                setSelectedIds(state.selectedItems || []);
+                setCouponCode(state.couponCode || "");
+                setDiscountAmount(state.discountAmount || 0);
+            }
         }
 
         // USER PROFILE
-
         const userData =
             localStorage.getItem("user");
 
@@ -199,10 +188,10 @@ function Checkout() {
 
         }
 
-    }, []);
+    }, [location.state]); // THÊM DEPENDENCY
 
     // =========================
-    // PLACE ORDER
+    // PLACE ORDER - ĐÃ SỬA CHO BUY NOW
     // =========================
 
     const handlePlaceOrder =
@@ -210,40 +199,42 @@ function Checkout() {
 
             try {
 
-                const payload = {
+                let payload = {};
 
-                    customer_name:
-                        customerName,
-
-                    phone,
-
-                    address,
-
-                    payment_method:
-                        paymentMethod,
-
-                    coupon_code:
-                        couponCode,
-
-                    selected_cart_item_ids:
-                        selectedIds,
-
-
-                    remember_info:
-                        rememberInfo,
-
-                    note
-
-
-                };
+                // TRƯỜNG HỢP MUA NGAY
+                if (buyNowItem) {
+                    payload = {
+                        customer_name: customerName,
+                        phone: phone,
+                        address: address,
+                        payment_method: paymentMethod,
+                        note: note,
+                        remember_info: rememberInfo,
+                        // DỮ LIỆU CHO MUA NGAY
+                        buy_now: true,
+                        product_variant_id: buyNowItem.variant.id,
+                        quantity: buyNowItem.quantity,
+                        price: buyNowItem.price
+                    };
+                } 
+                // TRƯỜNG HỢP TỪ GIỎ HÀNG
+                else {
+                    payload = {
+                        customer_name: customerName,
+                        phone: phone,
+                        address: address,
+                        payment_method: paymentMethod,
+                        coupon_code: couponCode,
+                        selected_cart_item_ids: selectedIds,
+                        remember_info: rememberInfo,
+                        note: note
+                    };
+                }
 
                 const res =
                     await checkout(payload);
 
-                // =====================
                 // PAYMENT REDIRECT
-                // =====================
-
                 if (
                     paymentMethod ===
                     "bank_transfer" &&
@@ -286,6 +277,7 @@ function Checkout() {
 
             } catch (err) {
 
+                console.error("ORDER ERROR:", err);
                 alert(
                     err.response?.data?.message ||
                     "Đặt hàng thất bại"
@@ -311,8 +303,7 @@ function Checkout() {
 
         const base =
             buyNowItem
-                ? buyNowItem.price *
-                buyNowItem.quantity
+                ? Number(buyNowItem.price) * Number(buyNowItem.quantity)
                 : selectedCartItems.reduce(
                     (total, item) =>
                         total +
@@ -325,7 +316,7 @@ function Checkout() {
     };
 
     // =========================
-    // RENDER ITEM
+    // RENDER ITEM - ĐÃ SỬA LỖI HIỂN THỊ
     // =========================
 
     const renderItem = (
@@ -341,8 +332,11 @@ function Checkout() {
             <div className="checkout-item-left">
 
                 <img
-                    src={image}
+                    src={image || "/placeholder.jpg"}
                     alt={name}
+                    onError={(e) => { 
+                        e.target.src = "/placeholder.jpg"; 
+                    }}
                 />
 
                 <div className="checkout-item-info">
@@ -355,7 +349,7 @@ function Checkout() {
 
                     <div className="checkout-item-variant">
 
-                        {variant}
+                        {variant || "Mặc định"}
 
                     </div>
 
@@ -385,7 +379,7 @@ function Checkout() {
     );
 
     // =========================
-    // ITEMS
+    // ITEMS - ĐÃ SỬA LỖI HIỂN THỊ
     // =========================
 
     const renderItems = () => {
@@ -396,15 +390,13 @@ function Checkout() {
 
                 <div className="checkout-items">
 
-                    {
-                        renderItem(
-                            buyNowItem.product.image,
-                            buyNowItem.product.name,
-                            buyNowItem.variant?.variant_name,
-                            buyNowItem.price,
-                            buyNowItem.quantity
-                        )
-                    }
+                    {renderItem(
+                        buyNowItem.product?.image,
+                        buyNowItem.product?.name,
+                        buyNowItem.variant?.variant_name,
+                        buyNowItem.price,
+                        buyNowItem.quantity
+                    )}
 
                 </div>
 
@@ -412,31 +404,27 @@ function Checkout() {
 
         }
 
-        if (cart?.items?.length > 0) {
+        if (cart?.items?.length > 0 && selectedCartItems.length > 0) {
 
             return (
 
                 <div className="checkout-items">
 
-                    {
-                        selectedCartItems.map((item) => (
+                    {selectedCartItems.map((item) => (
 
-                            <div key={item.id}>
+                        <div key={item.id}>
 
-                                {
-                                    renderItem(
-                                        item.product.thumbnail,
-                                        item.product.name,
-                                        item.variant?.variant_name,
-                                        item.subtotal,
-                                        item.quantity
-                                    )
-                                }
+                            {renderItem(
+                                item.product?.thumbnail,
+                                item.product?.name,
+                                item.variant?.variant_name,
+                                item.subtotal,
+                                item.quantity
+                            )}
 
-                            </div>
+                        </div>
 
-                        ))
-                    }
+                    ))}
 
                 </div>
 
@@ -448,7 +436,7 @@ function Checkout() {
 
             <div className="empty-order">
 
-                Giỏ hàng trống
+                {buyNowItem ? "Đang tải..." : "Giỏ hàng trống"}
 
             </div>
 
@@ -460,7 +448,7 @@ function Checkout() {
     // LOADING
     // =========================
 
-    if (loading) {
+    if (loading && !buyNowItem) {
 
         return (
 
@@ -570,8 +558,6 @@ function Checkout() {
 
                             </div>
 
-
-
                             {/* REMEMBER */}
 
                             <label className="remember-info">
@@ -651,26 +637,24 @@ function Checkout() {
 
                             {renderItems()}
 
-                            {
-                                discountAmount > 0 && (
+                            {discountAmount > 0 && !buyNowItem && (
 
-                                    <div className="checkout-total-row discount">
+                                <div className="checkout-total-row discount">
 
-                                        <span>
-                                            Giảm giá
-                                        </span>
+                                    <span>
+                                        Giảm giá
+                                    </span>
 
-                                        <strong>
+                                    <strong>
 
-                                            -{discountAmount
-                                                .toLocaleString("vi-VN")}đ
+                                        -{discountAmount
+                                            .toLocaleString("vi-VN")}đ
 
-                                        </strong>
+                                    </strong>
 
-                                    </div>
+                                </div>
 
-                                )
-                            }
+                            )}
 
                             <div className="checkout-total-row total">
 
@@ -690,6 +674,7 @@ function Checkout() {
                             <button
                                 className="checkout-btn"
                                 onClick={handlePlaceOrder}
+                                disabled={!customerName || !phone || !address}
                             >
 
                                 Đặt hàng
@@ -711,4 +696,3 @@ function Checkout() {
 }
 
 export default Checkout;
-

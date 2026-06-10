@@ -1,5 +1,7 @@
+
 import { Link } from "react-router-dom";
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 
 import "./ProductCard.css";
 
@@ -15,12 +17,12 @@ import {
 } from "../../../context/CartContext";
 
 const FALLBACK_IMAGE =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='18'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 function ProductCard({ product }) {
 
     // =========================
-    // CART CONTEXT
+    // CONTEXT
     // =========================
 
     const {
@@ -31,6 +33,10 @@ function ProductCard({ product }) {
     // STATES
     // =========================
 
+    const [loading,
+        setLoading] =
+        useState(false);
+
     const [imageError,
         setImageError] =
         useState(false);
@@ -39,105 +45,105 @@ function ProductCard({ product }) {
         setShowQuickShop] =
         useState(false);
 
-    const [loading,
-        setLoading] =
-        useState(false);
+    // =========================
+    // VALIDATE
+    // =========================
 
-    if (!product) {
+    if (!product) return null;
 
-        console.log(
-            "NO PRODUCT"
-        );
-
-        return null;
-
-    }
+    // =========================
+    // BASIC INFO
+    // =========================
 
     const productId =
-        product.id || product._id;
+        product.id ||
+        product._id;
 
     const productName =
         product.name ||
-        "Không có tên";
+        "Sản phẩm";
+
+    const variants =
+        product.variants || [];
 
     // =========================
     // PRICE
     // =========================
 
+    const firstVariant =
+        variants[0];
+
     const originalPrice =
         Number(
             product.price ||
-            product.variants?.[0]?.price ||
+            firstVariant?.price ||
             0
         );
 
     const salePrice =
         Number(
-            (
-                product.sale_price ??
-                product.variants?.[0]?.sale_price ??
-                product.price
-            ) || 0
+            product.sale_price ??
+            firstVariant?.sale_price ??
+            originalPrice
         );
 
     const hasDiscount =
-        originalPrice > 0 &&
         salePrice < originalPrice;
 
     const discount =
         product.discount ||
-        product.variants?.[0]?.discount ||
-        null;
+        firstVariant?.discount;
+
+    // =========================
+    // STOCK
+    // =========================
+
+    const totalQuantity =
+        variants.reduce(
+            (sum, item) =>
+                sum + (
+                    Number(item.quantity) || 0
+                ),
+            0
+        );
+
+    const outOfStock =
+        totalQuantity <= 0;
 
     // =========================
     // IMAGE
     // =========================
 
-    const getProductImage = () => {
+    const productImage =
+        useMemo(() => {
 
-        if (imageError) {
+            if (imageError) {
+                return FALLBACK_IMAGE;
+            }
 
-            return FALLBACK_IMAGE;
+            const image =
+                product.images?.[0]?.image_url
+                ||
+                product.images?.[0]?.url
+                ||
+                product.image
+                ||
+                product.thumbnail;
 
-        }
+            return image || FALLBACK_IMAGE;
 
-        let imageUrl = "";
-
-        if (
-            product.images &&
-            product.images.length > 0
-        ) {
-
-            imageUrl =
-                product.images[0]
-                    .image_url ||
-                product.images[0].url ||
-                "";
-
-        }
-
-        if (!imageUrl) {
-
-            imageUrl =
-                product.image ||
-                product.thumbnail ||
-                "";
-
-        }
-
-        if (!imageUrl) {
-
-            return FALLBACK_IMAGE;
-
-        }
-
-        return imageUrl;
-
-    };
+        }, [product, imageError]);
 
     // =========================
     // FORMAT PRICE
     // =========================
+
+    const formatPrice =
+        (value) =>
+            Number(value)
+                .toLocaleString(
+                    "vi-VN"
+                ) + "đ";
 
     // =========================
     // IMAGE ERROR
@@ -151,19 +157,13 @@ function ProductCard({ product }) {
         };
 
     // =========================
-    // ADD TO CART / QUICKSHOP
+    // BUY
     // =========================
 
     const handleBuy =
         async () => {
 
-            console.log(
-                "CLICK BUY"
-            );
-
-            // =========================
-            // LOGIN
-            // =========================
+            // LOGIN CHECK
 
             const token =
                 localStorage.getItem(
@@ -173,20 +173,27 @@ function ProductCard({ product }) {
             if (!token) {
 
                 alert(
-                    "Vui lòng đăng nhập"
+                    "Vui lòng đăng nhập để mua hàng"
                 );
 
                 return;
-
             }
 
-            // =========================
-            // NO VARIANTS
-            // =========================
+            // OUT OF STOCK
+
+            if (outOfStock) {
+
+                alert(
+                    "Sản phẩm hiện đã hết hàng"
+                );
+
+                return;
+            }
+
+            // NO VARIANT
 
             if (
-                !product.variants ||
-                product.variants.length === 0
+                variants.length === 0
             ) {
 
                 alert(
@@ -194,69 +201,36 @@ function ProductCard({ product }) {
                 );
 
                 return;
-
             }
 
-            console.log(
-                "TOTAL VARIANTS:",
-                product.variants.length
-            );
-
-            // =========================
             // MULTIPLE VARIANTS
-            // OPEN MODAL
-            // =========================
 
             if (
-                product.variants.length > 1
+                variants.length > 1
             ) {
-
-                console.log(
-                    "OPEN QUICKSHOP"
-                );
 
                 setShowQuickShop(
                     true
                 );
 
                 return;
-
             }
 
-            // =========================
-            // ONLY 1 VARIANT
-            // AUTO ADD CART
-            // =========================
+            // SINGLE VARIANT
 
             try {
 
                 setLoading(true);
 
-                const variant =
-                    product.variants[0];
-
-                console.log(
-                    "AUTO ADD CART:",
-                    variant
-                );
-
                 await addToCart({
 
                     product_variant_id:
-                        variant.id,
+                        variants[0].id,
 
                     quantity: 1
-
                 });
 
-                // REALTIME HEADER
-                increaseCartCount(
-                    1
-                );
-
-                console.log(
-                    "ADD CART SUCCESS"
-                );
+                increaseCartCount(1);
 
                 alert(
                     "Đã thêm vào giỏ hàng"
@@ -264,22 +238,17 @@ function ProductCard({ product }) {
 
             } catch (error) {
 
-                console.log(
-                    "ADD CART ERROR:",
-                    error
-                );
-
                 alert(
+
                     error.response?.data?.message ||
-                    "Add to cart failed"
+
+                    "Thêm giỏ hàng thất bại"
                 );
 
             } finally {
 
                 setLoading(false);
-
             }
-
         };
 
     return (
@@ -297,27 +266,43 @@ function ProductCard({ product }) {
 
                     <div className="product-image-wrapper">
 
+                        {/* DISCOUNT */}
+
                         {discount && (
+
                             <div className="discount-badge">
-                                {discount.type === "percent"
-                                    ? `-${discount.value}%`
-                                    : `-${Number(
-                                        discount.value
-                                    ).toLocaleString("vi-VN")}đ`}
+
+                                {
+                                    discount.type === "percent"
+
+                                        ? `-${discount.value}%`
+
+                                        : `-${formatPrice(
+                                            discount.value
+                                        )}`
+                                }
+
                             </div>
+
+                        )}
+
+                        {/* STOCK */}
+
+                        {outOfStock && (
+
+                            <div className="stock-badge">
+
+                                Hết hàng
+
+                            </div>
+
                         )}
 
                         <img
-                            src={
-                                getProductImage()
-                            }
-                            alt={
-                                productName
-                            }
+                            src={productImage}
+                            alt={productName}
                             className="product-image"
-                            onError={
-                                handleImageError
-                            }
+                            onError={handleImageError}
                             loading="lazy"
                         />
 
@@ -341,23 +326,23 @@ function ProductCard({ product }) {
 
                     )}
 
-                    {/* PRODUCT CODE */}
+                    {/* CODE */}
 
                     {product.product_code && (
 
-<p className="product-code">
+                        <p className="product-code">
 
-    #
-    {product.product_code}
+                            #{product.product_code}
 
-</p>
+                        </p>
 
                     )}
 
-                    {/* PRODUCT NAME */}
+                    {/* NAME */}
 
                     <Link
                         to={`/product/${productId}`}
+                        className="product-title-link"
                     >
 
                         <h3 className="product-title">
@@ -374,9 +359,7 @@ function ProductCard({ product }) {
 
                         <p className="product-description">
 
-                            {
-                                product.short_description
-                            }
+                            {product.short_description}
 
                         </p>
 
@@ -387,13 +370,23 @@ function ProductCard({ product }) {
                     <div className="product-price">
 
                         {hasDiscount && (
+
                             <span className="old-price">
-                                {originalPrice.toLocaleString("vi-VN")}đ
+
+                                {formatPrice(
+                                    originalPrice
+                                )}
+
                             </span>
+
                         )}
 
                         <span className="sale-price">
-                            {salePrice.toLocaleString("vi-VN")}đ
+
+                            {formatPrice(
+                                salePrice
+                            )}
+
                         </span>
 
                     </div>
@@ -401,17 +394,20 @@ function ProductCard({ product }) {
                     {/* BUTTON */}
 
                     <button
-                        onClick={
-                            handleBuy
-                        }
                         className="add-to-cart-btn"
-                        disabled={loading}
+                        onClick={handleBuy}
+                        disabled={
+                            loading ||
+                            outOfStock
+                        }
                     >
 
                         {
                             loading
                                 ? "Đang thêm..."
-                                : "Chọn mua"
+                                : outOfStock
+                                    ? "Hết hàng"
+                                    : "Chọn mua"
                         }
 
                     </button>
@@ -426,16 +422,12 @@ function ProductCard({ product }) {
                 showQuickShop && (
 
                     <QuickShopModal
+
                         product={product}
-                        onClose={() => {
 
-                            console.log(
-                                "CLOSE MODAL"
-                            );
-
-                            setShowQuickShop(false);
-
-                        }}
+                        onClose={() =>
+                            setShowQuickShop(false)
+                        }
                     />
 
                 )
@@ -444,7 +436,7 @@ function ProductCard({ product }) {
         </>
 
     );
-
 }
 
 export default ProductCard;
+
