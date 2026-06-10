@@ -564,15 +564,16 @@ function Cart() {
             return;
         }
 
-navigate(
-    "/checkout",
-    {
-        state: {
-            couponCode: coupon,
-            discountAmount: discount
-        }
-    }
-);
+        navigate(
+            "/checkout",
+            {
+                state: {
+                    selectedItems,
+                    couponCode: coupon,
+                    discountAmount: discount
+                }
+            }
+        );
     };
 
     // =========================

@@ -64,52 +64,30 @@ function ProductCard({ product }) {
     // PRICE
     // =========================
 
-    let originalPrice = 0;
+    const originalPrice =
+        Number(
+            product.price ||
+            product.variants?.[0]?.price ||
+            0
+        );
 
-    let salePrice = 0;
-
-    if (
-        product.variants &&
-        product.variants.length > 0
-    ) {
-
-        const firstVariant =
-            product.variants[0];
-
-        originalPrice =
-            Number(firstVariant.price) || 0;
-
-        salePrice =
-            Number(
-                firstVariant.discount_price
-            ) || originalPrice;
-
-    } else {
-
-        originalPrice =
-            Number(product.price) ||
-            Number(
-                product.original_price
-            ) ||
-            0;
-
-        salePrice =
-            Number(
-                product.discount_price
-            ) ||
-            Number(product.sale_price) ||
-            originalPrice;
-
-    }
+    const salePrice =
+        Number(
+            (
+                product.sale_price ??
+                product.variants?.[0]?.sale_price ??
+                product.price
+            ) || 0
+        );
 
     const hasDiscount =
-        salePrice < originalPrice &&
-        salePrice > 0;
+        originalPrice > 0 &&
+        salePrice < originalPrice;
 
-    const displayPrice =
-        hasDiscount
-            ? salePrice
-            : originalPrice;
+    const discount =
+        product.discount ||
+        product.variants?.[0]?.discount ||
+        null;
 
     // =========================
     // IMAGE
@@ -160,28 +138,6 @@ function ProductCard({ product }) {
     // =========================
     // FORMAT PRICE
     // =========================
-
-    const formatPrice = (
-        value
-    ) => {
-
-        if (
-            !value ||
-            isNaN(value) ||
-            value === 0
-        ) {
-
-            return "Liên hệ";
-
-        }
-
-        return (
-            value.toLocaleString(
-                "vi-VN"
-            ) + "₫"
-        );
-
-    };
 
     // =========================
     // IMAGE ERROR
@@ -341,6 +297,16 @@ function ProductCard({ product }) {
 
                     <div className="product-image-wrapper">
 
+                        {discount && (
+                            <div className="discount-badge">
+                                {discount.type === "percent"
+                                    ? `-${discount.value}%`
+                                    : `-${Number(
+                                        discount.value
+                                    ).toLocaleString("vi-VN")}đ`}
+                            </div>
+                        )}
+
                         <img
                             src={
                                 getProductImage()
@@ -420,45 +386,15 @@ function ProductCard({ product }) {
 
                     <div className="product-price">
 
-                        {hasDiscount ? (
-
-                            <div className="price-group">
-
-                                <span className="old-price">
-
-                                    {
-                                        formatPrice(
-                                            originalPrice
-                                        )
-                                    }
-
-                                </span>
-
-                                <span className="sale-price">
-
-                                    {
-                                        formatPrice(
-                                            salePrice
-                                        )
-                                    }
-
-                                </span>
-
-                            </div>
-
-                        ) : (
-
-                            <span className="current-price">
-
-                                {
-                                    formatPrice(
-                                        displayPrice
-                                    )
-                                }
-
+                        {hasDiscount && (
+                            <span className="old-price">
+                                {originalPrice.toLocaleString("vi-VN")}đ
                             </span>
-
                         )}
+
+                        <span className="sale-price">
+                            {salePrice.toLocaleString("vi-VN")}đ
+                        </span>
 
                     </div>
 

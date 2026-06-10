@@ -41,26 +41,13 @@ function QuickShopModal({
         setLoading] =
         useState(false);
 
+    const navigate = useNavigate();
 
     if (!product) return null;
-
-    const navigate = useNavigate();
 
     // =========================
     // FORMAT PRICE
     // =========================
-
-    const formatPrice = (
-        value
-    ) => {
-
-        return (
-            Number(value)
-                .toLocaleString("vi-VN")
-            + "₫"
-        );
-
-    };
 
     // =========================
     // CHECK STOCK AVAILABILITY
@@ -78,6 +65,20 @@ function QuickShopModal({
         setSelectedVariant(variant);
         setQuantity(1); // Reset quantity when variant changes
     };
+
+    const originalPrice =
+        Number(selectedVariant?.price || 0);
+
+    const salePrice =
+        Number(
+            selectedVariant?.sale_price ||
+            selectedVariant?.price ||
+            0
+        );
+
+    const hasDiscount =
+        originalPrice > 0 &&
+        salePrice < originalPrice;
 
     // =========================
     // ADD TO CART
@@ -273,14 +274,22 @@ function QuickShopModal({
 
                             {/* PRICE */}
 
-                            <div className="quickshop-price">
+                            <div className="quick-price">
+                                {hasDiscount ? (
+                                    <>
+                                        <span className="quick-old-price">
+                                            {originalPrice.toLocaleString("vi-VN")}đ
+                                        </span>
 
-                                {
-                                    formatPrice(
-                                        selectedVariant?.price
-                                    )
-                                }
-
+                                        <span className="quick-sale-price">
+                                            {salePrice.toLocaleString("vi-VN")}đ
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className="quick-sale-price">
+                                        {originalPrice.toLocaleString("vi-VN")}đ
+                                    </span>
+                                )}
                             </div>
 
                             {/* VARIANTS */}
@@ -547,13 +556,48 @@ function QuickShopModal({
    PRICE
 ========================= */
 
-.quickshop-price {
+.quick-price {
+    margin-bottom: 28px;
+}
+
+.quick-old-price {
+    display: block;
+    font-size: 16px;
+    color: #999;
+    text-decoration: line-through;
+    margin-bottom: 8px;
+}
+
+.quick-sale-price {
+    display: block;
     font-size: 34px;
     font-weight: 800;
-
     color: #ee4d2d;
+}
 
-    margin-bottom: 28px;
+.quickshop-price .old-price {
+    font-size: 16px;
+    color: #999;
+    text-decoration: line-through;
+    margin-bottom: 8px;
+}
+
+.quickshop-price .sale-price {
+    display: block;
+    font-size: 34px;
+    font-weight: 800;
+    color: #ee4d2d;
+}
+
+.quickshop-price .discount-percent {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: #ee4d2d;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 /* =========================
@@ -807,8 +851,23 @@ button:disabled {
         font-size: 22px;
     }
 
-    .quickshop-price {
+    .quick-price {
+        margin-bottom: 28px;
+    }
+
+    .quick-old-price {
+        display: block;
+        font-size: 16px;
+        color: #999;
+        text-decoration: line-through;
+        margin-bottom: 8px;
+    }
+
+    .quick-sale-price {
+        display: block;
         font-size: 28px;
+        font-weight: 800;
+        color: #ee4d2d;
     }
 
     .quickshop-actions {

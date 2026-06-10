@@ -17,7 +17,8 @@ import OrderDetail from "../pages/admin/orders/OrderDetail";
 import CreateCoupon from "../pages/admin/coupons/CreateCoupon";
 import CouponList from "../pages/admin/coupons/CouponList";
 
-
+import DiscountList from "../pages/admin/discounts/DiscountList";
+import CreateDiscount from "../pages/admin/discounts/CreateDiscount";
 
 import Users from "../pages/admin/Users";
 
@@ -78,6 +79,15 @@ function AdminRoutes() {
                 <Route
                     path="create-coupon"
                     element={<CreateCoupon />}
+                />
+
+                <Route
+                    path="discounts"
+                    element={<DiscountList />}
+                />
+                <Route
+                    path="discounts/create"
+                    element={<CreateDiscount />}
                 />
             </Route>
 

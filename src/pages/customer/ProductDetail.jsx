@@ -337,9 +337,18 @@ toast.error("Sản phẩm đã hết hàng");
 
     }
 
-    const price =
+    const originalPrice =
         Number(selectedVariant?.price) ||
         0;
+
+    const salePrice =
+        Number(
+            selectedVariant?.sale_price ??
+            selectedVariant?.price
+        );
+
+    const discount =
+        selectedVariant?.discount;
 
     const availableStock =
         getAvailableStock(
@@ -453,8 +462,30 @@ toast.error("Sản phẩm đã hết hàng");
 
                                 <div className="pd-price">
 
-                                    {formatPrice(
-                                        price
+                                    {discount ? (
+                                        <>
+                                            <div className="pd-old-price">
+                                                {formatPrice(
+                                                    originalPrice
+                                                )}
+                                            </div>
+
+                                            <div className="pd-sale-price">
+                                                {formatPrice(
+                                                    salePrice
+                                                )}
+                                            </div>
+
+                                            <div className="pd-discount-badge">
+                                                {discount.type === "percent"
+                                                    ? `-${discount.value}%`
+                                                    : `-${formatPrice(discount.value)}`}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        formatPrice(
+                                            originalPrice
+                                        )
                                     )}
 
                                 </div>
@@ -702,15 +733,20 @@ toast.error("Sản phẩm đã hết hàng");
                         <div className="pd-related-grid">
 
                             {relatedProducts.map(
-                                (item) => (
+                                (item) => {
 
-                                    <Link
-                                        key={
-                                            item.id
-                                        }
-                                        to={`/product/${item.id}`}
-                                        className="pd-related-card"
-                                    >
+                                    const variant =
+                                        item?.variants?.[0];
+
+                                    return (
+
+                                        <Link
+                                            key={
+                                                item.id
+                                            }
+                                            to={`/product/${item.id}`}
+                                            className="pd-related-card"
+                                        >
 
                                         <img
                                             src={
@@ -737,13 +773,24 @@ toast.error("Sản phẩm đã hết hàng");
                                             </div>
 
                                             <div className="pd-related-price">
-
-                                                {formatPrice(
-                                                    item
-                                                        ?.variants?.[0]
-                                                        ?.price
+                                                {variant?.discount ? (
+                                                    <>
+                                                        <div className="pd-old-price">
+                                                            {formatPrice(
+                                                                variant.price
+                                                            )}
+                                                        </div>
+                                                        <div className="pd-sale-price">
+                                                            {formatPrice(
+                                                                variant.sale_price
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    formatPrice(
+                                                        variant?.price
+                                                    )
                                                 )}
-
                                             </div>
 
                                         </div>
@@ -751,7 +798,7 @@ toast.error("Sản phẩm đã hết hàng");
                                     </Link>
 
                                 )
-                            )}
+                            })}
 
                         </div>
 

@@ -77,6 +77,10 @@ function Checkout() {
         setDiscountAmount] =
         useState(0);
 
+    const [selectedIds,
+        setSelectedIds] =
+        useState([]);
+
     const [rememberInfo,
         setRememberInfo] =
         useState(true);
@@ -157,6 +161,10 @@ function Checkout() {
 
         if (location.state) {
 
+            setSelectedIds(
+                location.state.selectedItems || []
+            );
+
             setCouponCode(
                 location.state.couponCode || ""
             );
@@ -216,6 +224,9 @@ function Checkout() {
 
                     coupon_code:
                         couponCode,
+
+                    selected_cart_item_ids:
+                        selectedIds,
 
 
                     remember_info:
@@ -288,13 +299,26 @@ function Checkout() {
     // TOTAL
     // =========================
 
+    const selectedCartItems =
+        cart?.items?.filter(
+            (item) =>
+                selectedIds.includes(
+                    item.id
+                )
+        ) || [];
+
     const getTotal = () => {
 
         const base =
             buyNowItem
                 ? buyNowItem.price *
                 buyNowItem.quantity
-                : cart?.total_price || 0;
+                : selectedCartItems.reduce(
+                    (total, item) =>
+                        total +
+                        Number(item.subtotal),
+                    0
+                );
 
         return base - discountAmount;
 
@@ -395,7 +419,7 @@ function Checkout() {
                 <div className="checkout-items">
 
                     {
-                        cart.items.map((item) => (
+                        selectedCartItems.map((item) => (
 
                             <div key={item.id}>
 

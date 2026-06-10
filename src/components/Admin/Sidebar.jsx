@@ -6,7 +6,8 @@ import {
     FaShoppingCart,
     FaUsers,
     FaSignOutAlt,
-    FaTicketAlt
+    FaTicketAlt,
+    FaTag
 } from "react-icons/fa";
 
 import {
@@ -200,6 +201,16 @@ function Sidebar() {
                 active={
                     isActive("/admin/coupons") ||
                     isActive("/admin/create-coupon")
+                }
+            />
+
+            <MenuItem
+                to="/admin/discounts"
+                icon={<FaTag />}
+                text="Discount"
+                active={
+                    isActive("/admin/discounts") ||
+                    isActive("/admin/discounts/create")
                 }
             />
 

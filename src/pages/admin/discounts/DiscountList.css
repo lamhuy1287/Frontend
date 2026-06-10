@@ -1,0 +1,272 @@
+.discount-list {
+    padding: 20px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.list-header h1 {
+    margin: 0;
+    color: #333;
+    font-size: 28px;
+}
+
+.btn-create {
+    padding: 10px 20px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.btn-create:hover {
+    background-color: #229954;
+}
+
+.error-message {
+    background-color: #ffe6e6;
+    color: #c0392b;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border-left: 4px solid #c0392b;
+}
+
+.loading,
+.no-data {
+    background-color: white;
+    padding: 40px;
+    text-align: center;
+    border-radius: 8px;
+    color: #666;
+    font-size: 16px;
+}
+
+.table-wrapper {
+    background-color: white;
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.discount-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.discount-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #ddd;
+}
+
+.discount-table th {
+    padding: 15px;
+    text-align: left;
+    color: #333;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.discount-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.discount-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.variant-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.product-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.variant-name {
+    font-size: 12px;
+    color: #666;
+}
+
+.value {
+    font-weight: 500;
+    color: #27ae60;
+}
+
+.date {
+    white-space: nowrap;
+    color: #666;
+}
+
+.priority {
+    text-align: center;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 40px;
+}
+
+.badge.percent {
+    background-color: #e8f4f8;
+    color: #0c5460;
+}
+
+.badge.fixed {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-toggle {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-toggle:hover {
+    background-color: #2980b9;
+}
+
+.btn-deactivate {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-deactivate:hover {
+    background-color: #c0392b;
+}
+
+.btn-activate {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-activate:hover {
+    background-color: #229954;
+}
+
+.btn-delete {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #c0392b;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn-page {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    background-color: white;
+    color: #333;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-page:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #999;
+}
+
+.btn-page.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.btn-page:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .discount-table {
+        font-size: 12px;
+    }
+
+    .discount-table th,
+    .discount-table td {
+        padding: 10px;
+    }
+
+    .actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .actions button {
+        width: 100%;
+        padding: 4px 8px;
+    }
+}
