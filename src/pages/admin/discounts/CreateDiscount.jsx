@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
@@ -44,10 +43,12 @@ export default function CreateDiscount() {
         useState([]);
 
     // =========================
-    // FORM DATA
+    // FORM DATA (THÊM discount_level)
     // =========================
 
     const [formData, setFormData] = useState({
+
+        discount_level: "variant", // THÊM: variant, product, category
 
         parent_category_id: "",
 
@@ -136,6 +137,36 @@ export default function CreateDiscount() {
 
             [name]: newValue,
         }));
+
+        // =========================
+        // DISCOUNT LEVEL - RESET ALL
+        // =========================
+
+        if (name === "discount_level") {
+
+            setFormData((prev) => ({
+
+                ...prev,
+
+                discount_level: value,
+
+                parent_category_id: "",
+
+                child_category_id: "",
+
+                product_id: "",
+
+                product_variant_id: "",
+            }));
+
+            setChildCategories([]);
+
+            setProducts([]);
+
+            setVariants([]);
+
+            return;
+        }
 
         // =========================
         // PARENT CATEGORY
@@ -256,7 +287,7 @@ export default function CreateDiscount() {
     };
 
     // =========================
-    // SUBMIT
+    // SUBMIT - TẠO PAYLOAD THEO LEVEL
     // =========================
 
     const handleSubmit = async (e) => {
@@ -269,33 +300,126 @@ export default function CreateDiscount() {
 
             setError("");
 
-            const payload = {
+            let payload = {};
 
-                product_variant_id:
-                    Number(
-                        formData.product_variant_id
-                    ),
+            const discountLevel = formData.discount_level;
 
-                discount_type:
-                    formData.discount_type,
+            // =========================
+            // CASE 1: VARIANT LEVEL
+            // =========================
 
-                discount_value:
-                    Number(
-                        formData.discount_value
-                    ),
+            if (discountLevel === "variant") {
 
-                priority:
-                    Number(formData.priority),
+                if (!formData.product_variant_id) {
 
-                start_at:
-                    formData.start_at || null,
+                    setError("Vui lòng chọn biến thể sản phẩm");
 
-                end_at:
-                    formData.end_at || null,
+                    setLoading(false);
 
-                is_active:
-                    formData.is_active,
-            };
+                    return;
+                }
+
+                payload = {
+
+                    discount_level: "variant",
+
+                    product_variant_id:
+                        Number(formData.product_variant_id),
+
+                    discount_type: formData.discount_type,
+
+                    discount_value:
+                        Number(formData.discount_value),
+
+                    priority: Number(formData.priority),
+
+                    start_at: formData.start_at || null,
+
+                    end_at: formData.end_at || null,
+
+                    is_active: formData.is_active,
+                };
+            }
+
+            // =========================
+            // CASE 2: PRODUCT LEVEL (ALL VARIANTS)
+            // =========================
+
+            else if (discountLevel === "product") {
+
+                if (!formData.product_id) {
+
+                    setError("Vui lòng chọn sản phẩm");
+
+                    setLoading(false);
+
+                    return;
+                }
+
+                payload = {
+
+                    discount_level: "product",
+
+                    product_id: Number(formData.product_id),
+
+                    discount_type: formData.discount_type,
+
+                    discount_value:
+                        Number(formData.discount_value),
+
+                    priority: Number(formData.priority),
+
+                    start_at: formData.start_at || null,
+
+                    end_at: formData.end_at || null,
+
+                    is_active: formData.is_active,
+
+                    apply_to_all_variants: true,
+                };
+            }
+
+            // =========================
+            // CASE 3: CATEGORY LEVEL (ALL PRODUCTS IN CATEGORY)
+            // =========================
+
+            else if (discountLevel === "category") {
+
+                const categoryId =
+                    formData.child_category_id ||
+                    formData.parent_category_id;
+
+                if (!categoryId) {
+
+                    setError("Vui lòng chọn danh mục");
+
+                    setLoading(false);
+
+                    return;
+                }
+
+                payload = {
+
+                    discount_level: "category",
+
+                    category_id: Number(categoryId),
+
+                    discount_type: formData.discount_type,
+
+                    discount_value:
+                        Number(formData.discount_value),
+
+                    priority: Number(formData.priority),
+
+                    start_at: formData.start_at || null,
+
+                    end_at: formData.end_at || null,
+
+                    is_active: formData.is_active,
+
+                    apply_to_all_products: true,
+                };
+            }
 
             await createDiscount(payload);
 
@@ -316,6 +440,453 @@ export default function CreateDiscount() {
 
             setLoading(false);
         }
+    };
+
+    // =========================
+    // RENDER FORM THEO LEVEL
+    // =========================
+
+    const renderLevelSpecificFields = () => {
+
+        const { discount_level } = formData;
+
+        // =========================
+        // VARIANT LEVEL - HIỂN THỊ TẤT CẢ SELECT
+        // =========================
+
+        if (discount_level === "variant") {
+
+            return (
+
+                <>
+
+                    {/* CATEGORY PARENT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục cha
+                        </label>
+
+                        <select
+
+                            name="parent_category_id"
+
+                            value={
+                                formData.parent_category_id
+                            }
+
+                            onChange={handleChange}
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục cha --
+                            </option>
+
+                            {
+                                parentCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* CATEGORY CHILD */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục con
+                        </label>
+
+                        <select
+
+                            name="child_category_id"
+
+                            value={
+                                formData.child_category_id
+                            }
+
+                            onChange={handleChange}
+
+                            disabled={
+                                !formData.parent_category_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục con --
+                            </option>
+
+                            {
+                                childCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* PRODUCT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Sản phẩm
+                        </label>
+
+                        <select
+
+                            name="product_id"
+
+                            value={formData.product_id}
+
+                            onChange={handleChange}
+
+                            disabled={
+                                !formData.child_category_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn sản phẩm --
+                            </option>
+
+                            {
+                                products.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* VARIANT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Biến thể sản phẩm
+                        </label>
+
+                        <select
+
+                            name="product_variant_id"
+
+                            value={
+                                formData.product_variant_id
+                            }
+
+                            onChange={handleChange}
+
+                            required
+
+                            disabled={
+                                !formData.product_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn biến thể --
+                            </option>
+
+                            {
+                                variants.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.variant_name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+                </>
+            );
+        }
+
+        // =========================
+        // PRODUCT LEVEL - CHỈ CẦN CHỌN SẢN PHẨM
+        // =========================
+
+        if (discount_level === "product") {
+
+            return (
+
+                <>
+
+                    {/* CATEGORY PARENT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục cha
+                        </label>
+
+                        <select
+
+                            name="parent_category_id"
+
+                            value={
+                                formData.parent_category_id
+                            }
+
+                            onChange={handleChange}
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục cha --
+                            </option>
+
+                            {
+                                parentCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* CATEGORY CHILD */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục con
+                        </label>
+
+                        <select
+
+                            name="child_category_id"
+
+                            value={
+                                formData.child_category_id
+                            }
+
+                            onChange={handleChange}
+
+                            disabled={
+                                !formData.parent_category_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục con --
+                            </option>
+
+                            {
+                                childCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* PRODUCT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Sản phẩm (giảm giá cho TẤT CẢ biến thể)
+                        </label>
+
+                        <select
+
+                            name="product_id"
+
+                            value={formData.product_id}
+
+                            onChange={handleChange}
+
+                            required
+
+                            disabled={
+                                !formData.child_category_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn sản phẩm --
+                            </option>
+
+                            {
+                                products.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* INFO MESSAGE */}
+
+                    <div className="info-message">
+
+                        <small>
+                            ✅ Giảm giá sẽ áp dụng cho TẤT CẢ biến thể của sản phẩm này
+                        </small>
+
+                    </div>
+                </>
+            );
+        }
+
+        // =========================
+        // CATEGORY LEVEL - CHỈ CẦN CHỌN DANH MỤC
+        // =========================
+
+        if (discount_level === "category") {
+
+            return (
+
+                <>
+
+                    {/* CATEGORY PARENT */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục cha
+                        </label>
+
+                        <select
+
+                            name="parent_category_id"
+
+                            value={
+                                formData.parent_category_id
+                            }
+
+                            onChange={handleChange}
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục cha --
+                            </option>
+
+                            {
+                                parentCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* CATEGORY CHILD */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Danh mục con (giảm giá cho toàn bộ)
+                        </label>
+
+                        <select
+
+                            name="child_category_id"
+
+                            value={
+                                formData.child_category_id
+                            }
+
+                            onChange={handleChange}
+
+                            required
+
+                            disabled={
+                                !formData.parent_category_id
+                            }
+                        >
+
+                            <option value="">
+                                -- Chọn danh mục con --
+                            </option>
+
+                            {
+                                childCategories.map((item) => (
+
+                                    <option
+                                        key={item.id}
+                                        value={item.id}
+                                    >
+                                        {item.name}
+                                    </option>
+                                ))
+                            }
+
+                        </select>
+
+                    </div>
+
+                    {/* INFO MESSAGE */}
+
+                    <div className="info-message">
+
+                        <small>
+                            ✅ Giảm giá sẽ áp dụng cho TẤT CẢ sản phẩm trong danh mục này
+                        </small>
+
+                    </div>
+                </>
+            );
+        }
+
+        return null;
     };
 
     return (
@@ -361,173 +932,42 @@ export default function CreateDiscount() {
                 className="discount-form"
             >
 
-                {/* CATEGORY PARENT */}
+                {/* ========================= ✅ THÊM MỚI: CẤP ĐỘ GIẢM GIÁ ========================= */}
 
                 <div className="form-group">
 
                     <label>
-                        Danh mục cha
+                        Cấp độ giảm giá
                     </label>
 
                     <select
 
-                        name="parent_category_id"
+                        name="discount_level"
 
-                        value={
-                            formData.parent_category_id
-                        }
+                        value={formData.discount_level}
 
                         onChange={handleChange}
                     >
 
-                        <option value="">
-                            -- Chọn danh mục cha --
+                        <option value="variant">
+                             Một biến thể cụ thể
                         </option>
 
-                        {
-                            parentCategories.map((item) => (
+                        <option value="product">
+                             Tất cả biến thể của một sản phẩm
+                        </option>
 
-                                <option
-                                    key={item.id}
-                                    value={item.id}
-                                >
-                                    {item.name}
-                                </option>
-                            ))
-                        }
+                        <option value="category">
+                             Toàn bộ sản phẩm trong danh mục
+                        </option>
 
                     </select>
 
                 </div>
 
-                {/* CATEGORY CHILD */}
+                {/* RENDER FIELD THEO CẤP ĐỘ */}
 
-                <div className="form-group">
-
-                    <label>
-                        Danh mục con
-                    </label>
-
-                    <select
-
-                        name="child_category_id"
-
-                        value={
-                            formData.child_category_id
-                        }
-
-                        onChange={handleChange}
-
-                        disabled={
-                            !formData.parent_category_id
-                        }
-                    >
-
-                        <option value="">
-                            -- Chọn danh mục con --
-                        </option>
-
-                        {
-                            childCategories.map((item) => (
-
-                                <option
-                                    key={item.id}
-                                    value={item.id}
-                                >
-                                    {item.name}
-                                </option>
-                            ))
-                        }
-
-                    </select>
-
-                </div>
-
-                {/* PRODUCT */}
-
-                <div className="form-group">
-
-                    <label>
-                        Sản phẩm
-                    </label>
-
-                    <select
-
-                        name="product_id"
-
-                        value={formData.product_id}
-
-                        onChange={handleChange}
-
-                        disabled={
-                            !formData.child_category_id
-                        }
-                    >
-
-                        <option value="">
-                            -- Chọn sản phẩm --
-                        </option>
-
-                        {
-                            products.map((item) => (
-
-                                <option
-                                    key={item.id}
-                                    value={item.id}
-                                >
-                                    {item.name}
-                                </option>
-                            ))
-                        }
-
-                    </select>
-
-                </div>
-
-                {/* VARIANT */}
-
-                <div className="form-group">
-
-                    <label>
-                        Variant sản phẩm
-                    </label>
-
-                    <select
-
-                        name="product_variant_id"
-
-                        value={
-                            formData.product_variant_id
-                        }
-
-                        onChange={handleChange}
-
-                        required
-
-                        disabled={
-                            !formData.product_id
-                        }
-                    >
-
-                        <option value="">
-                            -- Chọn variant --
-                        </option>
-
-                        {
-                            variants.map((item) => (
-
-                                <option
-                                    key={item.id}
-                                    value={item.id}
-                                >
-                                    {item.variant_name}
-                                </option>
-                            ))
-                        }
-
-                    </select>
-
-                </div>
+                {renderLevelSpecificFields()}
 
                 {/* DISCOUNT */}
 
@@ -735,4 +1175,3 @@ export default function CreateDiscount() {
         </div>
     );
 }
-

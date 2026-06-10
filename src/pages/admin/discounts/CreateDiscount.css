@@ -393,3 +393,25 @@
         padding: 12px 14px;
     }
 }
+/* INFO MESSAGE */
+.info-message {
+    margin-top: -10px;
+    margin-bottom: 20px;
+    padding: 10px 12px;
+    background: #e8f5e9;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+}
+
+.info-message small {
+    color: #2e7d32;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-message small::before {
+    content: "💡";
+    font-size: 14px;
+}
