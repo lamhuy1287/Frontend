@@ -176,104 +176,109 @@ function CategoryProducts() {
         sortBy
     ]);
 
-    const fetchProducts = async () => {
+const fetchProducts = async () => {
 
-        try {
+    try {
 
-            setLoading(true);
+        setLoading(true);
 
-            // =====================
-            // PARAMS
-            // =====================
+        // =====================
+        // PARAMS - CHỈ GỬI SORT, KHÔNG GỬI SORT_BY
+        // =====================
 
-            const params = {
+        const params = {};
 
-                category_id:
-                    selectedChildCategory || id,
-
-                limit: 50,
-
-                sort: sortBy
-            };
-
-            // =====================
-            // BRAND FILTER
-            // =====================
-
-            if (selectedBrand) {
-
-                params.brand_id =
-                    selectedBrand;
-            }
-
-            // =====================
-            // PRICE FILTER
-            // =====================
-
-            if (
-                selectedPrice ===
-                "under_500"
-            ) {
-
-                params.max_price =
-                    500000;
-            }
-
-            if (
-                selectedPrice ===
-                "500_1000"
-            ) {
-
-                params.min_price =
-                    500000;
-
-                params.max_price =
-                    1000000;
-            }
-
-            if (
-                selectedPrice ===
-                "over_1000"
-            ) {
-
-                params.min_price =
-                    1000000;
-            }
-
-            // =====================
-            // API
-            // =====================
-
-            const res =
-                await getProducts(
-                    params
-                );
-
-            // =====================
-            // DATA
-            // =====================
-
-            const productsData =
-                res.data?.data?.products || [];
-
-            setProducts(
-                productsData
-            );
-
-        } catch (error) {
-
-            console.log(
-                "LOAD PRODUCTS ERROR:",
-                error
-            );
-
-            setProducts([]);
-
-        } finally {
-
-            setLoading(false);
+        // Category ID
+        const categoryId = selectedChildCategory || id;
+        if (categoryId) {
+            params.category_id = categoryId;
         }
-    };
+
+        params.limit = 50;
+
+        // ✅ CHỈ GỬI SORT, KHÔNG GỬI SORT_BY
+        if (sortBy === "price_asc") {
+            params.sort = "price_asc";
+        } else if (sortBy === "price_desc") {
+            params.sort = "price_desc";
+        } else if (sortBy === "newest") {
+            params.sort = "newest";
+        } else if (sortBy === "best_selling") {
+            params.sort = "best_selling";
+        } else {
+            params.sort = "newest";
+        }
+
+        // ❌ KHÔNG gửi params.sort_by
+        // ❌ KHÔNG gửi params.sort = sortParam + params.sort_by = sortParam
+
+        // =====================
+        // BRAND FILTER
+        // =====================
+
+        if (selectedBrand) {
+            params.brand_id = selectedBrand;
+        }
+
+        // =====================
+        // PRICE FILTER
+        // =====================
+
+        if (selectedPrice === "under_500") {
+            params.max_price = 500000;
+        }
+        else if (selectedPrice === "500_1000") {
+            params.min_price = 500000;
+            params.max_price = 1000000;
+        }
+        else if (selectedPrice === "over_1000") {
+            params.min_price = 1000000;
+        }
+
+        // =====================
+        // DEBUG LOG
+        // =====================
+        console.log("=== FETCH PRODUCTS PARAMS ===");
+        console.log("Params:", params);
+
+        // =====================
+        // API CALL
+        // =====================
+
+        const res = await getProducts(params);
+        
+        console.log("API Response:", res.data);
+
+        // =====================
+        // DATA
+        // =====================
+
+        let productsData = [];
+        
+        if (res.data?.data?.products) {
+            productsData = res.data.data.products;
+        } else if (res.data?.data && Array.isArray(res.data.data)) {
+            productsData = res.data.data;
+        } else if (res.data?.products && Array.isArray(res.data.products)) {
+            productsData = res.data.products;
+        } else if (Array.isArray(res.data)) {
+            productsData = res.data;
+        }
+
+        console.log("Products loaded:", productsData.length);
+        
+        setProducts(productsData);
+
+    } catch (error) {
+
+        console.log("LOAD PRODUCTS ERROR:", error);
+        setProducts([]);
+
+    } finally {
+
+        setLoading(false);
+    }
+};
 
     // =========================
     // CLEAR FILTER
@@ -282,11 +287,8 @@ function CategoryProducts() {
     const clearFilters = () => {
 
         setSelectedBrand(null);
-
         setSelectedChildCategory(null);
-
         setSelectedPrice(null);
-
         setSortBy("newest");
 
     };
@@ -322,21 +324,21 @@ function CategoryProducts() {
 
                 {/* HEADER */}
 
-<div
-    style={{
-        ...styles.header,
-        textAlign: "center"
-    }}
->
+                <div
+                    style={{
+                        ...styles.header,
+                        textAlign: "center"
+                    }}
+                >
 
-    <h2 style={styles.title}>
+                    <h2 style={styles.title}>
 
-        {categoryName ||
-            "Danh mục"}
+                        {categoryName ||
+                            "Danh mục"}
 
-    </h2>
+                    </h2>
 
-</div>
+                </div>
 
                 {/* CONTENT */}
 

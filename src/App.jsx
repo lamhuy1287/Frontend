@@ -24,6 +24,7 @@ import PaymentSuccess from "./pages/customer/PaymentSuccess";
 import PaymentCancel from "./pages/customer/PaymentCancel";
 import OrderDetail from "./pages/customer/OrderDetail";
 import MyOrders from "./pages/customer/orders/MyOrders";
+import SearchResults from './pages/customer/SearchResults';
 
 
 function App() {
@@ -90,6 +91,7 @@ function App() {
                     path="/my-orders"
                     element={<MyOrders />}
                 />
+                <Route path="/search" element={<SearchResults />} />
 
 
             </Routes>

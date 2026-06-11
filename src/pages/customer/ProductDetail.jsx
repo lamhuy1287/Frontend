@@ -49,22 +49,45 @@ function ProductDetail() {
     // =========================
 
     const isVariantOutOfStock = (variant) => {
-
         return (
             variant?.quantity === 0 ||
             variant?.stock === 0
         );
-
     };
 
     const getAvailableStock = (variant) => {
-
         return (
             variant?.quantity ||
             variant?.stock ||
             0
         );
+    };
 
+    // =========================
+    // FETCH RELATED PRODUCTS
+    // =========================
+
+    const fetchRelatedProducts = async (categoryId, currentProductId) => {
+        try {
+            // ✅ Gọi API với filter category và giới hạn số lượng
+            const relatedRes = await getProducts({
+                category_id: categoryId,
+                limit: 6,
+                page: 1
+            });
+            
+            let products = relatedRes?.data?.data?.products || [];
+            
+            // ✅ Loại bỏ sản phẩm hiện tại
+            products = products.filter(item => item.id !== currentProductId);
+            
+            // ✅ Giới hạn chỉ lấy 5 sản phẩm
+            setRelatedProducts(products.slice(0, 5));
+            
+        } catch (error) {
+            console.log("Error fetching related products:", error);
+            setRelatedProducts([]);
+        }
     };
 
     // =========================
@@ -99,32 +122,8 @@ function ProductDetail() {
                 productData.variants?.[0]
             );
 
-            // RELATED
-
-            const relatedRes =
-                await getProducts();
-
-            let allProducts =
-                relatedRes?.data?.data
-                    ?.products || [];
-
-            allProducts =
-                allProducts.filter(
-                    (item) =>
-                        item.id !==
-                        productData.id
-                );
-
-            const related =
-                allProducts.filter(
-                    (item) =>
-                        item.category_id ===
-                        productData.category_id
-                );
-
-            setRelatedProducts(
-                related.slice(0, 5)
-            );
+            // ✅ Gọi hàm lấy sản phẩm tương tự
+            await fetchRelatedProducts(productData.category_id, productData.id);
 
         } catch (error) {
 
@@ -266,7 +265,7 @@ function ProductDetail() {
         };
 
     // =========================
-    // BUY NOW - ĐÃ SỬA LỖI
+    // BUY NOW
     // =========================
 
     const handleBuyNow = async () => {
@@ -742,87 +741,85 @@ function ProductDetail() {
 
                     </div>
 
-                    {/* RELATED */}
+                    {/* RELATED PRODUCTS - CẢI TIẾN */}
 
                     <div className="pd-related">
 
                         <h2 className="pd-related-title">
-
                             Sản phẩm tương tự
-
                         </h2>
 
-                        <div className="pd-related-grid">
-
-                            {relatedProducts.map(
-                                (item) => {
-
-                                    const variant =
-                                        item?.variants?.[0];
-
+                        {relatedProducts.length === 0 ? (
+                            <div className="pd-related-empty">
+                                Không có sản phẩm tương tự
+                            </div>
+                        ) : (
+                            <div className="pd-related-grid">
+                                {relatedProducts.map((item) => {
+                                    // Lấy variant đầu tiên
+                                    const firstVariant = item?.variants?.[0];
+                                    
+                                    // Lấy giá bán cuối cùng
+                                    const hasDiscount = firstVariant?.discount;
+                                    const finalPrice = hasDiscount 
+                                        ? Number(firstVariant?.sale_price || firstVariant?.price)
+                                        : Number(firstVariant?.price);
+                                    
+                                    // Lấy ảnh đại diện
+                                    const productImage = item?.images?.[0]?.image_url || 
+                                                        "https://picsum.photos/200/200";
+                                    
+                                    // Kiểm tra còn hàng
+                                    const isOutOfStock = (firstVariant?.quantity || 0) === 0;
+                                    
                                     return (
-
                                         <Link
-                                            key={
-                                                item.id
-                                            }
+                                            key={item.id}
                                             to={`/product/${item.id}`}
                                             className="pd-related-card"
                                         >
-
-                                            <img
-                                                src={
-                                                    item
-                                                        .images?.[0]
-                                                        ?.image_url
-                                                }
-                                                alt={
-                                                    item.name
-                                                }
-                                                className="pd-related-image"
-                                            />
+                                            <div className="pd-related-image-wrapper">
+                                                <img
+                                                    src={productImage}
+                                                    alt={item.name}
+                                                    className="pd-related-image"
+                                                />
+                                                {isOutOfStock && (
+                                                    <div className="pd-related-soldout">
+                                                        Hết hàng
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             <div className="pd-related-content">
-
-                                                <div className="pd-related-name">
-
-                                                    {
-                                                        item.name.length > 10
-                                                            ? item.name.slice(0, 10) + "..."
-                                                            : item.name
-                                                    }
-
+                                                <div className="pd-related-name" title={item.name}>
+                                                    {item.name.length > 40 
+                                                        ? item.name.slice(0, 40) + "..." 
+                                                        : item.name}
                                                 </div>
 
                                                 <div className="pd-related-price">
-                                                    {variant?.discount ? (
+                                                    {hasDiscount ? (
                                                         <>
-                                                            <div className="pd-old-price">
-                                                                {formatPrice(
-                                                                    variant.price
-                                                                )}
+                                                            <div className="pd-related-old-price">
+                                                                {formatPrice(firstVariant?.price)}
                                                             </div>
-                                                            <div className="pd-sale-price">
-                                                                {formatPrice(
-                                                                    variant.sale_price
-                                                                )}
+                                                            <div className="pd-related-sale-price">
+                                                                {formatPrice(finalPrice)}
                                                             </div>
                                                         </>
                                                     ) : (
-                                                        formatPrice(
-                                                            variant?.price
-                                                        )
+                                                        <div className="pd-related-current-price">
+                                                            {formatPrice(finalPrice)}
+                                                        </div>
                                                     )}
                                                 </div>
-
                                             </div>
-
                                         </Link>
-
-                                    )
+                                    );
                                 })}
-
-                        </div>
+                            </div>
+                        )}
 
                     </div>
 
