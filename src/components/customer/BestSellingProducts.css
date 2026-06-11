@@ -1,0 +1,153 @@
+/* ================================
+   BEST SELLING PRODUCTS - NEW LAYOUT
+   ================================ */
+
+.bestselling-products {
+    width: 100%;
+    padding: 40px 20px;
+    background: #ffffff;
+}
+
+.bestselling-container {
+    width: 90%;
+    max-width: 1450px;
+    margin: auto;
+}
+
+/* HEADER */
+.bestselling-header {
+    margin-bottom: 32px;
+}
+
+.bestselling-title-wrapper {
+    text-align: left;
+}
+
+.bestselling-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.bestselling-subtitle {
+    color: #6b7280;
+    font-size: 16px;
+}
+
+/* ================================
+   LAYOUT 2 CỘT (BANNER + PRODUCTS)
+   ================================ */
+.bestselling-two-columns {
+    display: flex;
+    gap: 24px;
+    align-items: stretch; /* Đảm bảo 2 cột cao bằng nhau */
+}
+
+/* CỘT TRÁI - BANNER DỌC (25%) */
+.bestselling-banner {
+    flex: 0 0 25%; /* Chiếm 25% chiều rộng */
+    max-width: 25%;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.bestselling-banner:hover {
+    transform: translateY(-5px);
+}
+
+.banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ảnh phủ kín banner, giữ tỷ lệ */
+    display: block;
+    border-radius: 24px;
+}
+
+/* CỘT PHẢI - GRID SẢN PHẨM (75%) */
+.bestselling-products-grid {
+    flex: 0 0 75%;
+    max-width: 75%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 3 cột sản phẩm */
+    gap: 24px;
+}
+
+/* Mỗi item sản phẩm */
+.bestselling-product-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bestselling-product-item:hover {
+    transform: translateY(-4px);
+}
+
+/* ================================
+   RESPONSIVE (TABLET & MOBILE)
+   ================================ */
+
+/* Tablet: 2 cột sản phẩm */
+@media (max-width: 1024px) {
+    .bestselling-products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Mobile: xếp chồng banner lên trên */
+@media (max-width: 768px) {
+    .bestselling-two-columns {
+        flex-direction: column;
+    }
+
+    .bestselling-banner {
+        flex: 0 0 auto;
+        max-width: 100%;
+        height: 200px; /* Banner ngang khi mobile */
+    }
+
+    .bestselling-products-grid {
+        flex: 0 0 100%;
+        max-width: 100%;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .banner-image {
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+/* Mobile rất nhỏ: 1 cột sản phẩm */
+@media (max-width: 480px) {
+    .bestselling-products-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================
+   LOADING SPINNER
+   ================================ */
+.bestselling-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.bestselling-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #ff6b00;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

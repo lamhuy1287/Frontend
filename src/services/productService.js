@@ -179,3 +179,15 @@ export const searchProductsAdvanced = async (filters) => {
         };
     }
 };
+// =========================
+// GET BEST SELLING PRODUCTS
+// =========================
+export const getBestSellingProducts = async (limit = 8) => {
+    try {
+        const response = await axios.get(`${API_URL}/products/best-selling?limit=${limit}`);
+        return response;
+    } catch (error) {
+        console.error("Get best selling products error:", error);
+        return { data: { data: { products: [] } } };
+    }
+};
