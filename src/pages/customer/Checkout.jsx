@@ -26,6 +26,12 @@ import {
     FaStickyNote
 } from "react-icons/fa";
 
+// ✅ IMPORT CART CONTEXT
+import { useCart } from "../../context/CartContext";
+
+// ✅ IMPORT TOAST
+import toast from "react-hot-toast";
+
 import "./Checkout.css";
 
 function Checkout() {
@@ -35,6 +41,9 @@ function Checkout() {
 
     const location =
         useLocation();
+
+    // ✅ LẤY HÀM loadCart TỪ CONTEXT (THAY VÌ refreshCart)
+    const { loadCart } = useCart();
 
     // =========================
     // STATE
@@ -123,7 +132,7 @@ function Checkout() {
 
             } catch (err) {
 
-                alert(
+                toast.error(
                     err.response?.data?.message ||
                     "Không thể tải giỏ hàng"
                 );
@@ -137,7 +146,7 @@ function Checkout() {
         };
 
     // =========================
-    // LOAD DATA - ĐÃ SỬA LỖI
+    // LOAD DATA
     // =========================
 
     useEffect(() => {
@@ -188,14 +197,23 @@ function Checkout() {
 
         }
 
-    }, [location.state]); // THÊM DEPENDENCY
+    }, [location.state]);
 
     // =========================
-    // PLACE ORDER - ĐÃ SỬA CHO BUY NOW
+    // PLACE ORDER - ĐÃ SỬA (DÙNG loadCart)
     // =========================
 
     const handlePlaceOrder =
         async () => {
+
+            // Validate required fields
+            if (!customerName || !phone || !address) {
+                toast.error("Vui lòng điền đầy đủ thông tin giao hàng");
+                return;
+            }
+
+            // Hiển thị toast loading
+            const loadingToast = toast.loading("Đang xử lý đơn hàng...");
 
             try {
 
@@ -234,18 +252,25 @@ function Checkout() {
                 const res =
                     await checkout(payload);
 
+                // Dismiss loading toast
+                toast.dismiss(loadingToast);
+
+                // ✅ QUAN TRỌNG: Load lại cart sau khi checkout thành công
+                // Chỉ load nếu không phải mua ngay (vì mua ngay không ảnh hưởng đến giỏ hàng)
+                if (!buyNowItem) {
+                    await loadCart();  // ✅ DÙNG loadCart THAY VÌ refreshCart
+                    console.log("✅ Cart loaded after checkout");
+                }
+
                 // PAYMENT REDIRECT
                 if (
                     paymentMethod ===
                     "bank_transfer" &&
                     res.data?.checkout_url
                 ) {
-
                     window.location.href =
                         res.data.checkout_url;
-
                     return;
-
                 }
 
                 if (
@@ -254,31 +279,34 @@ function Checkout() {
                     &&
                     res.data?.pay_url
                 ) {
-
                     window.location.href =
                         res.data.pay_url;
-
                     return;
-
                 }
 
-                alert(
-                    "Đặt hàng thành công"
-                );
+                // ✅ HIỂN THỊ THÔNG BÁO THÀNH CÔNG
+                toast.success("Đặt hàng thành công!", {
+                    duration: 2000,
+                    position: "top-right"
+                });
 
                 const orderId =
                     res.data?.order_id;
 
-                navigate(
-                    orderId
-                        ? `/my-orders/${orderId}`
-                        : "/user"
-                );
+                // ✅ CHUYỂN HƯỚNG NGAY SAU KHI ĐẶT HÀNG THÀNH CÔNG
+                setTimeout(() => {
+                    navigate(
+                        orderId
+                            ? `/my-orders/${orderId}`
+                            : "/user"
+                    );
+                }, 1500); // Chờ 1.5 giây để người dùng thấy thông báo thành công
 
             } catch (err) {
 
                 console.error("ORDER ERROR:", err);
-                alert(
+                toast.dismiss(loadingToast);
+                toast.error(
                     err.response?.data?.message ||
                     "Đặt hàng thất bại"
                 );
@@ -316,7 +344,7 @@ function Checkout() {
     };
 
     // =========================
-    // RENDER ITEM - ĐÃ SỬA LỖI HIỂN THỊ
+    // RENDER ITEM
     // =========================
 
     const renderItem = (
@@ -379,7 +407,7 @@ function Checkout() {
     );
 
     // =========================
-    // ITEMS - ĐÃ SỬA LỖI HIỂN THỊ
+    // ITEMS
     // =========================
 
     const renderItems = () => {

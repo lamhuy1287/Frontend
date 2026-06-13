@@ -115,7 +115,7 @@ export default function DiscountList() {
                                             className={`badge ${discount.discount_type}`}
                                         >
                                             {discount.discount_type ===
-                                            "percent"
+                                                "percent"
                                                 ? "%"
                                                 : "đ"}
                                         </span>
@@ -128,19 +128,19 @@ export default function DiscountList() {
                                     <td className="date">
                                         {discount.start_at
                                             ? new Date(
-                                                  discount.start_at
-                                              ).toLocaleDateString(
-                                                  "vi-VN"
-                                              )
+                                                discount.start_at
+                                            ).toLocaleDateString(
+                                                "vi-VN"
+                                            )
                                             : "-"}
                                     </td>
                                     <td className="date">
                                         {discount.end_at
                                             ? new Date(
-                                                  discount.end_at
-                                              ).toLocaleDateString(
-                                                  "vi-VN"
-                                              )
+                                                discount.end_at
+                                            ).toLocaleDateString(
+                                                "vi-VN"
+                                            )
                                             : "-"}
                                     </td>
                                     <td className="priority">
@@ -148,11 +148,14 @@ export default function DiscountList() {
                                     </td>
                                     <td>
                                         <span
-                                            className={`status ${discount.is_active ? "active" : "inactive"}`}
+                                            className={`status ${discount.is_currently_active
+                                                    ? "active"
+                                                    : "expired"
+                                                }`}
                                         >
-                                            {discount.is_active
+                                            {discount.is_currently_active
                                                 ? "Hoạt động"
-                                                : "Tắt"}
+                                                : "Hết hạn"}
                                         </span>
                                     </td>
                                     <td className="actions">

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import AdminLayout from "../layouts/AdminLayout";
 
 import Dashboard from "../pages/admin/Dashboard";
+import Reports from "../pages/admin/Reports"; // ✅ THÊM IMPORT BÁO CÁO
 
 import Products from "../pages/admin/products/ProductList";
 import Categoties from "../pages/admin/categories/CategoryList";
@@ -32,6 +33,12 @@ function AdminRoutes() {
             <Route path="/" element={<AdminLayout />}>
 
                 <Route index element={<Dashboard />} />
+
+                {/* ✅ THÊM ROUTE CHO BÁO CÁO CHI TIẾT */}
+                <Route path="reports" element={<Reports />} />
+                
+                {/* Có thể thêm sub-route nếu muốn chia tabs */}
+                {/* <Route path="reports/:tab" element={<Reports />} /> */}
 
                 <Route
                     path="products"

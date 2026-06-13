@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-
 import "./CouponList.css";
 
 import {
     getCoupons,
-    deleteCoupon
+    toggleCoupon
 } from "../../../services/couponService";
 
 import { Link } from "react-router-dom";
@@ -12,14 +11,12 @@ import { Link } from "react-router-dom";
 function CouponList() {
 
     const [coupons, setCoupons] = useState([]);
-
     const [loading, setLoading] = useState(true);
-
     const [search, setSearch] = useState("");
 
-    // ===================================
+    // =========================
     // FETCH COUPONS
-    // ===================================
+    // =========================
     const fetchCoupons = async () => {
 
         try {
@@ -28,13 +25,14 @@ function CouponList() {
 
             const res = await getCoupons();
 
-            console.log("COUPONS:", res.data);
-
             setCoupons(res.data.coupons || []);
 
         } catch (err) {
 
-            console.error("GET COUPONS ERROR:", err);
+            console.error(
+                "GET COUPONS ERROR:",
+                err
+            );
 
         } finally {
 
@@ -46,41 +44,55 @@ function CouponList() {
         fetchCoupons();
     }, []);
 
-    // ===================================
-    // DELETE
-    // ===================================
-    const handleDelete = async (id) => {
+    // =========================
+    // TOGGLE COUPON
+    // =========================
+    const handleToggle = async (coupon) => {
 
-        const confirmDelete = window.confirm(
-            "Bạn có chắc muốn vô hiệu hóa mã này?"
+        const action = coupon.is_active
+            ? "tắt"
+            : "bật lại";
+
+        const confirmAction = window.confirm(
+            `Bạn có chắc muốn ${action} mã này?`
         );
 
-        if (!confirmDelete) return;
+        if (!confirmAction) return;
 
         try {
 
-            await deleteCoupon(id);
+            const res = await toggleCoupon(
+                coupon.id
+            );
 
-            alert("Đã vô hiệu hóa mã");
+            alert(
+                res.data.message ||
+                "Cập nhật thành công"
+            );
 
             fetchCoupons();
 
         } catch (err) {
 
-            console.error("DELETE COUPON ERROR:", err);
+            console.error(err);
 
-            alert("Xóa thất bại");
+            alert(
+                err?.response?.data?.message ||
+                "Không thể thay đổi trạng thái"
+            );
         }
     };
 
-    // ===================================
+    // =========================
     // COPY CODE
-    // ===================================
+    // =========================
     const handleCopy = async (code) => {
 
         try {
 
-            await navigator.clipboard.writeText(code);
+            await navigator.clipboard.writeText(
+                code
+            );
 
             alert(`Đã copy mã: ${code}`);
 
@@ -90,52 +102,84 @@ function CouponList() {
         }
     };
 
-    // ===================================
+    // =========================
     // FILTER
-    // ===================================
-    const filteredCoupons = coupons.filter((coupon) =>
-        coupon.code
-            .toLowerCase()
-            .includes(search.toLowerCase())
+    // =========================
+    const filteredCoupons = coupons.filter(
+        (coupon) =>
+            coupon.code
+                ?.toLowerCase()
+                .includes(
+                    search.toLowerCase()
+                )
     );
 
-    // ===================================
+    // =========================
+    // CHECK EXPIRED
+    // =========================
+    const isExpired = (coupon) => {
+
+        if (!coupon.end_at)
+            return false;
+
+        return (
+            new Date(coupon.end_at) <
+            new Date()
+        );
+    };
+
+    // =========================
     // STATUS
-    // ===================================
+    // =========================
     const getStatus = (coupon) => {
 
         const now = new Date();
-
-        if (!coupon.is_active) {
-            return "Đã tắt";
-        }
 
         if (
             coupon.end_at &&
             new Date(coupon.end_at) < now
         ) {
-            return "Hết hạn";
+            return {
+                label: "Hết hạn",
+                className: "expired"
+            };
         }
 
         if (
             coupon.usage_limit &&
-            coupon.used_count >= coupon.usage_limit
+            coupon.used_count >=
+            coupon.usage_limit
         ) {
-            return "Hết lượt";
+            return {
+                label: "Hết lượt",
+                className: "used-up"
+            };
         }
 
-        return "Đang hoạt động";
+        if (!coupon.is_active) {
+
+            return {
+                label: "Đã tắt",
+                className: "inactive"
+            };
+        }
+
+        return {
+            label: "Đang hoạt động",
+            className: "active"
+        };
     };
 
     return (
         <div className="coupon-list-page">
 
-            {/* HEADER */}
             <div className="coupon-header">
 
                 <div>
 
-                    <h1>Quản lý mã giảm giá</h1>
+                    <h1>
+                        Quản lý mã giảm giá
+                    </h1>
 
                     <p>
                         Quản lý toàn bộ coupon của shop
@@ -152,7 +196,6 @@ function CouponList() {
 
             </div>
 
-            {/* SEARCH */}
             <div className="coupon-toolbar">
 
                 <input
@@ -160,13 +203,14 @@ function CouponList() {
                     placeholder="Tìm mã giảm giá..."
                     value={search}
                     onChange={(e) =>
-                        setSearch(e.target.value)
+                        setSearch(
+                            e.target.value
+                        )
                     }
                 />
 
             </div>
 
-            {/* TABLE */}
             <div className="coupon-table-wrapper">
 
                 <table className="coupon-table">
@@ -197,123 +241,179 @@ function CouponList() {
 
                     <tbody>
 
-                        {
-                            loading
-                                ? (
-                                    <tr>
-                                        <td colSpan="8">
-                                            Đang tải...
-                                        </td>
-                                    </tr>
-                                )
-                                : filteredCoupons.length === 0
-                                    ? (
-                                        <tr>
-                                            <td colSpan="8">
-                                                Không có coupon
+                        {loading ? (
+
+                            <tr>
+
+                                <td colSpan="8">
+                                    Đang tải...
+                                </td>
+
+                            </tr>
+
+                        ) : filteredCoupons.length === 0 ? (
+
+                            <tr>
+
+                                <td colSpan="8">
+                                    Không có coupon
+                                </td>
+
+                            </tr>
+
+                        ) : (
+
+                            filteredCoupons.map(
+                                (coupon) => {
+
+                                    const status =
+                                        getStatus(
+                                            coupon
+                                        );
+
+                                    return (
+
+                                        <tr
+                                            key={
+                                                coupon.id
+                                            }
+                                        >
+
+                                            <td>
+                                                {
+                                                    coupon.id
+                                                }
                                             </td>
-                                        </tr>
-                                    )
-                                    : (
-                                        filteredCoupons.map((coupon) => (
 
-                                            <tr key={coupon.id}>
+                                            <td>
 
-                                                <td>
-                                                    {coupon.id}
-                                                </td>
+                                                <div className="coupon-code-box">
 
-                                                <td>
-
-                                                    <div className="coupon-code-box">
-
-                                                        <span>
-                                                            {coupon.code}
-                                                        </span>
-
-                                                        <button
-                                                            onClick={() =>
-                                                                handleCopy(coupon.code)
-                                                            }
-                                                        >
-                                                            Copy
-                                                        </button>
-
-                                                    </div>
-
-                                                </td>
-
-                                                <td>
-                                                    {
-                                                        coupon.discount_type === "percent"
-                                                            ? "Phần trăm"
-                                                            : "Tiền cố định"
-                                                    }
-                                                </td>
-
-                                                <td>
-
-                                                    {
-                                                        coupon.discount_type === "percent"
-                                                            ? `${coupon.discount_value}%`
-                                                            : `${Number(coupon.discount_value).toLocaleString()}đ`
-                                                    }
-
-                                                </td>
-
-                                                <td>
-                                                    {
-                                                        coupon.min_order_value
-                                                            ? `${Number(coupon.min_order_value).toLocaleString()}đ`
-                                                            : "-"
-                                                    }
-                                                </td>
-
-                                                <td>
-
-                                                    {
-                                                        coupon.used_count || 0
-                                                    }
-
-                                                    /
-
-                                                    {
-                                                        coupon.usage_limit || "∞"
-                                                    }
-
-                                                </td>
-
-                                                <td>
-
-                                                    <span
-                                                        className={`status-badge ${getStatus(coupon)}`}
-                                                    >
-                                                        {getStatus(coupon)}
+                                                    <span>
+                                                        {
+                                                            coupon.code
+                                                        }
                                                     </span>
 
-                                                </td>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleCopy(
+                                                                coupon.code
+                                                            )
+                                                        }
+                                                    >
+                                                        Copy
+                                                    </button>
 
-                                                <td>
+                                                </div>
 
-                                                    <div className="action-buttons">
+                                            </td>
+
+                                            <td>
+
+                                                {coupon.discount_type ===
+                                                    "percent"
+                                                    ? "Phần trăm"
+                                                    : "Tiền cố định"}
+
+                                            </td>
+
+                                            <td>
+
+                                                {coupon.discount_type ===
+                                                    "percent"
+                                                    ? `${coupon.discount_value}%`
+                                                    : `${Number(
+                                                        coupon.discount_value
+                                                    ).toLocaleString()}đ`}
+
+                                            </td>
+
+                                            <td>
+
+                                                {coupon.min_order_value
+                                                    ? `${Number(
+                                                        coupon.min_order_value
+                                                    ).toLocaleString()}đ`
+                                                    : "-"}
+
+                                            </td>
+
+                                            <td>
+
+                                                {
+                                                    coupon.used_count || 0
+                                                }
+
+                                                /
+
+                                                {
+                                                    coupon.usage_limit || "∞"
+                                                }
+
+                                            </td>
+
+                                            <td>
+
+                                                <span
+                                                    className={`status-badge ${status.className}`}
+                                                >
+                                                    {
+                                                        status.label
+                                                    }
+                                                </span>
+
+                                            </td>
+
+                                            <td>
+
+                                                <div className="action-buttons">
+
+                                                    {isExpired(
+                                                        coupon
+                                                    ) ? (
+
+                                                        <span className="expired-action">
+                                                            Đã hết hạn
+                                                        </span>
+
+                                                    ) : coupon.is_active ? (
 
                                                         <button
                                                             className="delete-btn"
                                                             onClick={() =>
-                                                                handleDelete(coupon.id)
+                                                                handleToggle(
+                                                                    coupon
+                                                                )
                                                             }
                                                         >
                                                             Tắt
                                                         </button>
 
-                                                    </div>
+                                                    ) : (
 
-                                                </td>
+                                                        <button
+                                                            className="enable-btn"
+                                                            onClick={() =>
+                                                                handleToggle(
+                                                                    coupon
+                                                                )
+                                                            }
+                                                        >
+                                                            Bật lại
+                                                        </button>
 
-                                            </tr>
-                                        ))
-                                    )
-                        }
+                                                    )}
+
+                                                </div>
+
+                                            </td>
+
+                                        </tr>
+                                    );
+                                }
+                            )
+                        )}
 
                     </tbody>
 

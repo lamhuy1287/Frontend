@@ -36,11 +36,12 @@ export const getCoupons = async () => {
 };
 
 // ============================
-// DELETE COUPON
+// TOGGLE COUPON
 // ============================
-export const deleteCoupon = async (id) => {
-    return axios.delete(
-        `${API_URL}/admin/coupons/${id}`,
+export const toggleCoupon = async (id) => {
+    return axios.put(
+        `${API_URL}/admin/coupons/${id}/toggle`,
+        {},
         {
             headers: {
                 Authorization: `Bearer ${getToken()}`
@@ -48,27 +49,24 @@ export const deleteCoupon = async (id) => {
         }
     );
 };
+
 // ============================
 // VALIDATE COUPON
 // ============================
-
-export const validateCoupon =
-    async (code, orderTotal) => {
-
-        return axios.post(
-
-            `${API_URL}/validate-coupon`,
-
-            {
-                code,
-                order_total: orderTotal
-            },
-
-            {
-                headers: {
-                    Authorization:
-                        `Bearer ${getToken()}`
-                }
+export const validateCoupon = async (
+    code,
+    orderTotal
+) => {
+    return axios.post(
+        `${API_URL}/validate-coupon`,
+        {
+            code,
+            order_total: orderTotal
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${getToken()}`
             }
-        );
-    };
+        }
+    );
+};

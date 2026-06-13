@@ -7,7 +7,9 @@ import {
     FaUsers,
     FaSignOutAlt,
     FaTicketAlt,
-    FaTag
+    FaTag,
+    FaChartLine,      // Thêm icon cho báo cáo
+    FaFileAlt         // Thêm icon phụ
 } from "react-icons/fa";
 
 import {
@@ -17,7 +19,8 @@ import {
 } from "react-router-dom";
 
 import {
-    useEffect
+    useEffect,
+    useState
 } from "react";
 
 import socket from "../../socket";
@@ -26,8 +29,10 @@ import Swal from "sweetalert2";
 function Sidebar() {
 
     const navigate = useNavigate();
-
     const location = useLocation();
+    
+    // State cho số lượng đơn hàng chờ (badge)
+    const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
     // =========================
     // SOCKET REALTIME
@@ -39,77 +44,68 @@ function Sidebar() {
         // NEW ORDER - HIỂN THỊ TOAST
         // =========================
 
-        socket.on(
-            "new_order",
-            (order) => {
+        const handleNewOrder = (order) => {
+            // Tăng số lượng đơn hàng chờ
+            setPendingOrdersCount(prev => prev + 1);
 
-                // Hiển thị toast thông báo
-                Swal.fire({
-
-                    toast: true,
-
-                    position: "top-end",
-
-                    icon: "info",
-
-                    title: `🛒 Đơn hàng mới #${order.id}`,
-
-                    text: `${order.customer_name || "Khách hàng"} vừa đặt hàng`,
-
-                    showConfirmButton: false,
-
-                    timer: 5000,
-
-                    timerProgressBar: true,
-
-                    didOpen: (toast) => {
-
-                        // Thêm hiệu ứng click để chuyển đến trang đơn hàng
-                        toast.onclick = () => {
-
-                            navigate("/admin/orders");
-                            
-                            Swal.close();
-                        };
-                    }
-                });
-
-                // Phát âm thanh thông báo (nếu muốn)
-                try {
-                    const audio = new Audio("/notification.mp3");
-                    audio.play().catch(e => console.log("Audio không hỗ trợ"));
-                } catch (error) {
-                    console.log("Lỗi phát âm thanh:", error);
+            // Hiển thị toast thông báo
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "info",
+                title: `🛒 Đơn hàng mới #${order.id}`,
+                text: `${order.customer_name || "Khách hàng"} vừa đặt hàng`,
+                showConfirmButton: false,
+                timer: 10000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    // Thêm hiệu ứng click để chuyển đến trang đơn hàng
+                    toast.onclick = () => {
+                        navigate("/admin/orders");
+                        setPendingOrdersCount(0); // Reset count khi vào trang đơn hàng
+                        Swal.close();
+                    };
                 }
+            });
 
-                // Thay đổi title để thu hút sự chú ý
-                const originalTitle = document.title;
-                
-                document.title = "🔔 ĐƠN HÀNG MỚI! 🔔";
-                
-                setTimeout(() => {
-                    document.title = originalTitle;
-                }, 5000);
+            // Phát âm thanh thông báo (nếu muốn)
+            try {
+                const audio = new Audio("/notification.mp3");
+                audio.play().catch(e => console.log("Audio không hỗ trợ"));
+            } catch (error) {
+                console.log("Lỗi phát âm thanh:", error);
             }
-        );
+
+            // Thay đổi title để thu hút sự chú ý
+            const originalTitle = document.title;
+            document.title = "🔔 ĐƠN HÀNG MỚI! 🔔";
+            setTimeout(() => {
+                document.title = originalTitle;
+            }, 5000);
+        };
+
+        socket.on("new_order", handleNewOrder);
 
         return () => {
-
-            socket.off("new_order");
+            socket.off("new_order", handleNewOrder);
         };
 
     }, [navigate]);
+
+    // Reset badge khi vào trang đơn hàng
+    useEffect(() => {
+        if (location.pathname === "/admin/orders") {
+            setPendingOrdersCount(0);
+        }
+    }, [location.pathname]);
 
     // =========================
     // LOGOUT
     // =========================
 
     const handleLogout = () => {
-
         localStorage.removeItem("token");
-
         localStorage.removeItem("user");
-
         navigate("/");
     };
 
@@ -118,7 +114,10 @@ function Sidebar() {
     // =========================
 
     const isActive = (path) => {
-
+        // Kiểm tra exact match hoặc path con
+        if (path === "/admin/reports") {
+            return location.pathname.startsWith("/admin/reports");
+        }
         return location.pathname === path;
     };
 
@@ -131,19 +130,16 @@ function Sidebar() {
             ========================= */}
 
             <div style={logoWrapper}>
-
                 <h1 style={logoText}>
                     Hobby Corner
                 </h1>
-
                 <p style={logoSubText}>
                     Admin Dashboard
                 </p>
-
             </div>
 
             {/* =========================
-            DASHBOARD
+            DASHBOARD & REPORTS
             ========================= */}
 
             <div style={groupTitle}>
@@ -155,6 +151,14 @@ function Sidebar() {
                 icon={<FaHome />}
                 text="Dashboard"
                 active={isActive("/admin")}
+            />
+
+            {/* ✅ THÊM MỚI: BÁO CÁO CHI TIẾT */}
+            <MenuItem
+                to="/admin/reports"
+                icon={<FaChartLine />}
+                text="Báo cáo chi tiết"
+                active={isActive("/admin/reports")}
             />
 
             {/* =========================
@@ -227,6 +231,7 @@ function Sidebar() {
                 icon={<FaShoppingCart />}
                 text="Đơn hàng"
                 active={isActive("/admin/orders")}
+                badge={pendingOrdersCount > 0 ? pendingOrdersCount : null}
             />
 
             {/* =========================
@@ -252,11 +257,8 @@ function Sidebar() {
                 onClick={handleLogout}
                 style={logoutStyle}
             >
-
                 <FaSignOutAlt />
-
                 Đăng xuất
-
             </button>
 
         </div>
@@ -293,15 +295,12 @@ function MenuItem({
         >
 
             <div style={menuLeft}>
-
                 <span style={{ fontSize: "18px" }}>
                     {icon}
                 </span>
-
                 <span>
                     {text}
                 </span>
-
             </div>
 
             {

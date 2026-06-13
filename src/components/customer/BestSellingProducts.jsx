@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { getBestSellingProducts } from "../../services/productService";
 import ProductCard from "./PrductCard/ProductCard";
 
@@ -11,31 +11,53 @@ function BestSellingProducts() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Banner dọc với ảnh từ assets
-    const verticalBanner = {
+    // Banner dọc với ảnh từ assets - Dùng useMemo để tránh tạo lại object
+    const verticalBanner = useMemo(() => ({
         imageUrl: bannerImage,
         alt: "Banner quảng cáo dọc",
-        link: "/khuyen-mai" // Bạn có thể sửa link này
-    };
+        link: "/khuyen-mai"
+    }), []);
 
     // =========================
     // FETCH BEST SELLING PRODUCTS
     // =========================
     useEffect(() => {
+        let isMounted = true; // Chống memory leak
+        
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const res = await getBestSellingProducts(8); // Lấy 8 sản phẩm
+                const res = await getBestSellingProducts(8);
                 const productsArray = res.data?.data?.products || [];
-                setProducts(productsArray);
+                
+                if (isMounted) {
+                    setProducts(productsArray);
+                }
             } catch (error) {
                 console.log("Lỗi load sản phẩm bán chạy:", error);
+                if (isMounted) {
+                    setProducts([]);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchData();
+        
+        return () => {
+            isMounted = false;
+        };
+    }, []); // Empty array - chỉ chạy 1 lần
+
+    // =========================
+    // HANDLE ADD TO CART CALLBACK - Tránh tạo function mới mỗi lần render
+    // =========================
+    const handleAddToCartSuccess = useCallback((productId, quantity) => {
+        console.log(`Added ${quantity} of product ${productId} to cart`);
+        // Có thể dispatch event hoặc update state nếu cần
     }, []);
 
     // =========================
@@ -60,7 +82,6 @@ function BestSellingProducts() {
     return (
         <section className="bestselling-products">
             <div className="bestselling-container">
-
                 {/* HEADER */}
                 <div className="bestselling-header">
                     <div className="bestselling-title-wrapper">
@@ -75,7 +96,6 @@ function BestSellingProducts() {
 
                 {/* LAYOUT 2 CỘT */}
                 <div className="bestselling-two-columns">
-
                     {/* CỘT TRÁI: BANNER DỌC (25%) */}
                     <aside className="bestselling-banner">
                         <a href={verticalBanner.link}>
@@ -83,6 +103,7 @@ function BestSellingProducts() {
                                 src={verticalBanner.imageUrl}
                                 alt={verticalBanner.alt}
                                 className="banner-image"
+                                loading="lazy"
                             />
                         </a>
                     </aside>
@@ -91,13 +112,14 @@ function BestSellingProducts() {
                     <div className="bestselling-products-grid">
                         {products.map((product) => (
                             <div key={product.id} className="bestselling-product-item">
-                                <ProductCard product={product} />
+                                <ProductCard 
+                                    product={product} 
+                                    onAddToCartSuccess={handleAddToCartSuccess}
+                                />
                             </div>
                         ))}
                     </div>
-
                 </div>
-
             </div>
         </section>
     );

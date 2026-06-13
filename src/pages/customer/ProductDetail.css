@@ -558,3 +558,25 @@
     }
 
 }
+.pd-related-price {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pd-related-current-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ff6b00;
+}
+
+.pd-related-discount-badge {
+    background: #e53935;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}

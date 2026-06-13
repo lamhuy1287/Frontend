@@ -25,8 +25,11 @@ import {
     FiCalendar,
     FiClock,
     FiAward,
-    FiList
+    FiList,
+    FiRefreshCw
 } from "react-icons/fi";
+import socket from "../../socket";
+import toast from "react-hot-toast";
 
 const statusColors = {
     pending: "#f59e0b",
@@ -69,6 +72,7 @@ function Dashboard() {
             total_revenue: 0
         },
         revenue: {
+            today: 0,              // Doanh thu hôm nay
             current_month: 0,
             previous_month: 0,
             last_30_days: 0,
@@ -86,18 +90,146 @@ function Dashboard() {
         top_products: [],
         low_products: []
     });
+    
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [newOrderAlert, setNewOrderAlert] = useState(null);
 
     useEffect(() => {
         loadDashboard();
+        
+        // =========================
+        // SOCKET EVENT HANDLERS
+        // =========================
+        
+        // 1. Lắng nghe đơn hàng mới
+        const handleNewOrder = (order) => {
+            console.log("📦 Đơn hàng mới:", order);
+            
+            // Hiển thị thông báo realtime
+            // toast.success(`Đơn hàng mới #${order.id} - ${currencyFormatter(order.total_price)}`, {
+            //     duration: 8000,
+            //     position: "top-right",
+            //     icon: "🛒",
+            //     style: {
+            //         background: "#1e293b",
+            //         color: "white",
+            //         border: "1px solid #3b82f6"
+            //     }
+            // });
+            
+            // Lưu thông tin đơn hàng mới để hiển thị animation
+            setNewOrderAlert({
+                id: order.id,
+                customer: order.customer_name,
+                amount: order.total_price,
+                timestamp: new Date()
+            });
+            
+            // Xóa alert sau 5 giây
+            setTimeout(() => setNewOrderAlert(null), 5000);
+            
+            // Refresh dashboard data để cập nhật số liệu
+            refreshDashboard();
+        };
+        
+        // 2. Lắng nghe cập nhật đơn hàng
+        const handleOrderUpdated = (updatedOrder) => {
+            console.log("🔄 Đơn hàng cập nhật:", updatedOrder);
+            
+            toast.info(`Đơn hàng #${updatedOrder.order_id} đã chuyển sang trạng thái mới`, {
+                duration: 5000,
+                position: "top-right"
+            });
+            
+            // Refresh dashboard để cập nhật thống kê
+            refreshDashboard();
+        };
+        
+        // 3. Lắng nghe sản phẩm mới
+        const handleNewProduct = (product) => {
+            console.log("🆕 Sản phẩm mới:", product);
+            
+            toast.success(`Sản phẩm mới: ${product.name}`, {
+                duration: 5000,
+                position: "top-right"
+            });
+            
+            refreshDashboard();
+        };
+        
+        // 4. Lắng nghe cập nhật tồn kho
+        const handleStockUpdated = (data) => {
+            console.log("📦 Cập nhật tồn kho:", data);
+            
+            if (data.stock <= 5) {
+                toast.error(`⚠️ Sản phẩm ${data.product_name} sắp hết hàng! Còn ${data.stock} sản phẩm`, {
+                    duration: 10000,
+                    position: "top-right",
+                    icon: "⚠️"
+                });
+            }
+            
+            refreshDashboard();
+        };
+        
+        // 5. Lắng nghe khách hàng mới
+        const handleNewCustomer = (user) => {
+            console.log("👤 Khách hàng mới:", user);
+            
+            toast.success(`Chào mừng khách hàng mới: ${user.name}`, {
+                duration: 5000,
+                position: "top-right"
+            });
+            
+            refreshDashboard();
+        };
+        
+        // 6. Lắng nghe doanh thu đột biến
+        const handleRevenueSpike = (data) => {
+            console.log("📈 Doanh thu tăng đột biến:", data);
+            
+            toast.success(`📈 Doanh thu hôm nay tăng ${data.growth_percent}% so với hôm qua!`, {
+                duration: 7000,
+                position: "top-right",
+                icon: "🚀"
+            });
+        };
+        
+        // Register socket listeners
+        socket.on("new_order", handleNewOrder);
+        socket.on("order_updated", handleOrderUpdated);
+        socket.on("product_created", handleNewProduct);
+        socket.on("stock_updated", handleStockUpdated);
+        socket.on("new_customer_registered", handleNewCustomer);
+        socket.on("revenue_spike", handleRevenueSpike);
+        
+        // Cleanup
+        return () => {
+            socket.off("new_order", handleNewOrder);
+            socket.off("order_updated", handleOrderUpdated);
+            socket.off("product_created", handleNewProduct);
+            socket.off("stock_updated", handleStockUpdated);
+            socket.off("new_customer_registered", handleNewCustomer);
+            socket.off("revenue_spike", handleRevenueSpike);
+        };
     }, []);
 
     const loadDashboard = async () => {
         try {
             const data = await getDashboard();
             setStats(data);
+            setLastUpdate(new Date());
         } catch (err) {
             console.error(err);
+            toast.error("Không thể tải dữ liệu dashboard");
         }
+    };
+    
+    const refreshDashboard = async () => {
+        setIsRefreshing(true);
+        await loadDashboard();
+        setIsRefreshing(false);
     };
 
     const orderStatusData = stats.order_status_report || [];
@@ -106,11 +238,18 @@ function Dashboard() {
         count: item.count
     })) || [];
 
-    const revenueCompareData = stats.revenue_compare?.map((item) => ({
-        month: `T${item.month}`,
-        previous_year: item.previous_year,
-        current_year: item.current_year
-    })) || [];
+    // SỬA LẠI: Đảm bảo dữ liệu đúng năm
+    const revenueCompareData = stats.revenue_compare?.map((item) => {
+        // Lấy năm hiện tại và năm trước từ dữ liệu
+        const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        
+        return {
+            month: `T${item.month}`,
+            [previousYear]: item.previous_year || 0,  // Năm trước
+            [currentYear]: item.current_year || 0      // Năm nay
+        };
+    }) || [];
 
     const dailyRevenueData = stats.daily_revenue?.map((item) => ({
         date: item.date.slice(5),
@@ -119,6 +258,20 @@ function Dashboard() {
 
     return (
         <div className="dashboard-container">
+            {/* New Order Alert Animation */}
+            {newOrderAlert && (
+                <div className="new-order-floating-alert">
+                    <div className="alert-content">
+                        <div className="alert-icon">🛒</div>
+                        <div className="alert-info">
+                            <h4>Đơn hàng mới!</h4>
+                            <p>#{newOrderAlert.id} - {newOrderAlert.customer}</p>
+                            <small>{currencyFormatter(newOrderAlert.amount)}</small>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             {/* Header Section */}
             <div className="header-section">
                 <div className="header-left">
@@ -130,18 +283,41 @@ function Dashboard() {
                     <p className="header-description">
                         Theo dõi doanh thu, đơn hàng và hiệu suất bán hàng theo thời gian thực
                     </p>
+                    <div className="update-info">
+                        <FiClock className="update-icon" />
+                        <span>Cập nhật lần cuối: {formatDateTime(lastUpdate)}</span>
+                        <button 
+                            className={`refresh-btn ${isRefreshing ? 'refreshing' : ''}`}
+                            onClick={refreshDashboard}
+                            disabled={isRefreshing}
+                        >
+                            <FiRefreshCw className={isRefreshing ? 'spin' : ''} />
+                            {isRefreshing ? 'Đang tải...' : 'Làm mới'}
+                        </button>
+                    </div>
                 </div>
+                {/* SỬA: Đổi từ doanh thu 30 ngày thành doanh thu hôm nay */}
                 <div className="revenue-card">
                     <div className="revenue-header">
                         <FiCalendar className="revenue-icon" />
-                        <span>Doanh thu 30 ngày</span>
+                        <span>Doanh thu hôm nay</span>
                     </div>
                     <h2 className="revenue-amount">
-                        {currencyFormatter(stats.revenue.last_30_days)}
+                        {currencyFormatter(stats.revenue.today || 0)}
                     </h2>
+                    <div className="revenue-compare">
+                        <div className="compare-item">
+                            <span className="compare-label">Tháng này:</span>
+                            <span className="compare-value">{currencyFormatter(stats.revenue.current_month || 0)}</span>
+                        </div>
+                        <div className="compare-item">
+                            <span className="compare-label">Tháng trước:</span>
+                            <span className="compare-value">{currencyFormatter(stats.revenue.previous_month || 0)}</span>
+                        </div>
+                    </div>
                     <div className={`growth-badge ${stats.revenue.growth_percent >= 0 ? 'positive' : 'negative'}`}>
                         {stats.revenue.growth_percent >= 0 ? <FiTrendingUp /> : <FiTrendingDown />}
-                        <span>{Math.abs(stats.revenue.growth_percent)}%</span>
+                        <span>{Math.abs(stats.revenue.growth_percent)}% so với hôm qua</span>
                     </div>
                 </div>
             </div>
@@ -249,10 +425,11 @@ function Dashboard() {
                 </ResponsiveContainer>
             </div>
 
-            {/* Revenue Comparison - Hàng 3 */}
+            {/* Revenue Comparison - Hàng 3 - SỬA LẠI */}
             <div className="card full-width">
                 <div className="card-header">
                     <h3 className="card-title">So sánh doanh thu theo năm</h3>
+                    <p className="card-subtitle">So sánh doanh thu giữa năm {new Date().getFullYear() - 1} và {new Date().getFullYear()}</p>
                 </div>
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={revenueCompareData}>
@@ -261,8 +438,18 @@ function Dashboard() {
                         <YAxis stroke="#94a3b8"/>
                         <Tooltip formatter={(value) => [currencyFormatter(value), "Doanh thu"]}/>
                         <Legend />
-                        <Bar dataKey="previous_year" fill="#94a3b8" radius={[8, 8, 0, 0]} name="Năm trước"/>
-                        <Bar dataKey="current_year" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Năm nay"/>
+                        <Bar 
+                            dataKey={new Date().getFullYear() - 1} 
+                            fill="#94a3b8" 
+                            radius={[8, 8, 0, 0]} 
+                            name={`Năm ${new Date().getFullYear() - 1}`}
+                        />
+                        <Bar 
+                            dataKey={new Date().getFullYear()} 
+                            fill="#3b82f6" 
+                            radius={[8, 8, 0, 0]} 
+                            name={`Năm ${new Date().getFullYear()}`}
+                        />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -294,6 +481,60 @@ function Dashboard() {
                     padding: 28px;
                     background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
                     min-height: 100vh;
+                    position: relative;
+                }
+
+                .new-order-floating-alert {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    animation: slideInRight 0.3s ease-out;
+                }
+
+                .alert-content {
+                    background: linear-gradient(135deg, #1e293b, #0f172a);
+                    border-left: 4px solid #3b82f6;
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+                    min-width: 300px;
+                }
+
+                .alert-icon {
+                    font-size: 32px;
+                }
+
+                .alert-info h4 {
+                    color: #3b82f6;
+                    margin: 0 0 4px 0;
+                    font-size: 16px;
+                }
+
+                .alert-info p {
+                    color: white;
+                    margin: 0;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                .alert-info small {
+                    color: #94a3b8;
+                    font-size: 12px;
+                }
+
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
                 }
 
                 .header-section {
@@ -344,6 +585,56 @@ function Dashboard() {
                     max-width: 450px;
                     line-height: 1.5;
                     font-size: 0.9rem;
+                    margin-bottom: 12px;
+                }
+
+                .update-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    color: #94a3b8;
+                    font-size: 0.8rem;
+                }
+
+                .update-icon {
+                    color: #3b82f6;
+                }
+
+                .refresh-btn {
+                    background: rgba(59, 130, 246, 0.2);
+                    border: 1px solid rgba(59, 130, 246, 0.3);
+                    color: #3b82f6;
+                    padding: 4px 12px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 0.8rem;
+                    transition: all 0.3s ease;
+                }
+
+                .refresh-btn:hover:not(:disabled) {
+                    background: rgba(59, 130, 246, 0.3);
+                    transform: scale(1.05);
+                }
+
+                .refresh-btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+                .spin {
+                    animation: spin 1s linear infinite;
+                }
+
+                @keyframes spin {
+                    from {
+                        transform: rotate(0deg);
+                    }
+                    to {
+                        transform: rotate(360deg);
+                    }
                 }
 
                 .revenue-card {
@@ -373,6 +664,32 @@ function Dashboard() {
                     font-size: 1.8rem;
                     margin-bottom: 16px;
                     font-weight: 700;
+                }
+
+                .revenue-compare {
+                    display: flex;
+                    gap: 16px;
+                    margin-bottom: 12px;
+                    padding: 8px 0;
+                    border-top: 1px solid rgba(255,255,255,0.1);
+                    border-bottom: 1px solid rgba(255,255,255,0.1);
+                }
+
+                .compare-item {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .compare-label {
+                    color: #94a3b8;
+                    font-size: 0.7rem;
+                }
+
+                .compare-value {
+                    color: white;
+                    font-size: 0.85rem;
+                    font-weight: 600;
                 }
 
                 .growth-badge {
@@ -490,6 +807,10 @@ function Dashboard() {
                     }
                     .all-status-grid {
                         grid-template-columns: repeat(2, 1fr);
+                    }
+                    .revenue-compare {
+                        flex-direction: column;
+                        gap: 8px;
                     }
                 }
             `}</style>
@@ -681,10 +1002,15 @@ function ProductTable({ products, type }) {
     );
 }
 
-// Helper function
+// Helper functions
 function formatDate(date) {
     if (!date) return "";
     return new Date(date).toLocaleDateString("vi-VN");
+}
+
+function formatDateTime(date) {
+    if (!date) return "";
+    return new Date(date).toLocaleString("vi-VN");
 }
 
 export default Dashboard;
