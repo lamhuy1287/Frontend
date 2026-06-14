@@ -1,9 +1,6 @@
-/* =========================
-   Tất cả class đều có prefix "qsm-" 
-   để tránh xung đột với CSS toàn trang
-========================= */
 
-/* OVERLAY */
+
+
 .qsm-overlay {
     position: fixed !important;
     inset: 0 !important;
@@ -20,7 +17,7 @@
     animation: qsmFadeOut 0.25s ease forwards !important;
 }
 
-/* MODAL */
+
 .qsm-modal {
     width: 950px !important;
     max-width: 95% !important;
@@ -37,13 +34,13 @@
     animation: qsmPopupHide 0.25s ease forwards !important;
 }
 
-/* CONTENT */
+
 .qsm-content {
     display: grid !important;
     grid-template-columns: 420px 1fr !important;
 }
 
-/* LEFT SECTION */
+
 .qsm-left {
     background: #f8f8f8 !important;
     display: flex !important;
@@ -61,7 +58,7 @@
     background: white !important;
 }
 
-/* RIGHT SECTION */
+
 .qsm-right {
     padding: 32px !important;
     overflow-y: auto !important;
@@ -92,7 +89,7 @@
     font-family: inherit !important;
 }
 
-/* PRICE */
+
 .qsm-price {
     margin-bottom: 28px !important;
 }
@@ -112,7 +109,7 @@
     color: #ee4d2d !important;
 }
 
-/* SECTION */
+
 .qsm-section {
     margin-bottom: 28px !important;
 }
@@ -125,7 +122,7 @@
     font-family: inherit !important;
 }
 
-/* VARIANTS */
+
 .qsm-variants {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -162,7 +159,7 @@
     cursor: not-allowed !important;
 }
 
-/* QUANTITY */
+
 .qsm-qty-wrapper {
     display: inline-flex !important;
     align-items: center !important;
@@ -210,7 +207,7 @@
     font-weight: bold !important;
 }
 
-/* ACTIONS BUTTONS */
+
 .qsm-actions {
     display: flex !important;
     gap: 16px !important;
@@ -259,7 +256,7 @@ button:disabled {
     transform: none !important;
 }
 
-/* CLOSE BUTTON */
+
 .qsm-close {
     position: absolute !important;
     top: 18px !important;
@@ -282,7 +279,7 @@ button:disabled {
     transform: rotate(90deg) !important;
 }
 
-/* ANIMATIONS */
+
 @keyframes qsmPopupShow {
     from {
         opacity: 0;
@@ -323,7 +320,7 @@ button:disabled {
     }
 }
 
-/* RESPONSIVE */
+
 @media (max-width: 768px) {
     .qsm-modal {
         width: 95% !important;
@@ -359,7 +356,7 @@ button:disabled {
     }
 }
 
-/* Performance */
+
 .qsm-modal,
 .qsm-overlay {
     will-change: transform, opacity !important;

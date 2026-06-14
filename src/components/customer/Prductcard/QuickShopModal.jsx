@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
     addToCart
 } from "../../../services/cartService";
@@ -48,11 +49,15 @@ function QuickShopModal({
     useEffect(() => {
         if (product) {
             document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = '0px'; // Fix jump scroll
+            document.body.style.paddingRight = '0px';
+            
+            // 🆕 Thêm class để báo hiệu modal đang mở
+            document.body.classList.add('qsm-modal-open');
         }
         return () => {
             document.body.style.overflow = 'unset';
             document.body.style.paddingRight = '';
+            document.body.classList.remove('qsm-modal-open');
         };
     }, [product]);
 
@@ -63,6 +68,17 @@ function QuickShopModal({
             setQuantity(1);
         }
     }, [product]);
+
+    // 🆕 Xử lý phím ESC để đóng modal
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                handleClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
 
     // Xử lý đóng modal với animation
     const handleClose = () => {
@@ -215,7 +231,6 @@ function QuickShopModal({
         try {
             setLoading(true);
 
-            // TẠO DỮ LIỆU CHO CHECKOUT
             const finalPrice = salePrice || originalPrice;
 
             const buyNowData = {
@@ -234,7 +249,6 @@ function QuickShopModal({
                 subtotal: finalPrice * quantity
             };
 
-            // CHUYỂN SANG CHECKOUT KÈM DATA
             navigate("/checkout", { state: buyNowData });
 
         } catch (error) {
@@ -248,8 +262,8 @@ function QuickShopModal({
         }
     };
 
-    return (
-
+    // Render modal bằng Portal
+    return createPortal(
         <div
             className={`qsm-overlay ${isClosing ? 'qsm-closing' : ''}`}
             onClick={handleClose}
@@ -421,7 +435,8 @@ function QuickShopModal({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

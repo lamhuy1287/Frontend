@@ -1,4 +1,3 @@
-
 import {
     useEffect,
     useState
@@ -10,7 +9,10 @@ import {
 
 import {
     getProducts,
-    deleteProduct
+    deleteProduct,
+    getStockSummary,
+    getStockStatusInfo,
+    getTotalQuantityFromVariants
 } from "../../../services/productService";
 
 import {
@@ -43,11 +45,25 @@ function ProductList() {
     const [brandId, setBrandId] =
         useState("");
 
+    const [stockFilter, setStockFilter] =
+        useState("all");  // all, low_stock, out_of_stock, has_low_stock_variant
+
     const [page, setPage] =
         useState(1);
 
     const [total, setTotal] =
         useState(0);
+
+    const [stockSummary, setStockSummary] =
+        useState({
+            low_stock: 0,
+            out_of_stock: 0,
+            in_stock: 0,
+            total_products: 0
+        });
+
+    const [showWarning, setShowWarning] =
+        useState(false);
 
     const limit = 10;
 
@@ -63,24 +79,88 @@ function ProductList() {
 
             try {
 
+                const params = {
+                    page,
+                    limit,
+                    keyword,
+                    category_id: categoryId,
+                    brand_id: brandId
+                };
+
+                // Chỉ thêm stock_filter nếu không phải "all"
+                if (stockFilter !== "all") {
+                    params.stock_filter = stockFilter;
+                }
+
+                console.log("Fetching products with params:", params); // Debug
+
                 const res =
-                    await getProducts({
-                        page,
-                        limit,
-                        keyword,
-                        category_id:
-                            categoryId,
-                        brand_id:
-                            brandId
-                    });
+                    await getProducts(params);
 
-                setProducts(
-                    res.data.data.products
-                );
+                console.log("API Response:", res.data); // Debug
 
-                setTotal(
-                    res.data.data.total
-                );
+                // Lấy danh sách sản phẩm
+                const productsData = res.data.data?.products || [];
+                
+                // Enrich products với stock status (nếu backend chưa trả đủ)
+                const enrichedProducts = productsData.map(product => {
+                    // Nếu backend đã trả đầy đủ thông tin
+                    if (product.total_quantity !== undefined && product.low_stock_variants !== undefined) {
+                        return product;
+                    }
+                    // Fallback: tự tính từ variants
+                    const totalQty = getTotalQuantityFromVariants(product.variants);
+                    const stockInfo = getStockStatusInfo(totalQty);
+                    
+                    // Tính biến thể sắp hết
+                    const lowStockVariants = product.variants?.filter(v => v.quantity > 0 && v.quantity <= 5) || [];
+                    const outOfStockVariants = product.variants?.filter(v => v.quantity === 0) || [];
+                    
+                    return {
+                        ...product,
+                        total_quantity: totalQty,
+                        stock_status: stockInfo.status,
+                        low_stock_variants: lowStockVariants.map(v => ({
+                            id: v.id,
+                            variant_name: v.variant_name,
+                            quantity: v.quantity
+                        })),
+                        out_of_stock_variants: outOfStockVariants.map(v => ({
+                            id: v.id,
+                            variant_name: v.variant_name,
+                            quantity: v.quantity
+                        }))
+                    };
+                });
+
+                setProducts(enrichedProducts);
+                setTotal(res.data.data?.total || 0);
+
+            } catch (err) {
+
+                console.log("Error fetching products:", err);
+            }
+        };
+
+    // =========================
+    // LOAD STOCK SUMMARY
+    // =========================
+
+    const fetchStockSummary =
+        async () => {
+
+            try {
+
+                const res =
+                    await getStockSummary();
+
+                if (res.data.success) {
+                    setStockSummary(res.data.data);
+                    // Hiển thị cảnh báo nếu có sản phẩm sắp hết hoặc hết hàng
+                    const hasLowStock = res.data.data.low_stock > 0;
+                    const hasOutOfStock = res.data.data.out_of_stock > 0;
+                    setShowWarning(hasLowStock || hasOutOfStock);
+                }
 
             } catch (err) {
 
@@ -181,12 +261,22 @@ function ProductList() {
                 );
 
                 fetchProducts();
+                fetchStockSummary();
 
             } catch (err) {
 
                 console.log(err);
             }
         };
+
+    // =========================
+    // RESET PAGE WHEN FILTERS CHANGE
+    // =========================
+
+    const handleStockFilterChange = (value) => {
+        setStockFilter(value);
+        setPage(1);
+    };
 
     // =========================
     // USE EFFECT
@@ -200,14 +290,32 @@ function ProductList() {
         page,
         keyword,
         categoryId,
-        brandId
+        brandId,
+        stockFilter
     ]);
 
     useEffect(() => {
 
         fetchFilters();
+        fetchStockSummary();
 
     }, []);
+
+    // =========================
+    // Lấy label cho stock filter
+    // =========================
+    const getStockFilterLabel = (filter) => {
+        switch(filter) {
+            case "low_stock":
+                return "⚠️ Sắp hết hàng (tổng ≤5)";
+            case "out_of_stock":
+                return "❌ Hết hàng";
+            case "has_low_stock_variant":
+                return "⚠️ Có biến thể sắp hết";
+            default:
+                return "📦 Tất cả trạng thái";
+        }
+    };
 
     return (
 
@@ -238,6 +346,42 @@ function ProductList() {
                 </button>
 
             </div>
+
+            {/* WARNING BANNER */}
+            {showWarning && (
+                <div
+                    style={warningBannerStyle}
+                >
+                    <span style={{ fontSize: "20px" }}>⚠️</span>
+                    <div>
+                        <strong>Cảnh báo tồn kho!</strong>
+                        <div style={{ fontSize: "13px", marginTop: "4px" }}>
+                            {stockSummary.low_stock > 0 && (
+                                <span style={{ marginRight: "15px" }}>
+                                    🟠 {stockSummary.low_stock} sản phẩm sắp hết hàng
+                                </span>
+                            )}
+                            {stockSummary.out_of_stock > 0 && (
+                                <span style={{ color: "#dc2626" }}>
+                                    🔴 {stockSummary.out_of_stock} sản phẩm hết hàng
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            if (stockSummary.low_stock > 0) {
+                                handleStockFilterChange("low_stock");
+                            } else if (stockSummary.out_of_stock > 0) {
+                                handleStockFilterChange("out_of_stock");
+                            }
+                        }}
+                        style={warningButtonStyle}
+                    >
+                        Xem ngay
+                    </button>
+                </div>
+            )}
 
             {/* FILTER */}
             <div
@@ -359,6 +503,35 @@ function ProductList() {
 
                 </select>
 
+                {/* STOCK FILTER - CẬP NHẬT THÊM TÙY CHỌN MỚI */}
+                <select
+                    value={stockFilter}
+                    onChange={(e) =>
+                        handleStockFilterChange(e.target.value)
+                    }
+                    style={{
+                        ...selectStyle,
+                        backgroundColor: stockFilter !== "all" 
+                            ? (stockFilter === "low_stock" ? "#fff3cd" : 
+                               stockFilter === "has_low_stock_variant" ? "#fef3c7" : "#f8d7da")
+                            : "white",
+                        fontWeight: stockFilter !== "all" ? "bold" : "normal"
+                    }}
+                >
+                    <option value="all">
+                        📦 Tất cả trạng thái
+                    </option>
+                    <option value="low_stock">
+                        ⚠️ Sắp hết hàng (tổng ≤5)
+                    </option>
+                    <option value="has_low_stock_variant">
+                        ⚠️ Có biến thể sắp hết
+                    </option>
+                    <option value="out_of_stock">
+                        ❌ Hết hàng
+                    </option>
+                </select>
+
             </div>
 
             {/* PRODUCT TABLE */}
@@ -438,86 +611,81 @@ function ProductList() {
 
 const headerStyle = {
     display: "flex",
-
-    justifyContent:
-        "space-between",
-
+    justifyContent: "space-between",
     alignItems: "center",
-
     marginBottom: "25px"
 };
 
 const createBtn = {
     background: "#2563EB",
-
     color: "white",
-
     border: "none",
-
     padding: "14px 20px",
-
     borderRadius: "12px",
-
     cursor: "pointer"
 };
 
 const filterContainer = {
     display: "flex",
-
     gap: "15px",
-
     marginBottom: "25px",
-
     background: "white",
-
     padding: "20px",
-
     borderRadius: "20px",
-
-    boxShadow:
-        "0 5px 15px rgba(0,0,0,0.05)"
+    boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
 };
 
 const inputStyle = {
     flex: 1,
-
     padding: "14px",
-
     borderRadius: "12px",
-
     border: "1px solid #ddd"
 };
 
 const selectStyle = {
     padding: "14px",
-
     borderRadius: "12px",
-
-    border: "1px solid #ddd"
+    border: "1px solid #ddd",
+    cursor: "pointer"
 };
 
 const paginationContainer = {
     display: "flex",
-
     gap: "10px",
-
     marginTop: "25px",
-
-    justifyContent:
-        "center"
+    justifyContent: "center"
 };
 
 const pageBtn = {
     width: "40px",
-
     height: "40px",
-
     borderRadius: "10px",
-
     border: "1px solid #ddd",
-
     cursor: "pointer"
 };
 
-export default ProductList;
+const warningBannerStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "15px",
+    background: "#fef3c7",
+    borderLeft: "4px solid #f59e0b",
+    padding: "15px 20px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+};
 
+const warningButtonStyle = {
+    marginLeft: "auto",
+    background: "#f59e0b",
+    color: "white",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "13px"
+};
+
+export default ProductList;

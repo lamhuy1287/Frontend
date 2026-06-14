@@ -7,13 +7,20 @@ const getToken = () => {
 };
 
 // =========================
-// GET ALL
+// GET ALL - CÓ HỖ TRỢ stock_filter
 // =========================
 export const getProducts = async (params) => {
-    return axios.get(
-        `${API_URL}/products`,
-        { params }
-    );
+    const cleanedParams = {};
+    if (params) {
+        Object.keys(params).forEach(key => {
+            const value = params[key];
+            if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+                cleanedParams[key] = value;
+            }
+        });
+    }
+    
+    return axios.get(`${API_URL}/products`, { params: cleanedParams });
 };
 
 // =========================
@@ -70,7 +77,7 @@ export const updateProduct = async (id, formData) => {
 };
 
 // =========================
-// DELETE - ✅ THÊM FUNCTION NÀY
+// DELETE
 // =========================
 export const deleteProduct = async (id) => {
     const token = getToken();
@@ -83,6 +90,69 @@ export const deleteProduct = async (id) => {
         headers: {
             "Authorization": `Bearer ${token}`
         }
+    });
+};
+
+// =========================
+// GET STOCK SUMMARY
+// =========================
+export const getStockSummary = async () => {
+    const token = getToken();
+    
+    try {
+        const response = await axios.get(`${API_URL}/products/stock-summary`, {
+            headers: token ? {
+                "Authorization": `Bearer ${token}`
+            } : {}
+        });
+        return response;
+    } catch (error) {
+        console.error("Get stock summary error:", error);
+        return { 
+            data: { 
+                success: false, 
+                message: "Không thể lấy thông tin tồn kho",
+                data: {
+                    low_stock: 0,
+                    out_of_stock: 0,
+                    in_stock: 0,
+                    total_products: 0
+                }
+            } 
+        };
+    }
+};
+
+// =========================
+// GET LOW STOCK PRODUCTS
+// =========================
+export const getLowStockProducts = async (page = 1, limit = 20) => {
+    return getProducts({
+        page,
+        limit,
+        stock_filter: "low_stock"
+    });
+};
+
+// =========================
+// GET OUT OF STOCK PRODUCTS
+// =========================
+export const getOutOfStockProducts = async (page = 1, limit = 20) => {
+    return getProducts({
+        page,
+        limit,
+        stock_filter: "out_of_stock"
+    });
+};
+
+// =========================
+// GET PRODUCTS WITH LOW STOCK VARIANTS
+// =========================
+export const getProductsWithLowStockVariants = async (page = 1, limit = 20) => {
+    return getProducts({
+        page,
+        limit,
+        stock_filter: "has_low_stock_variant"
     });
 };
 
@@ -103,7 +173,6 @@ export const searchProducts = async (keyword, limit = null) => {
         
         console.log("Search response:", response.data);
         
-        // Cấu trúc response: { success, message, data: { products, pagination } }
         if (response.data && response.data.success && response.data.data) {
             if (response.data.data.products && Array.isArray(response.data.data.products)) {
                 console.log("Found products array, length:", response.data.data.products.length);
@@ -146,6 +215,7 @@ export const searchProductsAdvanced = async (filters) => {
         if (filters.max_price) params.append('max_price', filters.max_price);
         if (filters.sort) params.append('sort', filters.sort);
         if (filters.page) params.append('page', filters.page);
+        if (filters.stock_filter) params.append('stock_filter', filters.stock_filter);
         
         const url = `${API_URL}/products?${params.toString()}`;
         console.log("Advanced search URL:", url);
@@ -156,7 +226,9 @@ export const searchProductsAdvanced = async (filters) => {
             return {
                 products: response.data.data?.products || [],
                 pagination: response.data.data?.pagination || null,
-                total: response.data.data?.products?.length || 0,
+                total: response.data.data?.total || 0,
+                page: response.data.data?.page || 1,
+                limit: response.data.data?.limit || filters.limit || 10,
                 success: true
             };
         }
@@ -179,6 +251,7 @@ export const searchProductsAdvanced = async (filters) => {
         };
     }
 };
+
 // =========================
 // GET BEST SELLING PRODUCTS
 // =========================
@@ -190,4 +263,67 @@ export const getBestSellingProducts = async (limit = 8) => {
         console.error("Get best selling products error:", error);
         return { data: { data: { products: [] } } };
     }
+};
+
+// =========================
+// HELPER: KIỂM TRA TRẠNG THÁI TỒN KHO
+// =========================
+export const getStockStatusInfo = (totalQuantity) => {
+    if (totalQuantity === 0) {
+        return {
+            status: "out_of_stock",
+            label: "Hết hàng",
+            color: "red",
+            bgColor: "#f8d7da",
+            icon: "❌"
+        };
+    }
+    if (totalQuantity <= 5) {
+        return {
+            status: "low_stock",
+            label: `Sắp hết (còn ${totalQuantity})`,
+            color: "orange",
+            bgColor: "#fff3cd",
+            icon: "⚠️"
+        };
+    }
+    return {
+        status: "in_stock",
+        label: "Còn hàng",
+        color: "green",
+        bgColor: "transparent",
+        icon: "✓"
+    };
+};
+
+// =========================
+// HELPER: TÍNH TỔNG SỐ LƯỢNG TỪ VARIANTS
+// =========================
+export const getTotalQuantityFromVariants = (variants) => {
+    if (!variants || variants.length === 0) return 0;
+    return variants.reduce((sum, variant) => sum + (variant.quantity || 0), 0);
+};
+
+// =========================
+// HELPER: KIỂM TRA BIẾN THỂ SẮP HẾT
+// =========================
+export const hasLowStockVariant = (variants) => {
+    if (!variants || variants.length === 0) return false;
+    return variants.some(v => v.quantity > 0 && v.quantity <= 5);
+};
+
+// =========================
+// HELPER: LẤY DANH SÁCH BIẾN THỂ SẮP HẾT
+// =========================
+export const getLowStockVariants = (variants) => {
+    if (!variants || variants.length === 0) return [];
+    return variants.filter(v => v.quantity > 0 && v.quantity <= 5);
+};
+
+// =========================
+// HELPER: LẤY DANH SÁCH BIẾN THỂ HẾT HÀNG
+// =========================
+export const getOutOfStockVariants = (variants) => {
+    if (!variants || variants.length === 0) return [];
+    return variants.filter(v => v.quantity === 0);
 };

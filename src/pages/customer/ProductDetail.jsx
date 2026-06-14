@@ -47,7 +47,12 @@ function ProductDetail() {
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [showFullDescription, setShowFullDescription] = useState(false);
 
-   const { loadCart } = useCart()
+    const { loadCart } = useCart();
+
+    // ✅ SCROLL TO TOP WHEN PAGE LOADS
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [id]);
 
     // =========================
     // CHECK STOCK
@@ -197,21 +202,15 @@ function ProductDetail() {
         }, [product]);
 
     // =========================
-    // FORMAT PRICE
+    // FORMAT PRICE - KHÔNG .00
     // =========================
 
     const formatPrice = (value) => {
-
-        return (
-            Number(value).toLocaleString(
-                "vi-VN"
-            ) + "₫"
-        );
-
+        return Math.round(Number(value)).toLocaleString("vi-VN") + "₫";
     };
 
     // =========================
-    // ADD CART - ĐÃ SỬA
+    // ADD CART
     // =========================
 
     const handleAddToCart =
@@ -624,6 +623,7 @@ function ProductDetail() {
                                         }
                                     >
                                         +
+
                                     </button>
 
                                 </div>
@@ -743,99 +743,106 @@ function ProductDetail() {
 
                     </div>
 
-{/* RELATED PRODUCTS */}
+                    {/* RELATED PRODUCTS */}
 
-<div className="pd-related">
+                    <div className="pd-related">
 
-    <h2 className="pd-related-title">
-        Sản phẩm tương tự
-    </h2>
+                        <h2 className="pd-related-title">
+                            Sản phẩm tương tự
+                        </h2>
 
-    {relatedProducts.length === 0 ? (
-        <div className="pd-related-empty">
-            Không có sản phẩm tương tự
-        </div>
-    ) : (
-        <div className="pd-related-grid">
-            {relatedProducts.map((item) => {
-                const firstVariant = item?.variants?.[0];
-                
-                if (!firstVariant) return null;
-                
-                // ✅ TÍNH GIÁ ĐÃ GIẢM VÀ PHẦN TRĂM
-                const originalPrice = Number(firstVariant.price) || 0;
-                let finalPrice = originalPrice;
-                let discountPercent = 0;
-                
-                if (firstVariant.discount) {
-                    if (firstVariant.discount.type === "percent") {
-                        discountPercent = firstVariant.discount.value;
-                        finalPrice = originalPrice * (1 - discountPercent / 100);
-                    } else if (firstVariant.discount.type === "fixed") {
-                        finalPrice = originalPrice - Number(firstVariant.discount.value);
-                        discountPercent = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
-                    }
-                } else if (firstVariant.sale_price && firstVariant.sale_price < originalPrice) {
-                    finalPrice = Number(firstVariant.sale_price);
-                    discountPercent = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
-                }
-                
-                // Làm tròn
-                finalPrice = Math.round(finalPrice);
-                
-                const productImage = item?.images?.[0]?.image_url || 
-                                    "https://picsum.photos/200/200";
-                
-                const isOutOfStock = (firstVariant?.quantity || 0) === 0;
-                const hasDiscount = discountPercent > 0;
-                
-                return (
-                    <Link
-                        key={item.id}
-                        to={`/product/${item.id}`}
-                        className="pd-related-card"
-                    >
-                        <div className="pd-related-image-wrapper">
-                            <img
-                                src={productImage}
-                                alt={item.name}
-                                className="pd-related-image"
-                            />
-                            {isOutOfStock && (
-                                <div className="pd-related-soldout">
-                                    Hết hàng
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="pd-related-content">
-                            <div className="pd-related-name" title={item.name}>
-                                {item.name.length > 40 
-                                    ? item.name.slice(0, 40) + "..." 
-                                    : item.name}
+                        {relatedProducts.length === 0 ? (
+                            <div className="pd-related-empty">
+                                Không có sản phẩm tương tự
                             </div>
+                        ) : (
+                            <div className="pd-related-grid">
+                                {relatedProducts.map((item) => {
+                                    const firstVariant = item?.variants?.[0];
+                                    
+                                    if (!firstVariant) return null;
+                                    
+                                    // TÍNH GIÁ ĐÃ GIẢM VÀ PHẦN TRĂM
+                                    const originalPrice = Number(firstVariant.price) || 0;
+                                    let finalPrice = originalPrice;
+                                    let discountPercent = 0;
+                                    
+                                    if (firstVariant.discount) {
+                                        if (firstVariant.discount.type === "percent") {
+                                            discountPercent = firstVariant.discount.value;
+                                            finalPrice = originalPrice * (1 - discountPercent / 100);
+                                        } else if (firstVariant.discount.type === "fixed") {
+                                            finalPrice = originalPrice - Number(firstVariant.discount.value);
+                                            discountPercent = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
+                                        }
+                                    } else if (firstVariant.sale_price && firstVariant.sale_price < originalPrice) {
+                                        finalPrice = Number(firstVariant.sale_price);
+                                        discountPercent = Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
+                                    }
+                                    
+                                    // Làm tròn và loại bỏ số thập phân
+                                    finalPrice = Math.round(finalPrice);
+                                    const originalPriceRounded = Math.round(originalPrice);
+                                    
+                                    const productImage = item?.images?.[0]?.image_url || 
+                                                        "https://picsum.photos/200/200";
+                                    
+                                    const isOutOfStock = (firstVariant?.quantity || 0) === 0;
+                                    const hasDiscount = discountPercent > 0;
+                                    
+                                    return (
+                                        <Link
+                                            key={item.id}
+                                            to={`/product/${item.id}`}
+                                            className="pd-related-card"
+                                        >
+                                            <div className="pd-related-image-wrapper">
+                                                <img
+                                                    src={productImage}
+                                                    alt={item.name}
+                                                    className="pd-related-image"
+                                                />
+                                                {/* BADGE PHẦN TRĂM GÓC TRÊN BÊN PHẢI */}
+                                                {hasDiscount && !isOutOfStock && (
+                                                    <div className="pd-related-discount-badge-corner">
+                                                        -{discountPercent}%
+                                                    </div>
+                                                )}
+                                                {isOutOfStock && (
+                                                    <div className="pd-related-soldout">
+                                                        Hết hàng
+                                                    </div>
+                                                )}
+                                            </div>
 
-                            <div className="pd-related-price">
-                                {/* ✅ CHỈ HIỂN THỊ GIÁ ĐÃ GIẢM */}
-                                <div className="pd-related-current-price">
-                                    {formatPrice(finalPrice)}
-                                </div>
-                                
-                                {/* ✅ BADGE GIẢM GIÁ */}
-                                {hasDiscount && (
-                                    <div className="pd-related-discount-badge">
-                                        -{discountPercent}%
-                                    </div>
-                                )}
+                                            <div className="pd-related-content">
+                                                <div className="pd-related-name" title={item.name}>
+                                                    {item.name.length > 40 
+                                                        ? item.name.slice(0, 40) + "..." 
+                                                        : item.name}
+                                                </div>
+
+                                                <div className="pd-related-price">
+                                                    {/* GIÁ ĐÃ GIẢM */}
+                                                    <div className="pd-related-current-price">
+                                                        {formatPrice(finalPrice)}
+                                                    </div>
+                                                    
+                                                    {/* GIÁ CŨ (NẾU CÓ GIẢM) */}
+                                                    {hasDiscount && (
+                                                        <div className="pd-related-old-price">
+                                                            {formatPrice(originalPriceRounded)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
-                        </div>
-                    </Link>
-                );
-            })}
-        </div>
-    )}
+                        )}
 
-</div>
+                    </div>
 
                 </div>
 

@@ -62,6 +62,42 @@ export default function DiscountList() {
         }
     };
 
+    // Tự tính toán trạng thái dựa trên thời gian
+    const isCurrentlyActive = (discount) => {
+        if (!discount.is_active) return false;
+        
+        const now = new Date();
+        const startAt = discount.start_at ? new Date(discount.start_at) : null;
+        const endAt = discount.end_at ? new Date(discount.end_at) : null;
+        
+        // Nếu không có thời gian bắt đầu/kết thúc, coi như luôn hoạt động
+        if (!startAt && !endAt) return true;
+        
+        // Kiểm tra thời gian bắt đầu
+        if (startAt && now < startAt) return false;
+        
+        // Kiểm tra thời gian kết thúc
+        if (endAt && now > endAt) return false;
+        
+        return true;
+    };
+
+    const getStatusDisplay = (discount) => {
+        if (!discount.is_active) return "Vô hiệu hóa";
+        
+        const currentlyActive = isCurrentlyActive(discount);
+        if (currentlyActive) return "Đang hoạt động";
+        return "Đã hết hạn";
+    };
+
+    const getStatusClass = (discount) => {
+        if (!discount.is_active) return "inactive";
+        
+        const currentlyActive = isCurrentlyActive(discount);
+        if (currentlyActive) return "active";
+        return "expired";
+    };
+
     return (
         <div className="discount-list">
             <div className="list-header">
@@ -114,65 +150,39 @@ export default function DiscountList() {
                                         <span
                                             className={`badge ${discount.discount_type}`}
                                         >
-                                            {discount.discount_type ===
-                                                "percent"
-                                                ? "%"
-                                                : "đ"}
+                                            {discount.discount_type === "percent" ? "%" : "đ"}
                                         </span>
                                     </td>
                                     <td className="value">
-                                        {Number(discount.discount_value).toLocaleString(
-                                            "vi-VN"
-                                        )}
+                                        {Number(discount.discount_value).toLocaleString("vi-VN")}
                                     </td>
                                     <td className="date">
                                         {discount.start_at
-                                            ? new Date(
-                                                discount.start_at
-                                            ).toLocaleDateString(
-                                                "vi-VN"
-                                            )
+                                            ? new Date(discount.start_at).toLocaleDateString("vi-VN")
                                             : "-"}
                                     </td>
                                     <td className="date">
                                         {discount.end_at
-                                            ? new Date(
-                                                discount.end_at
-                                            ).toLocaleDateString(
-                                                "vi-VN"
-                                            )
+                                            ? new Date(discount.end_at).toLocaleDateString("vi-VN")
                                             : "-"}
                                     </td>
                                     <td className="priority">
                                         {discount.priority}
                                     </td>
                                     <td>
-                                        <span
-                                            className={`status ${discount.is_currently_active
-                                                    ? "active"
-                                                    : "expired"
-                                                }`}
-                                        >
-                                            {discount.is_currently_active
-                                                ? "Hoạt động"
-                                                : "Hết hạn"}
+                                        <span className={`status ${getStatusClass(discount)}`}>
+                                            {getStatusDisplay(discount)}
                                         </span>
                                     </td>
                                     <td className="actions">
                                         <button
-                                            onClick={() =>
-                                                handleToggle(discount.id)
-                                            }
+                                            onClick={() => handleToggle(discount.id)}
                                             className={`btn-toggle ${discount.is_active ? "btn-deactivate" : "btn-activate"}`}
                                         >
-                                            {discount.is_active
-                                                ? "Tắt"
-                                                : "Bật"}
+                                            {discount.is_active ? "Tắt" : "Bật"}
                                         </button>
                                         <button
-                                            onClick={() =>
-                                                handleDelete(discount.id)
-                                            }
+                                            onClick={() => handleDelete(discount.id)}
                                             className="btn-delete"
                                         >
                                             Xoá
@@ -195,10 +205,7 @@ export default function DiscountList() {
                         Trước
                     </button>
 
-                    {Array.from(
-                        { length: pagination.total_pages },
-                        (_, i) => i + 1
-                    ).map((p) => (
+                    {Array.from({ length: pagination.total_pages }, (_, i) => i + 1).map((p) => (
                         <button
                             key={p}
                             onClick={() => setPage(p)}

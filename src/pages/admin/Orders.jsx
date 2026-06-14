@@ -2,7 +2,9 @@ import "./Orders.css";
 
 import {
     FaSearch,
-    FaEye
+    FaEye,
+    FaChevronLeft,
+    FaChevronRight
 } from "react-icons/fa";
 
 import {
@@ -43,6 +45,13 @@ function Orders() {
     // Bộ lọc tháng/năm
     const [monthFilter, setMonthFilter] = useState("all");
     const [yearFilter, setYearFilter] = useState("all");
+
+    // =========================
+    // PHÂN TRANG
+    // =========================
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10); // Số item trên mỗi trang
 
     // Lấy danh sách năm có trong đơn hàng
     const getAvailableYears = () => {
@@ -204,6 +213,11 @@ function Orders() {
 
     }, []);
 
+    // Reset về trang 1 khi thay đổi bộ lọc
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, monthFilter, yearFilter]);
+
     // =========================
     // FORMAT PRICE
     // =========================
@@ -243,6 +257,9 @@ function Orders() {
 
                 case "returned":
                     return "status returned";
+
+                case "return_requested":
+                    return "status return-requested";
 
                 default:
                     return "status";
@@ -311,146 +328,147 @@ function Orders() {
     // UPDATE STATUS
     // =========================
 
-const handleChangeStatus =
-    async (
-        orderId,
-        currentStatus
-    ) => {
-
-        const nextStatus =
-            getNextStatus(
-                currentStatus
-            );
-
-        // KHÔNG CÓ STATUS TIẾP THEO
-
-        if (
-            nextStatus ===
+    const handleChangeStatus =
+        async (
+            orderId,
             currentStatus
-        ) {
+        ) => {
 
-            return;
-        }
-
-        // MODAL XÁC NHẬN
-
-        const result =
-            await Swal.fire({
-
-                title: "Xác nhận chuyển trạng thái",
-
-                text:
-                    `Bạn có muốn chuyển đơn hàng sang "${getStatusText(nextStatus)}" không?`,
-
-                icon: "question",
-
-                showCancelButton: true,
-
-                confirmButtonText: "Đồng ý",
-
-                cancelButtonText: "Huỷ",
-
-                reverseButtons: true
-            });
-
-        // BẤM HUỶ
-
-        if (!result.isConfirmed) {
-
-            return;
-        }
-
-        try {
-
-            if (nextStatus === "shipping") {
-                const result = await Swal.fire({
-                    title: "Thông tin vận chuyển",
-html: `
-    <div class="swal-form">
-        <label for="shipping_provider">Đơn vị vận chuyển</label>
-        <input id="shipping_provider" class="swal2-input" placeholder="GHN" />
-
-        <label for="tracking_code">Mã vận đơn</label>
-        <input id="tracking_code" class="swal2-input" placeholder="GHN123456789" />
-    </div>
-`,
-                    showCancelButton: true,
-                    confirmButtonText: "Xác nhận",
-                    cancelButtonText: "Huỷ",
-                    focusConfirm: false,
-                    preConfirm: () => {
-                        const shipping_provider = document.getElementById("shipping_provider").value;
-                        const tracking_code = document.getElementById("tracking_code").value;
-
-                        if (!shipping_provider || !tracking_code) {
-                            Swal.showValidationMessage("Vui lòng nhập đầy đủ đơn vị vận chuyển và mã vận đơn.");
-                        }
-
-                        return {
-                            status: "shipping",
-                            shipping_provider,
-                            tracking_code
-                        };
-                    }
-                });
-
-                if (!result.isConfirmed) {
-                    return;
-                }
-
-                await updateOrderStatus(
-                    orderId,
-                    {
-                        status: "shipping",
-                        shipping_provider: result.value.shipping_provider,
-                        tracking_code: result.value.tracking_code
-                    }
+            const nextStatus =
+                getNextStatus(
+                    currentStatus
                 );
-            } else {
-                await updateOrderStatus(
-                    orderId,
-                    {
-                        status: nextStatus
-                    }
-                );
+
+            // KHÔNG CÓ STATUS TIẾP THEO
+
+            if (
+                nextStatus ===
+                currentStatus
+            ) {
+
+                return;
             }
 
-            // SUCCESS
+            // MODAL XÁC NHẬN
 
-            await Swal.fire({
+            const result =
+                await Swal.fire({
 
-                title: "Thành công",
+                    title: "Xác nhận chuyển trạng thái",
 
-                text:
-                    `Đơn hàng đã chuyển sang "${getStatusText(nextStatus)}"`,
+                    text:
+                        `Bạn có muốn chuyển đơn hàng sang "${getStatusText(nextStatus)}" không?`,
 
-                icon: "success",
+                    icon: "question",
 
-                confirmButtonText: "OK"
-            });
+                    showCancelButton: true,
 
-        } catch (error) {
+                    confirmButtonText: "Đồng ý",
 
-            console.log(
-                "UPDATE STATUS ERROR:",
-                error
-            );
+                    cancelButtonText: "Huỷ",
 
-            // ERROR
+                    reverseButtons: true
+                });
 
-            Swal.fire({
+            // BẤM HUỶ
 
-                title: "Thất bại",
+            if (!result.isConfirmed) {
 
-                text:
-                    "Cập nhật trạng thái thất bại",
+                return;
+            }
 
-                icon: "error",
+            try {
 
-                confirmButtonText: "OK"
-            });
-        }
-    };
+                if (nextStatus === "shipping") {
+                    const result = await Swal.fire({
+                        title: "Thông tin vận chuyển",
+                        html: `
+                            <div class="swal-form">
+                                <label for="shipping_provider">Đơn vị vận chuyển</label>
+                                <input id="shipping_provider" class="swal2-input" placeholder="GHN" />
+
+                                <label for="tracking_code">Mã vận đơn</label>
+                                <input id="tracking_code" class="swal2-input" placeholder="GHN123456789" />
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: "Xác nhận",
+                        cancelButtonText: "Huỷ",
+                        focusConfirm: false,
+                        preConfirm: () => {
+                            const shipping_provider = document.getElementById("shipping_provider").value;
+                            const tracking_code = document.getElementById("tracking_code").value;
+
+                            if (!shipping_provider || !tracking_code) {
+                                Swal.showValidationMessage("Vui lòng nhập đầy đủ đơn vị vận chuyển và mã vận đơn.");
+                            }
+
+                            return {
+                                status: "shipping",
+                                shipping_provider,
+                                tracking_code
+                            };
+                        }
+                    });
+
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    await updateOrderStatus(
+                        orderId,
+                        {
+                            status: "shipping",
+                            shipping_provider: result.value.shipping_provider,
+                            tracking_code: result.value.tracking_code
+                        }
+                    );
+                } else {
+                    await updateOrderStatus(
+                        orderId,
+                        {
+                            status: nextStatus
+                        }
+                    );
+                }
+
+                // SUCCESS
+
+                await Swal.fire({
+
+                    title: "Thành công",
+
+                    text:
+                        `Đơn hàng đã chuyển sang "${getStatusText(nextStatus)}"`,
+
+                    icon: "success",
+
+                    confirmButtonText: "OK"
+                });
+
+            } catch (error) {
+
+                console.log(
+                    "UPDATE STATUS ERROR:",
+                    error
+                );
+
+                // ERROR
+
+                Swal.fire({
+
+                    title: "Thất bại",
+
+                    text:
+                        "Cập nhật trạng thái thất bại",
+
+                    icon: "error",
+
+                    confirmButtonText: "OK"
+                });
+            }
+        };
+        
     // =========================
     // PAYMENT METHOD
     // =========================
@@ -482,7 +500,7 @@ html: `
         };
 
     // =========================
-    // FILTER ORDERS
+    // FILTER ORDERS (ĐÃ SỬA)
     // =========================
 
     const filteredOrders =
@@ -533,16 +551,17 @@ html: `
                     .includes(keyword)
             );
 
-            // Lọc theo trạng thái
-            const matchStatus =
-
-                statusFilter ===
-                "all"
-
-                ||
-
-                order.status ===
-                statusFilter;
+            // Lọc theo trạng thái (ĐÃ SỬA - bao gồm cả return_requested khi chọn returned)
+            let matchStatus = false;
+            
+            if (statusFilter === "all") {
+                matchStatus = true;
+            } else if (statusFilter === "returned") {
+                // Khi chọn "Hoàn hàng", hiển thị cả returned và return_requested
+                matchStatus = order.status === "returned" || order.status === "return_requested";
+            } else {
+                matchStatus = order.status === statusFilter;
+            }
 
             // Lọc theo tháng và năm
             let matchDate = true;
@@ -571,6 +590,94 @@ html: `
                 matchDate
             );
         });
+
+    // =========================
+    // PAGINATION LOGIC
+    // =========================
+    
+    // Tổng số trang
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    
+    // Lấy orders cho trang hiện tại
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+    
+    // Chuyển trang
+    const goToPage = (pageNumber) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    };
+    
+    // Trang trước
+    const goToPreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+    
+    // Trang sau
+    const goToNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+    
+    // Tạo mảng số trang hiển thị
+    const getPageNumbers = () => {
+        const pageNumbers = [];
+        const maxPagesToShow = 5; // Số trang tối đa hiển thị
+        
+        if (totalPages <= maxPagesToShow) {
+            // Hiển thị tất cả trang
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            // Hiển thị trang đầu, cuối và các trang xung quanh trang hiện tại
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 4; i++) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push('...');
+                pageNumbers.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pageNumbers.push(1);
+                pageNumbers.push('...');
+                for (let i = totalPages - 3; i <= totalPages; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                pageNumbers.push(1);
+                pageNumbers.push('...');
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pageNumbers.push(i);
+                }
+                pageNumbers.push('...');
+                pageNumbers.push(totalPages);
+            }
+        }
+        
+        return pageNumbers;
+    };
+
+    // =========================
+    // TÍNH TOÁN THỐNG KÊ CHO FOOTER
+    // =========================
+
+    const totalOrders = filteredOrders.length;
+    
+    const totalRevenue = filteredOrders
+        .filter(order => order.status === "completed")
+        .reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
+    
+    const pendingOrders = filteredOrders.filter(order => order.status === "pending").length;
+    const shippingOrders = filteredOrders.filter(order => order.status === "shipping").length;
+    const completedOrders = filteredOrders.filter(order => order.status === "completed").length;
+    const cancelledOrders = filteredOrders.filter(order => order.status === "cancelled").length;
+    const returnRequestedOrders = filteredOrders.filter(order => order.status === "return_requested").length;
+    const returnedOrders = filteredOrders.filter(order => order.status === "returned").length;
 
     // =========================
     // LOADING
@@ -812,180 +919,135 @@ html: `
 
                     <thead>
 
-                    <tr>
+                        <tr>
 
-                        <th>STT</th>
+                            <th>STT</th>
 
-                        <th>Mã đơn</th>
+                            <th>Khách hàng</th>
 
-                        <th>Khách hàng</th>
+                            <th>SĐT</th>
 
-                        <th>SĐT</th>
+                            <th>Tổng tiền</th>
 
-                        <th>Tổng tiền</th>
+                            <th>Hình thức</th>
 
-                        <th>Hình thức</th>
+                            <th>Trạng thái</th>
 
-                        <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
 
-                        <th>Ngày tạo</th>
+                            <th>Hành động</th>
 
-                        <th>Hành động</th>
-
-                    </tr>
+                        </tr>
 
                     </thead>
 
                     <tbody>
 
-                    {
-                        filteredOrders.length > 0 ? (
-
-                            filteredOrders.map((order, index) => (
-
-                                <tr key={order.id}>
-
-                                    {/* STT */}
-
-                                    <td>
-                                        {index + 1}
-                                    </td>
-
-                                    {/* MÃ ĐƠN */}
-
-                                    <td className="order-id">
-                                        #{order.id}
-                                    </td>
-
-                                    {/* CUSTOMER */}
-
-                                    <td>
-                                        {order.customer_name || "—"}
-                                    </td>
-
-                                    {/* PHONE */}
-
-                                    <td>
-                                        {order.phone || "—"}
-                                    </td>
-
-                                    {/* PRICE */}
-
-                                    <td className="price">
-
-                                        {
-                                            formatPrice(
-                                                order.total_price
-                                            )
-                                        }
-
-                                    </td>
-
-                                    {/* PAYMENT */}
-
-                                    <td className="payment-method-cell">
-
-                                        <span className="payment-method-badge">
-
-                                            {
-                                                getPaymentMethodText(
-                                                    order.payment_method
-                                                )
-                                            }
-
-                                        </span>
-
-                                    </td>
-
-                                    {/* STATUS */}
-
-                                    <td>
-
-                                        <button
-                                            className={
-                                                getStatusClass(
-                                                    order.status
-                                                )
-                                            }
-                                            onClick={() =>
-                                                handleChangeStatus(
-                                                    order.id,
-                                                    order.status
-                                                )
-                                            }
-                                        >
-
-                                            {
-                                                getStatusText(
-                                                    order.status
-                                                )
-                                            }
-
-                                        </button>
-
-                                    </td>
-
-                                    {/* DATE */}
-
-                                    <td>
-
-                                        {
-                                            new Date(
-                                                order.created_at
-                                            )
-                                                .toLocaleDateString(
-                                                    "vi-VN"
-                                                )
-                                        }
-
-                                    </td>
-
-                                    {/* ACTION */}
-
-                                    <td>
-
-                                        <button
-                                            className="view-btn"
-                                            onClick={() =>
-                                                navigate(
-                                                    `/admin/orders/${order.id}`
-                                                )
-                                            }
-                                        >
-
-                                            <FaEye />
-
-                                        </button>
-
-                                    </td>
-
-                                </tr>
-
-                            ))
-
-                        ) : (
-
-                            <tr>
-
-                                <td
-                                    colSpan="9"
-                                    className="empty-orders"
-                                >
-
-                                    Không tìm thấy đơn hàng
-
+                    {currentOrders.length > 0 ? (
+                        currentOrders.map((order, index) => (
+                            <tr key={order.id}>
+                                <td>{indexOfFirstItem + index + 1}</td>
+                                <td className="customer-name">{order.customer_name || "—"}</td>
+                                <td>{order.phone || "—"}</td>
+                                <td className="price">{formatPrice(order.total_price)}</td>
+                                <td className="payment-method-cell">
+                                    <span className="payment-method-badge">
+                                        {getPaymentMethodText(order.payment_method)}
+                                    </span>
                                 </td>
-
+                                <td>
+                                    <button
+                                        className={getStatusClass(order.status)}
+                                        onClick={() => handleChangeStatus(order.id, order.status)}
+                                    >
+                                        {getStatusText(order.status)}
+                                    </button>
+                                </td>
+                                <td>
+                                    {new Date(order.created_at).toLocaleDateString("vi-VN")}
+                                </td>
+                                <td>
+                                    <button
+                                        className="view-btn"
+                                        onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                    >
+                                        <FaEye />
+                                    </button>
+                                </td>
                             </tr>
-
-                        )
-                    }
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="8" className="empty-orders">
+                                Không tìm thấy đơn hàng
+                            </td>
+                        </tr>
+                    )}
 
                     </tbody>
 
                 </table>
 
             </div>
+
+            {/* ========================= */}
+            {/* PHÂN TRANG */}
+            {/* ========================= */}
+            
+            {totalPages > 1 && (
+                <div className="pagination-container">
+                    <div className="pagination-info">
+                        Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredOrders.length)} trên tổng số {filteredOrders.length} đơn hàng
+                    </div>
+                    
+                    <div className="pagination-controls">
+                        <button
+                            className="pagination-btn"
+                            onClick={goToPreviousPage}
+                            disabled={currentPage === 1}
+                        >
+                            <FaChevronLeft />
+                        </button>
+                        
+                        {getPageNumbers().map((page, index) => (
+                            <button
+                                key={index}
+                                className={`pagination-btn ${page === currentPage ? 'active' : ''} ${page === '...' ? 'disabled' : ''}`}
+                                onClick={() => page !== '...' && goToPage(page)}
+                                disabled={page === '...'}
+                            >
+                                {page}
+                            </button>
+                        ))}
+                        
+                        <button
+                            className="pagination-btn"
+                            onClick={goToNextPage}
+                            disabled={currentPage === totalPages}
+                        >
+                            <FaChevronRight />
+                        </button>
+                    </div>
+                    
+                    <div className="pagination-items-per-page">
+                        <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="items-per-page-select"
+                        >
+                            <option value={5}>5 / trang</option>
+                            <option value={10}>10 / trang</option>
+                            <option value={20}>20 / trang</option>
+                            <option value={50}>50 / trang</option>
+                        </select>
+                    </div>
+                </div>
+            )}
+
+
 
         </div>
     );

@@ -27,6 +27,7 @@ import MyOrders from "./pages/customer/orders/MyOrders";
 import SearchResults from './pages/customer/SearchResults';
 
 
+
 function App() {
 
     return (
@@ -92,6 +93,8 @@ function App() {
                     element={<MyOrders />}
                 />
                 <Route path="/search" element={<SearchResults />} />
+
+
 
 
             </Routes>
