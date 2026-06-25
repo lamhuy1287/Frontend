@@ -150,6 +150,27 @@ export const adminCancelOrder = async (
 
 /*
 |--------------------------------------------------------------------------
+| ADMIN - RETURN ORDER (THÊM MỚI)
+|--------------------------------------------------------------------------
+*/
+
+export const adminReturnOrder = async (
+    orderId,
+    admin_note
+) => {
+
+    const response = await api.put(
+        `/orders/admin/${orderId}/return`,
+        {
+            admin_note
+        }
+    );
+
+    return response.data;
+};
+
+/*
+|--------------------------------------------------------------------------
 | ADMIN - UPDATE PAYMENT STATUS
 |--------------------------------------------------------------------------
 */
@@ -185,7 +206,3 @@ export const deleteOrder = async (
 
     return response.data;
 };
-
-
-
-

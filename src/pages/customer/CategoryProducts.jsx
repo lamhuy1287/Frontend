@@ -242,7 +242,7 @@ function CategoryProducts() {
                                     <option value="newest">Mới nhất</option>
                                     <option value="price_asc">Giá tăng dần</option>
                                     <option value="price_desc">Giá giảm dần</option>
-                                    <option value="best_selling">Bán chạy</option>
+                                    {/* <option value="best_selling">Bán chạy</option> */}
                                 </select>
                             </div>
                         </div>

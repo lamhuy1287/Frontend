@@ -1,0 +1,400 @@
+/* src/pages/admin/Reports/components/DateRangePicker.css */
+
+.date-range-picker-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Input Styles */
+.date-range-picker-input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    user-select: none;
+    position: relative;
+}
+
+.date-range-picker-input:hover:not(.disabled) {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.date-range-picker-input.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-range-picker-input.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f1f5f9;
+}
+
+.input-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.calendar-icon {
+    color: #64748b;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.date-text {
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.input-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.clear-btn:hover {
+    background: #f1f5f9;
+    color: #ef4444;
+}
+
+.chevron-icon {
+    color: #94a3b8;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.chevron-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Styles */
+.date-range-picker-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    max-height: 560px;
+    overflow: hidden;
+    animation: slideDown 0.2s ease;
+    width: 100%;
+    min-width: 320px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-content {
+    padding: 16px;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+/* Quick Ranges Section */
+.quick-ranges-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-icon {
+    font-size: 14px;
+}
+
+.quick-ranges-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.quick-range-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.quick-range-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.quick-range-btn.active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.quick-range-btn .btn-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.quick-range-btn .check-icon {
+    margin-left: auto;
+    color: #3b82f6;
+    font-size: 14px;
+}
+
+/* Custom Range Section */
+.custom-range-section {
+    margin-bottom: 16px;
+}
+
+.custom-range-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.date-picker-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.date-picker-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.date-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.custom-date-picker {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1e293b;
+    background: white;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.custom-date-picker:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-date-picker:hover:not(:focus) {
+    border-color: #cbd5e1;
+}
+
+/* React DatePicker Overrides */
+.react-datepicker-wrapper {
+    width: 100%;
+}
+
+.react-datepicker__input-container {
+    width: 100%;
+}
+
+/* Selected Range Info */
+.selected-range-info {
+    display: flex;
+    justify-content: center;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.range-days {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Footer */
+.dropdown-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 4px;
+}
+
+.footer-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.cancel-btn:hover {
+    background: #e2e8f0;
+}
+
+.apply-btn {
+    background: #3b82f6;
+    color: white;
+}
+
+.apply-btn:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.apply-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive Styles */
+@media (max-width: 640px) {
+    .date-range-picker-wrapper {
+        max-width: 100%;
+    }
+    
+    .date-range-picker-dropdown {
+        min-width: auto;
+        left: -10px;
+        right: -10px;
+        width: calc(100% + 20px);
+    }
+    
+    .quick-ranges-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .date-picker-group {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .date-range-picker-input {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    
+    .date-text {
+        color: #e2e8f0;
+    }
+    
+    .date-range-picker-dropdown {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    
+    .quick-range-btn {
+        background: #334155;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+    
+    .quick-range-btn:hover {
+        background: #475569;
+    }
+    
+    .quick-range-btn.active {
+        background: #1e3a5f;
+        border-color: #3b82f6;
+        color: #60a5fa;
+    }
+    
+    .custom-date-picker {
+        background: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+    
+    .section-title {
+        color: #94a3b8;
+    }
+    
+    .selected-range-info {
+        background: #334155;
+    }
+    
+    .range-days {
+        color: #94a3b8;
+    }
+    
+    .cancel-btn {
+        background: #334155;
+        color: #94a3b8;
+    }
+}

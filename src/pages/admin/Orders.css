@@ -595,3 +595,158 @@
         justify-content: center;
     }
 }
+/* ========================= */
+/* ACTION BUTTONS - THÊM MỚI */
+/* ========================= */
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* View Button */
+.view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.view-btn:active {
+    transform: scale(0.95);
+}
+
+/* Cancel Button */
+.cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #e74c3c;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover:not(:disabled) {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+.cancel-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Return Button */
+.return-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #f39c12;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.return-btn:hover:not(:disabled) {
+    background: #d68910;
+    transform: scale(1.05);
+}
+
+.return-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.return-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Tooltip cho các nút */
+.view-btn,
+.cancel-btn,
+.return-btn {
+    position: relative;
+}
+
+.view-btn[title]:hover::after,
+.cancel-btn[title]:hover::after,
+.return-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* ========================= */
+/* SWEETALERT FORM STYLES - THÊM MỚI */
+/* ========================= */
+
+.swal-form {
+    text-align: left;
+    padding: 10px 0;
+}
+
+.swal-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.swal-form .swal2-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.swal-form .swal2-textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ========================= */
+/* RESPONSIVE - THÊM MỚI */

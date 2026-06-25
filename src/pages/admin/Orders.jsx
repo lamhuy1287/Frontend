@@ -4,7 +4,9 @@ import {
     FaSearch,
     FaEye,
     FaChevronLeft,
-    FaChevronRight
+    FaChevronRight,
+    FaTimesCircle,
+    FaUndo
 } from "react-icons/fa";
 
 import {
@@ -18,7 +20,9 @@ import {
 
 import {
     getAllOrders,
-    updateOrderStatus
+    updateOrderStatus,
+    adminCancelOrder,
+    adminReturnOrder
 } from "../../services/orderService";
 
 import socket from "../../socket";
@@ -51,7 +55,11 @@ function Orders() {
     // =========================
     
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10); // Số item trên mỗi trang
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // State cho loading khi huỷ/hoàn hàng
+    const [cancelLoading, setCancelLoading] = useState(false);
+    const [returnLoading, setReturnLoading] = useState(false);
 
     // Lấy danh sách năm có trong đơn hàng
     const getAvailableYears = () => {
@@ -325,6 +333,121 @@ function Orders() {
         };
 
     // =========================
+    // ADMIN - CANCEL ORDER (THÊM MỚI)
+    // =========================
+
+    const handleCancelOrder = async (orderId) => {
+        // Hiển thị form nhập lý do huỷ
+        const { value: cancelNote } = await Swal.fire({
+            title: 'Huỷ đơn hàng',
+            html: `
+                <div class="swal-form">
+                    <label for="cancel_note">Lý do huỷ đơn</label>
+                    <textarea id="cancel_note" class="swal2-textarea" placeholder="Nhập lý do huỷ đơn hàng..." rows="4"></textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận huỷ',
+            cancelButtonText: 'Huỷ bỏ',
+            focusConfirm: false,
+            preConfirm: () => {
+                const note = document.getElementById('cancel_note').value;
+                if (!note.trim()) {
+                    Swal.showValidationMessage('Vui lòng nhập lý do huỷ đơn');
+                }
+                return note;
+            }
+        });
+
+        if (!cancelNote) return;
+
+        try {
+            setCancelLoading(true);
+            
+            await adminCancelOrder(orderId, cancelNote);
+            
+            await Swal.fire({
+                title: 'Thành công',
+                text: 'Đơn hàng đã được huỷ thành công',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+            
+            // Refresh lại danh sách đơn hàng
+            fetchOrders();
+            
+        } catch (error) {
+            console.log('CANCEL ORDER ERROR:', error);
+            
+            Swal.fire({
+                title: 'Thất bại',
+                text: error?.response?.data?.message || 'Huỷ đơn hàng thất bại',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            setCancelLoading(false);
+        }
+    };
+
+    // =========================
+    // ADMIN - RETURN ORDER (THÊM MỚI)
+    // =========================
+
+    const handleReturnOrder = async (orderId) => {
+        const { value: returnNote } = await Swal.fire({
+            title: 'Yêu cầu hoàn hàng',
+            html: `
+                <div class="swal-form">
+                    <label for="return_note">Lý do hoàn hàng</label>
+                    <textarea id="return_note" class="swal2-textarea" placeholder="Nhập lý do yêu cầu hoàn hàng..." rows="4"></textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận hoàn hàng',
+            cancelButtonText: 'Huỷ bỏ',
+            focusConfirm: false,
+            preConfirm: () => {
+                const note = document.getElementById('return_note').value;
+                if (!note.trim()) {
+                    Swal.showValidationMessage('Vui lòng nhập lý do hoàn hàng');
+                }
+                return note;
+            }
+        });
+
+        if (!returnNote) return;
+
+        try {
+            setReturnLoading(true);
+            
+            await adminReturnOrder(orderId, returnNote);
+            
+            await Swal.fire({
+                title: 'Thành công',
+                text: 'Yêu cầu hoàn hàng đã được gửi thành công',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+            
+            // Refresh lại danh sách đơn hàng
+            fetchOrders();
+            
+        } catch (error) {
+            console.log('RETURN ORDER ERROR:', error);
+            
+            Swal.fire({
+                title: 'Thất bại',
+                text: error?.response?.data?.message || 'Yêu cầu hoàn hàng thất bại',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            setReturnLoading(false);
+        }
+    };
+
+    // =========================
     // UPDATE STATUS
     // =========================
 
@@ -500,7 +623,7 @@ function Orders() {
         };
 
     // =========================
-    // FILTER ORDERS (ĐÃ SỬA)
+    // FILTER ORDERS
     // =========================
 
     const filteredOrders =
@@ -551,13 +674,12 @@ function Orders() {
                     .includes(keyword)
             );
 
-            // Lọc theo trạng thái (ĐÃ SỬA - bao gồm cả return_requested khi chọn returned)
+            // Lọc theo trạng thái
             let matchStatus = false;
             
             if (statusFilter === "all") {
                 matchStatus = true;
             } else if (statusFilter === "returned") {
-                // Khi chọn "Hoàn hàng", hiển thị cả returned và return_requested
                 matchStatus = order.status === "returned" || order.status === "return_requested";
             } else {
                 matchStatus = order.status === statusFilter;
@@ -595,47 +717,39 @@ function Orders() {
     // PAGINATION LOGIC
     // =========================
     
-    // Tổng số trang
     const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
     
-    // Lấy orders cho trang hiện tại
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
     
-    // Chuyển trang
     const goToPage = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
         }
     };
     
-    // Trang trước
     const goToPreviousPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
         }
     };
     
-    // Trang sau
     const goToNextPage = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
         }
     };
     
-    // Tạo mảng số trang hiển thị
     const getPageNumbers = () => {
         const pageNumbers = [];
-        const maxPagesToShow = 5; // Số trang tối đa hiển thị
+        const maxPagesToShow = 5;
         
         if (totalPages <= maxPagesToShow) {
-            // Hiển thị tất cả trang
             for (let i = 1; i <= totalPages; i++) {
                 pageNumbers.push(i);
             }
         } else {
-            // Hiển thị trang đầu, cuối và các trang xung quanh trang hiện tại
             if (currentPage <= 3) {
                 for (let i = 1; i <= 4; i++) {
                     pageNumbers.push(i);
@@ -967,12 +1081,41 @@ function Orders() {
                                     {new Date(order.created_at).toLocaleDateString("vi-VN")}
                                 </td>
                                 <td>
-                                    <button
-                                        className="view-btn"
-                                        onClick={() => navigate(`/admin/orders/${order.id}`)}
-                                    >
-                                        <FaEye />
-                                    </button>
+                                    <div className="action-buttons">
+                                        {/* Nút Xem chi tiết */}
+                                        <button
+                                            className="view-btn"
+                                            onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                            title="Xem chi tiết"
+                                        >
+                                            <FaEye />
+                                        </button>
+                                        
+                                        {/* Nút Huỷ đơn - chỉ hiển thị với trạng thái pending hoặc confirmed */}
+{/* Nút Huỷ đơn với dấu X lớn */}
+{(order.status === "pending" || order.status === "confirmed") && (
+    <button
+        className="cancel-btn"
+        onClick={() => handleCancelOrder(order.id)}
+        disabled={cancelLoading}
+        title="Huỷ đơn hàng"
+    >
+        <FaTimesCircle /> <span className="cancel-x">×</span>
+    </button>
+)}
+                                        
+                                        {/* Nút Hoàn hàng - chỉ hiển thị với trạng thái shipping */}
+                                        {/* {order.status === "shipping" && (
+                                            <button
+                                                className="return-btn"
+                                                onClick={() => handleReturnOrder(order.id)}
+                                                disabled={returnLoading}
+                                                title="Yêu cầu hoàn hàng"
+                                            >
+                                                <FaUndo />
+                                            </button>
+                                        )} */}
+                                    </div>
                                 </td>
                             </tr>
                         ))
@@ -1046,8 +1189,6 @@ function Orders() {
                     </div>
                 </div>
             )}
-
-
 
         </div>
     );
