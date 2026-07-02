@@ -5,8 +5,7 @@ import {
     FaEye,
     FaChevronLeft,
     FaChevronRight,
-    FaTimesCircle,
-    FaUndo
+    FaTimesCircle
 } from "react-icons/fa";
 
 import {
@@ -21,8 +20,7 @@ import {
 import {
     getAllOrders,
     updateOrderStatus,
-    adminCancelOrder,
-    adminReturnOrder
+    adminCancelOrder
 } from "../../services/orderService";
 
 import socket from "../../socket";
@@ -57,9 +55,8 @@ function Orders() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    // State cho loading khi huỷ/hoàn hàng
+    // State cho loading khi huỷ đơn
     const [cancelLoading, setCancelLoading] = useState(false);
-    const [returnLoading, setReturnLoading] = useState(false);
 
     // Lấy danh sách năm có trong đơn hàng
     const getAvailableYears = () => {
@@ -89,6 +86,20 @@ function Orders() {
     };
 
     // =========================
+    // ORDER STATUS ORDER
+    // =========================
+
+    const statusOrder = {
+        "pending": 0,
+        "confirmed": 1,
+        "shipping": 2,
+        "completed": 3,
+        "cancelled": 4,
+        "returned": 5,
+        "return_requested": 5
+    };
+
+    // =========================
     // NAVIGATE
     // =========================
 
@@ -112,9 +123,22 @@ function Orders() {
                     response
                 );
 
-                setOrders(
-                    response.data || []
-                );
+                const ordersData = response.data || [];
+                
+                // Sắp xếp đơn hàng theo trạng thái
+                const sortedOrders = [...ordersData].sort((a, b) => {
+                    const orderA = statusOrder[a.status] ?? 999;
+                    const orderB = statusOrder[b.status] ?? 999;
+                    
+                    if (orderA !== orderB) {
+                        return orderA - orderB;
+                    }
+                    
+                    // Nếu cùng trạng thái, sắp xếp theo ngày tạo mới nhất
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+
+                setOrders(sortedOrders);
 
             } catch (error) {
 
@@ -147,11 +171,25 @@ function Orders() {
                     newOrder
                 );
 
-                setOrders((prev) => [
+                setOrders((prev) => {
 
-                    newOrder,
-                    ...prev
-                ]);
+                    const updatedOrders = [
+                        newOrder,
+                        ...prev
+                    ];
+
+                    // Sắp xếp lại sau khi thêm mới
+                    return updatedOrders.sort((a, b) => {
+                        const orderA = statusOrder[a.status] ?? 999;
+                        const orderB = statusOrder[b.status] ?? 999;
+                        
+                        if (orderA !== orderB) {
+                            return orderA - orderB;
+                        }
+                        
+                        return new Date(b.created_at) - new Date(a.created_at);
+                    });
+                });
             };
 
         // ORDER UPDATED
@@ -166,7 +204,7 @@ function Orders() {
 
                 setOrders((prev) => {
 
-                    return prev.map((order) => {
+                    const updatedOrders = prev.map((order) => {
 
                         if (
                             Number(order.id)
@@ -188,6 +226,18 @@ function Orders() {
                         }
 
                         return order;
+                    });
+
+                    // Sắp xếp lại sau khi cập nhật
+                    return updatedOrders.sort((a, b) => {
+                        const orderA = statusOrder[a.status] ?? 999;
+                        const orderB = statusOrder[b.status] ?? 999;
+                        
+                        if (orderA !== orderB) {
+                            return orderA - orderB;
+                        }
+                        
+                        return new Date(b.created_at) - new Date(a.created_at);
                     });
                 });
             };
@@ -302,7 +352,7 @@ function Orders() {
                     return "Hoàn hàng";
 
                 case "return_requested":
-                    return "Yêu cầu hoàn hàng";
+                    return "Hoàn hàng";
 
                 default:
                     return status;
@@ -333,7 +383,7 @@ function Orders() {
         };
 
     // =========================
-    // ADMIN - CANCEL ORDER (THÊM MỚI)
+    // ADMIN - CANCEL ORDER
     // =========================
 
     const handleCancelOrder = async (orderId) => {
@@ -387,63 +437,6 @@ function Orders() {
             });
         } finally {
             setCancelLoading(false);
-        }
-    };
-
-    // =========================
-    // ADMIN - RETURN ORDER (THÊM MỚI)
-    // =========================
-
-    const handleReturnOrder = async (orderId) => {
-        const { value: returnNote } = await Swal.fire({
-            title: 'Yêu cầu hoàn hàng',
-            html: `
-                <div class="swal-form">
-                    <label for="return_note">Lý do hoàn hàng</label>
-                    <textarea id="return_note" class="swal2-textarea" placeholder="Nhập lý do yêu cầu hoàn hàng..." rows="4"></textarea>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Xác nhận hoàn hàng',
-            cancelButtonText: 'Huỷ bỏ',
-            focusConfirm: false,
-            preConfirm: () => {
-                const note = document.getElementById('return_note').value;
-                if (!note.trim()) {
-                    Swal.showValidationMessage('Vui lòng nhập lý do hoàn hàng');
-                }
-                return note;
-            }
-        });
-
-        if (!returnNote) return;
-
-        try {
-            setReturnLoading(true);
-            
-            await adminReturnOrder(orderId, returnNote);
-            
-            await Swal.fire({
-                title: 'Thành công',
-                text: 'Yêu cầu hoàn hàng đã được gửi thành công',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-            
-            // Refresh lại danh sách đơn hàng
-            fetchOrders();
-            
-        } catch (error) {
-            console.log('RETURN ORDER ERROR:', error);
-            
-            Swal.fire({
-                title: 'Thất bại',
-                text: error?.response?.data?.message || 'Yêu cầu hoàn hàng thất bại',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        } finally {
-            setReturnLoading(false);
         }
     };
 
@@ -1084,7 +1077,7 @@ function Orders() {
                                     <div className="action-buttons">
                                         {/* Nút Xem chi tiết */}
                                         <button
-                                            className="view-btn"
+                                            className="order-view-btn"
                                             onClick={() => navigate(`/admin/orders/${order.id}`)}
                                             title="Xem chi tiết"
                                         >
@@ -1092,29 +1085,16 @@ function Orders() {
                                         </button>
                                         
                                         {/* Nút Huỷ đơn - chỉ hiển thị với trạng thái pending hoặc confirmed */}
-{/* Nút Huỷ đơn với dấu X lớn */}
-{(order.status === "pending" || order.status === "confirmed") && (
-    <button
-        className="cancel-btn"
-        onClick={() => handleCancelOrder(order.id)}
-        disabled={cancelLoading}
-        title="Huỷ đơn hàng"
-    >
-        <FaTimesCircle /> <span className="cancel-x">×</span>
-    </button>
-)}
-                                        
-                                        {/* Nút Hoàn hàng - chỉ hiển thị với trạng thái shipping */}
-                                        {/* {order.status === "shipping" && (
+                                        {(order.status === "pending" || order.status === "confirmed") && (
                                             <button
-                                                className="return-btn"
-                                                onClick={() => handleReturnOrder(order.id)}
-                                                disabled={returnLoading}
-                                                title="Yêu cầu hoàn hàng"
+                                                className="order-cancel-btn"
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                disabled={cancelLoading}
+                                                title="Huỷ đơn hàng"
                                             >
-                                                <FaUndo />
+                                                <FaTimesCircle />
                                             </button>
-                                        )} */}
+                                        )}
                                     </div>
                                 </td>
                             </tr>

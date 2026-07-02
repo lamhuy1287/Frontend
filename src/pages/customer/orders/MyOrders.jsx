@@ -16,6 +16,7 @@ import {
 } from "../../../services/orderService";
 
 import socket from "../../../socket";
+import Swal from "sweetalert2";
 
 function MyOrders() {
 
@@ -78,25 +79,41 @@ function MyOrders() {
                 isCancelLocked(orderStatus)
             ) {
 
-                alert(
-                    "Đơn hàng đã được shop xử lý, không thể hủy ở trạng thái này."
-                );
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Không thể hủy đơn',
+                    text: 'Đơn hàng đã được xác nhận và đang được xử lý. Bạn không thể hủy đơn hàng ở trạng thái này.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Đã hiểu'
+                });
 
             } else {
 
-                alert(
-                    "Đơn hàng không thể hủy ở trạng thái hiện tại."
-                );
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Không thể hủy đơn',
+                    text: 'Không thể hủy đơn hàng ở trạng thái hiện tại.',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Đã hiểu'
+                });
             }
 
             return;
         }
 
-        if (
-            !window.confirm(
-                "Bạn chắc chắn muốn hủy đơn hàng này?"
-            )
-        ) {
+        // Xác nhận hủy đơn
+        const result = await Swal.fire({
+            title: 'Xác nhận hủy đơn',
+            text: 'Bạn có chắc chắn muốn hủy đơn hàng này không?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Hủy đơn',
+            cancelButtonText: 'Quay lại'
+        });
+
+        if (!result.isConfirmed) {
             return;
         }
 
@@ -106,16 +123,25 @@ function MyOrders() {
 
             await cancelOrder(orderId);
 
-            alert("Đã hủy đơn thành công");
+            await Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Đã hủy đơn hàng thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
             await fetchOrders();
 
         } catch (err) {
 
-            alert(
-                err.response?.data?.message
-                || "Hủy đơn thất bại"
-            );
+            await Swal.fire({
+                icon: 'error',
+                title: 'Thất bại!',
+                text: 'Hủy đơn hàng thất bại. Vui lòng thử lại sau.',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Đóng'
+            });
 
         } finally {
 
@@ -263,7 +289,7 @@ function MyOrders() {
                     </h1>
 
                     <p>
-                        Theo dõi đơn hàng của bạn
+                        Theo dõi trạng thái đơn hàng của bạn
                     </p>
 
                 </div>
@@ -282,7 +308,7 @@ function MyOrders() {
                             </h3>
 
                             <p>
-                                Hãy mua sắm ngay hôm nay
+                                Bắt đầu mua sắm ngay hôm nay!
                             </p>
 
                             <Link

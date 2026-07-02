@@ -8,8 +8,8 @@ import {
     FaSignOutAlt,
     FaTicketAlt,
     FaTag,
-    FaChartLine,      // Thêm icon cho báo cáo
-    FaFileAlt         // Thêm icon phụ
+    FaChartLine,
+    FaFileAlt
 } from "react-icons/fa";
 
 import {
@@ -114,10 +114,61 @@ function Sidebar() {
     // =========================
 
     const isActive = (path) => {
-        // Kiểm tra exact match hoặc path con
+        // Dashboard: chỉ active khi chính xác /admin
+        if (path === "/admin") {
+            return location.pathname === "/admin";
+        }
+        
+        // Reports: active cho tất cả các route con của /admin/reports
         if (path === "/admin/reports") {
             return location.pathname.startsWith("/admin/reports");
         }
+        
+        // Products: active cho product và product detail
+        if (path === "/admin/products") {
+            return location.pathname === "/admin/products" || 
+                   location.pathname.startsWith("/admin/products/");
+        }
+        
+        // Categories: active cho category và category detail
+        if (path === "/admin/categories") {
+            return location.pathname === "/admin/categories" || 
+                   location.pathname.startsWith("/admin/categories/");
+        }
+        
+        // Brands: active cho brand và brand detail
+        if (path === "/admin/brands") {
+            return location.pathname === "/admin/brands" || 
+                   location.pathname.startsWith("/admin/brands/");
+        }
+        
+        // Coupons: active cho coupons và create-coupon
+        if (path === "/admin/coupons") {
+            return location.pathname === "/admin/coupons" || 
+                   location.pathname.startsWith("/admin/coupons/") ||
+                   location.pathname === "/admin/create-coupon";
+        }
+        
+        // Discounts: active cho discounts và create-discount
+        if (path === "/admin/discounts") {
+            return location.pathname === "/admin/discounts" || 
+                   location.pathname.startsWith("/admin/discounts/") ||
+                   location.pathname === "/admin/discounts/create";
+        }
+        
+        // Orders: active cho orders và order detail
+        if (path === "/admin/orders") {
+            return location.pathname === "/admin/orders" || 
+                   location.pathname.startsWith("/admin/orders/");
+        }
+        
+        // Users: active cho users và user detail
+        if (path === "/admin/users") {
+            return location.pathname === "/admin/users" || 
+                   location.pathname.startsWith("/admin/users/");
+        }
+        
+        // Fallback: exact match
         return location.pathname === path;
     };
 
@@ -153,7 +204,6 @@ function Sidebar() {
                 active={isActive("/admin")}
             />
 
-            {/* ✅ THÊM MỚI: BÁO CÁO CHI TIẾT */}
             <MenuItem
                 to="/admin/reports"
                 icon={<FaChartLine />}
@@ -202,20 +252,14 @@ function Sidebar() {
                 to="/admin/coupons"
                 icon={<FaTicketAlt />}
                 text="Mã giảm giá"
-                active={
-                    isActive("/admin/coupons") ||
-                    isActive("/admin/create-coupon")
-                }
+                active={isActive("/admin/coupons")}
             />
 
             <MenuItem
                 to="/admin/discounts"
                 icon={<FaTag />}
                 text="Discount"
-                active={
-                    isActive("/admin/discounts") ||
-                    isActive("/admin/discounts/create")
-                }
+                active={isActive("/admin/discounts")}
             />
 
             {/* =========================

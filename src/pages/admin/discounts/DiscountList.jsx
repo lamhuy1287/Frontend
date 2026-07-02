@@ -98,6 +98,24 @@ export default function DiscountList() {
         return "expired";
     };
 
+    // Kiểm tra discount đã hết hạn chưa
+    const isExpired = (discount) => {
+        if (!discount.is_active) return true;
+        
+        const now = new Date();
+        const endAt = discount.end_at ? new Date(discount.end_at) : null;
+        
+        // Nếu có thời gian kết thúc và đã qua thời gian kết thúc
+        if (endAt && now > endAt) return true;
+        
+        return false;
+    };
+
+    // Tính STT
+    const getRowNumber = (index) => {
+        return (page - 1) * 10 + index + 1;
+    };
+
     return (
         <div className="discount-list">
             <div className="list-header">
@@ -121,7 +139,7 @@ export default function DiscountList() {
                     <table className="discount-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>STT</th>
                                 <th>Variant</th>
                                 <th>Loại</th>
                                 <th>Giá trị</th>
@@ -133,9 +151,9 @@ export default function DiscountList() {
                             </tr>
                         </thead>
                         <tbody>
-                            {discounts.map((discount) => (
+                            {discounts.map((discount, index) => (
                                 <tr key={discount.id}>
-                                    <td>{discount.id}</td>
+                                    <td>{getRowNumber(index)}</td>
                                     <td>
                                         <div className="variant-info">
                                             <div className="product-name">
@@ -175,12 +193,17 @@ export default function DiscountList() {
                                         </span>
                                     </td>
                                     <td className="actions">
-                                        <button
-                                            onClick={() => handleToggle(discount.id)}
-                                            className={`btn-toggle ${discount.is_active ? "btn-deactivate" : "btn-activate"}`}
-                                        >
-                                            {discount.is_active ? "Tắt" : "Bật"}
-                                        </button>
+                                        {/* Chỉ hiển thị nút Tắt/Bật khi discount chưa hết hạn */}
+                                        {!isExpired(discount) && (
+                                            <button
+                                                onClick={() => handleToggle(discount.id)}
+                                                className={`btn-toggle ${discount.is_active ? "btn-deactivate" : "btn-activate"}`}
+                                            >
+                                                {discount.is_active ? "Tắt" : "Bật"}
+                                            </button>
+                                        )}
+                                        
+                                        {/* Luôn hiển thị nút Xoá */}
                                         <button
                                             onClick={() => handleDelete(discount.id)}
                                             className="btn-delete"

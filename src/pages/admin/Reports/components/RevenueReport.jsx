@@ -706,13 +706,13 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                             className={`view-btn ${viewMode === 'chart' ? 'active' : ''}`}
                             onClick={() => setViewMode('chart')}
                         >
-                            <FiTrendingUp /> Biểu đồ
+                            <FiTrendingUp size={18} /> Biểu đồ
                         </button>
                         <button 
                             className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
                             onClick={() => setViewMode('table')}
                         >
-                            <FiTable /> Bảng
+                            <FiTable size={18} /> Bảng
                         </button>
                     </div>
                     <div className="total-revenue">
@@ -886,42 +886,67 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                     flex-wrap: wrap;
                 }
                 
+                /* =========================
+                   VIEW TOGGLE - NÂNG CẤP
+                ========================= */
+                
                 .view-toggle {
                     display: flex;
-                    gap: 4px;
+                    gap: 8px;
                     background: #f1f5f9;
-                    padding: 4px;
-                    border-radius: 12px;
-                    margin-top: 4px;
+                    padding: 6px;
+                    border-radius: 16px;
+                    min-width: 280px;
+                    border: 1px solid #e2e8f0;
                 }
                 
                 .view-btn {
-                    padding: 8px 16px;
+                    padding: 14px 36px;
                     border: none;
                     background: transparent;
-                    border-radius: 8px;
+                    border-radius: 12px;
                     cursor: pointer;
-                    font-size: 13px;
-                    font-weight: 500;
+                    font-size: 16px;
+                    font-weight: 600;
                     color: #64748b;
                     display: flex;
                     align-items: center;
-                    gap: 6px;
+                    justify-content: center;
+                    gap: 12px;
                     transition: all 0.3s ease;
+                    flex: 1;
+                    min-height: 52px;
+                    letter-spacing: 0.3px;
                 }
                 
                 .view-btn:hover {
                     color: #0f172a;
+                    background: rgba(255, 255, 255, 0.5);
                 }
                 
                 .view-btn.active {
                     background: white;
                     color: #3b82f6;
-                    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+                    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+                    transform: translateY(-1px);
+                }
+                
+                .view-btn.active:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
                 }
                 
                 .view-btn svg {
-                    font-size: 16px;
+                    font-size: 20px;
+                    transition: transform 0.3s ease;
+                }
+                
+                .view-btn.active svg {
+                    color: #3b82f6;
+                }
+                
+                .view-btn:hover svg {
+                    transform: scale(1.1);
                 }
                 
                 .table-container {
@@ -1296,13 +1321,26 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                         flex-direction: column;
                         align-items: stretch;
                     }
+                    
                     .view-toggle {
+                        min-width: unset;
                         width: 100%;
+                        padding: 4px;
+                        border-radius: 12px;
                     }
+                    
                     .view-btn {
-                        flex: 1;
-                        justify-content: center;
+                        padding: 12px 20px;
+                        font-size: 14px;
+                        min-height: 44px;
+                        gap: 8px;
+                        border-radius: 10px;
                     }
+                    
+                    .view-btn svg {
+                        font-size: 16px;
+                    }
+                    
                     .table-actions {
                         flex-direction: column;
                         width: 100%;

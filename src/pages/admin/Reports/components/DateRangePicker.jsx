@@ -468,7 +468,7 @@ function DateRangePicker({
                         {/* Footer actions */}
                         {showFooter && (
                             <div className="dropdown-footer">
-                                <button
+                                {/* <button
                                     className="footer-btn cancel-btn"
                                     onClick={handleClose}
                                     type="button"
@@ -476,7 +476,7 @@ function DateRangePicker({
                                 >
                                     <FiX className="btn-icon" />
                                     Xóa bộ lọc
-                                </button>
+                                </button> */}
                                 <button
                                     className="footer-btn apply-btn"
                                     onClick={handleApply}

@@ -9,6 +9,7 @@ import {
     requestReturnOrder
 } from "../../services/orderService";
 
+import Swal from "sweetalert2";
 import "./OrderDetail.css";
 
 function OrderDetail() {
@@ -21,30 +22,12 @@ function OrderDetail() {
     const [cancelling, setCancelling] = useState(false);
     const [returning, setReturning] = useState(false);
 
-    // RETURN MODAL
-    const [returnModalOpen, setReturnModalOpen] = useState(false);
-    const [returnNote, setReturnNote] = useState("");
-
-    // TOAST
-    const [toast, setToast] = useState({
-        open: false,
-        message: "",
-        type: "success"
-    });
-
-    const showToast = (message, type = "success") => {
-        setToast({ open: true, message, type });
-
-        setTimeout(() => {
-            setToast({ open: false, message: "", type: "success" });
-        }, 2500);
-    };
-
     const statusMap = {
         pending: "Chờ xác nhận",
         confirmed: "Đã xác nhận",
         shipping: "Đang giao",
         return_requested: "Yêu cầu hoàn",
+        returned: "Đã hoàn hàng",
         completed: "Hoàn thành",
         cancelled: "Đã huỷ"
     };
@@ -77,67 +60,141 @@ function OrderDetail() {
     // CANCEL ORDER
     // =========================
     const handleCancel = async () => {
-        if (!window.confirm("Bạn chắc chắn muốn huỷ đơn?")) return;
+        // Xác nhận hủy đơn
+        const result = await Swal.fire({
+            title: 'Xác nhận hủy đơn',
+            text: 'Bạn có chắc chắn muốn hủy đơn hàng này không?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Hủy đơn',
+            cancelButtonText: 'Quay lại'
+        });
+
+        if (!result.isConfirmed) return;
 
         try {
             setCancelling(true);
 
             await cancelOrder(order.id);
 
-            showToast("Huỷ đơn thành công", "success");
+            await Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Đã hủy đơn hàng thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
             fetchOrderDetail();
 
         } catch (err) {
-            showToast(
-                err.response?.data?.message || "Huỷ đơn thất bại",
-                "error"
-            );
+            await Swal.fire({
+                icon: 'error',
+                title: 'Thất bại!',
+                text: err.response?.data?.message || 'Hủy đơn hàng thất bại. Vui lòng thử lại sau.',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Đóng'
+            });
         } finally {
             setCancelling(false);
         }
     };
 
     // =========================
-    // OPEN RETURN MODAL
-    // =========================
-    const handleReturn = () => {
-        setReturnNote("");
-        setReturnModalOpen(true);
-    };
-
-    // =========================
     // SUBMIT RETURN
     // =========================
     const submitReturn = async () => {
-        if (!returnNote.trim()) return;
+        // Hiển thị form nhập lý do hoàn hàng
+        const { value: returnNote } = await Swal.fire({
+            title: 'Yêu cầu hoàn hàng',
+            html: `
+                <div class="swal-form">
+                    <label for="return_note" style="display:block;text-align:left;margin-bottom:8px;font-weight:500;">Lý do hoàn hàng</label>
+                    <textarea id="return_note" class="swal2-textarea" placeholder="Nhập lý do yêu cầu hoàn hàng..." rows="4"></textarea>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Xác nhận hoàn hàng',
+            cancelButtonText: 'Huỷ bỏ',
+            focusConfirm: false,
+            preConfirm: () => {
+                const note = document.getElementById('return_note').value;
+                if (!note.trim()) {
+                    Swal.showValidationMessage('Vui lòng nhập lý do hoàn hàng');
+                }
+                return note;
+            }
+        });
+
+        if (!returnNote) return;
 
         try {
             setReturning(true);
 
             await requestReturnOrder(order.id, returnNote);
 
-            setReturnModalOpen(false);
-            setReturnNote("");
-
-            showToast("Gửi yêu cầu hoàn hàng thành công", "success");
+            await Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Yêu cầu hoàn hàng đã được gửi thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
 
             fetchOrderDetail();
 
         } catch (err) {
-            showToast(
-                err.response?.data?.message || "Gửi yêu cầu thất bại",
-                "error"
-            );
+            await Swal.fire({
+                icon: 'error',
+                title: 'Thất bại!',
+                text: err.response?.data?.message || 'Gửi yêu cầu hoàn hàng thất bại. Vui lòng thử lại sau.',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Đóng'
+            });
         } finally {
             setReturning(false);
+        }
+    };
+
+    // =========================
+    // GET PAYMENT STATUS TEXT
+    // =========================
+    const getPaymentStatusText = () => {
+        // Nếu đơn hàng ở trạng thái hoàn hàng, luôn hiển thị là "Thất bại"
+        if (order.status === "return_requested" || order.status === "returned") {
+            return "Thanh toán thất bại";
+        }
+        return paymentStatusMap[order.payment_status] || order.payment_status;
+    };
+
+    // =========================
+    // GET PAYMENT STATUS CLASS
+    // =========================
+    const getPaymentStatusClass = () => {
+        // Nếu đơn hàng ở trạng thái hoàn hàng, luôn là "failed"
+        if (order.status === "return_requested" || order.status === "returned") {
+            return "payment-status-failed";
+        }
+        
+        switch (order.payment_status) {
+            case "paid":
+                return "payment-status-paid";
+            case "pending":
+            case "unpaid":
+                return "payment-status-pending";
+            case "failed":
+                return "payment-status-failed";
+            default:
+                return "payment-status-pending";
         }
     };
 
     if (loading) {
         return (
             <CustomerLayout>
-                <div className="order-loading">Loading...</div>
+                <div className="order-loading">Đang tải...</div>
             </CustomerLayout>
         );
     }
@@ -158,7 +215,7 @@ function OrderDetail() {
                 {/* HEADER */}
                 <div className="order-header">
                     <div>
-                        <h1>Đơn hàng </h1>
+                        <h1>Đơn hàng của bạn</h1>
                         <p>Theo dõi trạng thái đơn hàng</p>
                     </div>
 
@@ -197,8 +254,8 @@ function OrderDetail() {
                             </div>
                             <div>
                                 <span>Trạng thái</span>
-                                <strong>
-                                    {paymentStatusMap[order.payment_status]}
+                                <strong className={getPaymentStatusClass()}>
+                                    {getPaymentStatusText()}
                                 </strong>
                             </div>
                         </div>
@@ -214,14 +271,28 @@ function OrderDetail() {
                         {order.items?.map((item) => (
                             <div key={item.id} className="minimal-product-item">
 
-                                <div>
-                                    <h4>{item.product_name}</h4>
-                                    <p>{item.variant_name}</p>
+                                {/* Ảnh sản phẩm */}
+                                <div className="product-image-wrapper">
+                                    <img
+                                        src={item.image || "/placeholder-product.png"}
+                                        alt={item.product_name}
+                                        className="product-image"
+                                    />
                                 </div>
 
-                                <div>x{item.quantity}</div>
+                                {/* Thông tin sản phẩm */}
+                                <div className="product-info">
+                                    <h4>{item.product_name}</h4>
+                                    <p>{item.variant_name || "Không có phân loại"}</p>
+                                </div>
 
-                                <div>
+                                {/* Số lượng */}
+                                <div className="product-quantity">
+                                    x{item.quantity}
+                                </div>
+
+                                {/* Giá */}
+                                <div className="product-total">
                                     <strong>
                                         {(item.price * item.quantity).toLocaleString()}đ
                                     </strong>
@@ -247,66 +318,23 @@ function OrderDetail() {
                             disabled={cancelling}
                             className="cancel-btn"
                         >
-                            {cancelling ? "Đang huỷ..." : "Huỷ đơn"}
+                            {cancelling ? "Đang hủy..." : "Hủy đơn"}
                         </button>
                     )}
 
                     {order.status === "shipping" && (
                         <button
-                            onClick={handleReturn}
+                            onClick={submitReturn}
+                            disabled={returning}
                             className="return-btn"
                         >
-                            Hoàn hàng
+                            {returning ? "Đang gửi..." : "Yêu cầu hoàn hàng"}
                         </button>
                     )}
 
                 </div>
 
             </div>
-
-            {/* ================= MODAL ================= */}
-            {returnModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-box">
-
-                        <h3>Lý do hoàn hàng</h3>
-
-                        <textarea
-                            value={returnNote}
-                            onChange={(e) => setReturnNote(e.target.value)}
-                            placeholder="Nhập lý do..."
-                            rows={5}
-                        />
-
-                        <div className="modal-actions">
-
-                            <button
-                                className="btn-cancel"
-                                onClick={() => setReturnModalOpen(false)}
-                            >
-                                Huỷ
-                            </button>
-
-                            <button
-                                className="btn-submit"
-                                onClick={submitReturn}
-                                disabled={returning}
-                            >
-                                {returning ? "Đang gửi..." : "Gửi"}
-                            </button>
-
-                        </div>
-
-                    </div>
-                </div>
-            )}
-
-            {/* ================= TOAST ================= */}
-            {toast.open && (
-                <div className={`toast ${toast.type}`}>
-                    {toast.message}
-                </div>
-            )}
 
         </CustomerLayout>
     );

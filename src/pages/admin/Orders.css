@@ -302,9 +302,15 @@
     color: #dc2626;
 }
 
+/* Hoàn hàng - màu xám */
 .status.returned {
-    background: #fed7aa;
-    color: #ea580c;
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.status.return-requested {
+    background: #e5e7eb;
+    color: #6b7280;
 }
 
 .status:hover {
@@ -331,30 +337,6 @@
     color: #d97706;
 }
 
-/* View button */
-.view-btn {
-    padding: 6px 10px;
-    border: none;
-    background: #f1f5f9;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    color: #64748b;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.view-btn svg {
-    font-size: 16px;
-}
-
-.view-btn:hover {
-    background: #3b82f6;
-    color: white;
-    transform: translateY(-1px);
-}
-
 /* Empty state */
 .empty-orders {
     text-align: center;
@@ -376,103 +358,82 @@
 }
 
 /* ========================= */
-/* SWEETALERT2 CUSTOM */
+/* ACTION BUTTONS */
 /* ========================= */
 
-.swal-form {
+.action-buttons {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    text-align: left;
-    margin-top: 8px;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
-.swal-form label {
+/* View Button */
+.order-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.order-view-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.order-view-btn:active {
+    transform: scale(0.95);
+}
+
+/* Cancel Button */
+.order-cancel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: #e74c3c;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    gap: 2px;
+}
+
+.order-cancel-btn:hover:not(:disabled) {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+.order-cancel-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.order-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.order-cancel-btn svg {
     font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    margin-top: 6px;
 }
 
-.swal-form label:first-child {
-    margin-top: 0;
+.order-cancel-btn .cancel-x {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
 }
 
-.swal2-input {
-    margin: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box;
-    border-radius: 8px !important;
-}
-
-/* ========================= */
-/* RESPONSIVE */
-/* ========================= */
-
-@media (max-width: 768px) {
-    .orders-page {
-        padding: 16px;
-    }
-    
-    .orders-header h1 {
-        font-size: 24px;
-    }
-    
-    .orders-toolbar {
-        padding: 16px;
-    }
-    
-    .search-section {
-        margin-bottom: 20px;
-    }
-    
-    .filter-section {
-        margin-bottom: 16px;
-    }
-    
-    .filter-btn {
-        padding: 6px 14px;
-        font-size: 13px;
-    }
-    
-    .date-filters {
-        flex-direction: column;
-    }
-    
-    .date-filter-select {
-        width: 100%;
-    }
-    
-    .orders-table th,
-    .orders-table td {
-        padding: 12px;
-    }
-    
-    .status-filters {
-        gap: 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .orders-stats {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    
-    .filter-btn {
-        padding: 5px 12px;
-        font-size: 12px;
-    }
-    
-    .status {
-        padding: 4px 10px;
-        font-size: 11px;
-    }
-    
-    .view-btn {
-        padding: 5px 8px;
-    }
-}
 /* ========================= */
 /* PAGINATION STYLES */
 /* ========================= */
@@ -576,8 +537,100 @@
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-/* Responsive cho phân trang */
+/* ========================= */
+/* SWEETALERT2 CUSTOM */
+/* ========================= */
+
+.swal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+    margin-top: 8px;
+}
+
+.swal-form label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 6px;
+}
+
+.swal-form label:first-child {
+    margin-top: 0;
+}
+
+.swal2-input {
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    border-radius: 8px !important;
+}
+
+.swal2-textarea {
+    width: 100% !important;
+    min-height: 100px !important;
+    padding: 10px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-family: inherit !important;
+    resize: vertical !important;
+}
+
+.swal2-textarea:focus {
+    outline: none !important;
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1) !important;
+}
+
+/* ========================= */
+/* RESPONSIVE */
+/* ========================= */
+
 @media (max-width: 768px) {
+    .orders-page {
+        padding: 16px;
+    }
+    
+    .orders-header h1 {
+        font-size: 24px;
+    }
+    
+    .orders-toolbar {
+        padding: 16px;
+    }
+    
+    .search-section {
+        margin-bottom: 20px;
+    }
+    
+    .filter-section {
+        margin-bottom: 16px;
+    }
+    
+    .filter-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+    
+    .date-filters {
+        flex-direction: column;
+    }
+    
+    .date-filter-select {
+        width: 100%;
+    }
+    
+    .orders-table th,
+    .orders-table td {
+        padding: 12px;
+    }
+    
+    .status-filters {
+        gap: 8px;
+    }
+
     .pagination-container {
         flex-direction: column;
         align-items: stretch;
@@ -595,158 +648,20 @@
         justify-content: center;
     }
 }
-/* ========================= */
-/* ACTION BUTTONS - THÊM MỚI */
-/* ========================= */
 
-.action-buttons {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
+@media (max-width: 480px) {
+    .orders-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .filter-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+    }
+    
+    .status {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
 }
-
-/* View Button */
-.view-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    background: #3498db;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.view-btn:hover {
-    background: #2980b9;
-    transform: scale(1.05);
-}
-
-.view-btn:active {
-    transform: scale(0.95);
-}
-
-/* Cancel Button */
-.cancel-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    background: #e74c3c;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.cancel-btn:hover:not(:disabled) {
-    background: #c0392b;
-    transform: scale(1.05);
-}
-
-.cancel-btn:active:not(:disabled) {
-    transform: scale(0.95);
-}
-
-.cancel-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Return Button */
-.return-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    background: #f39c12;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.return-btn:hover:not(:disabled) {
-    background: #d68910;
-    transform: scale(1.05);
-}
-
-.return-btn:active:not(:disabled) {
-    transform: scale(0.95);
-}
-
-.return-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Tooltip cho các nút */
-.view-btn,
-.cancel-btn,
-.return-btn {
-    position: relative;
-}
-
-.view-btn[title]:hover::after,
-.cancel-btn[title]:hover::after,
-.return-btn[title]:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-}
-
-/* ========================= */
-/* SWEETALERT FORM STYLES - THÊM MỚI */
-/* ========================= */
-
-.swal-form {
-    text-align: left;
-    padding: 10px 0;
-}
-
-.swal-form label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
-}
-
-.swal-form .swal2-textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    resize: vertical;
-    font-family: inherit;
-    transition: border-color 0.2s ease;
-}
-
-.swal-form .swal2-textarea:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
-
-/* ========================= */
-/* RESPONSIVE - THÊM MỚI */

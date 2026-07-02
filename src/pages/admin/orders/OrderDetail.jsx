@@ -1,4 +1,3 @@
-
 import {
     useEffect,
     useState
@@ -18,7 +17,8 @@ import {
     FaUser,
     FaMoneyBillWave,
     FaTruck,
-    FaTimesCircle
+    FaTimesCircle,
+    FaCopy
 } from "react-icons/fa";
 
 import "./OrderDetail.css";
@@ -77,18 +77,24 @@ function OrderDetail() {
             text: "Đã huỷ",
             className: "cancelled"
         },
+
         return_requested: {
-    text: "Hoàn hàng",
-    className: "return-requested"
-},
-        
+            text: "Hoàn hàng",
+            className: "return-requested"
+        },
+
+        returned: {
+            text: "Hoàn hàng",
+            className: "return-requested"
+        }
 
     };
 
     const paymentStatusMap = {
 
         unpaid: "Chưa thanh toán",
-
+        pending: "Chưa thanh toán",
+        failed: "Thất bại",
         paid: "Đã thanh toán"
 
     };
@@ -186,6 +192,51 @@ function OrderDetail() {
         };
 
     // =========================
+    // COPY TO CLIPBOARD
+    // =========================
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text)
+            .then(() => alert("Đã sao chép!"))
+            .catch(() => alert("Sao chép thất bại"));
+    };
+
+    // =========================
+    // GET PAYMENT STATUS TEXT
+    // =========================
+
+    const getPaymentStatusText = () => {
+        // Nếu đơn hàng ở trạng thái hoàn hàng, luôn hiển thị là "Thất bại"
+        if (order.status === "return_requested" || order.status === "returned") {
+            return "Thất bại";
+        }
+        return paymentStatusMap[order.payment_status] || order.payment_status;
+    };
+
+    // =========================
+    // GET PAYMENT STATUS CLASS
+    // =========================
+
+    const getPaymentStatusClass = () => {
+        // Nếu đơn hàng ở trạng thái hoàn hàng, luôn là "failed"
+        if (order.status === "return_requested" || order.status === "returned") {
+            return "payment-status-failed";
+        }
+        
+        switch (order.payment_status) {
+            case "paid":
+                return "payment-status-paid";
+            case "pending":
+            case "unpaid":
+                return "payment-status-pending";
+            case "failed":
+                return "payment-status-failed";
+            default:
+                return "payment-status-pending";
+        }
+    };
+
+    // =========================
     // LOADING
     // =========================
 
@@ -278,208 +329,136 @@ function OrderDetail() {
 
             </div>
 
-            {/* CUSTOMER */}
+            {/* ROW 1: CUSTOMER + PAYMENT (2 columns) */}
 
-            <div className="detail-card">
+            <div className="detail-row-2cols">
 
-                <div className="card-title">
+                {/* CUSTOMER */}
 
-                    <FaUser />
+                <div className="detail-card">
 
-                    <h3>
-                        Thông tin khách hàng
-                    </h3>
-
-                </div>
-
-                <div className="detail-grid">
-
-                    <div>
-
-                        <span>
-                            Họ tên
-                        </span>
-
-                        <p>
-                            {order.customer_name}
-                        </p>
-
+                    <div className="card-title">
+                        <FaUser />
+                        <h3>Thông tin khách hàng</h3>
                     </div>
 
-                    <div>
+                    <div className="card-body">
 
-                        <span>
-                            Số điện thoại
-                        </span>
+                        <div className="detail-grid">
 
-                        <p>
-                            {order.phone}
-                        </p>
+                            <div>
+                                <span>Họ tên</span>
+                                <p>
+                                    {order.customer_name}
+                                    <FaCopy
+                                        className="copy-icon"
+                                        onClick={() => copyToClipboard(order.customer_name)}
+                                    />
+                                </p>
+                            </div>
 
-                    </div>
-
-                    <div className="full-width">
-
-                        <span>
-                            Địa chỉ nhận hàng
-                        </span>
-
-                        <p>
-                            {order.address}
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            {/* PAYMENT */}
-
-            <div className="detail-card">
-
-                <div className="card-title">
-
-                    <FaMoneyBillWave />
-
-                    <h3>
-                        Thanh toán
-                    </h3>
-
-                </div>
-
-                <div className="detail-grid">
-
-                    <div>
-
-                        <span>
-                            Phương thức
-                        </span>
-
-                        <p>
-                            {order.payment_method}
-                        </p>
-
-                    </div>
-
-                    <div>
-
-                        <span>
-                            Trạng thái
-                        </span>
-
-                        <p>
-                            {
-                                paymentStatusMap[
-                                    order.payment_status
-                                ]
-                                || order.payment_status
-                            }
-                        </p>
-
-                    </div>
-
-                    <div>
-
-                        <span>
-                            Mã giảm giá
-                        </span>
-
-                        <p>
-                            {
-                                order.coupon_code
-                                    ? order.coupon_code
-                                    : "Không có"
-                            }
-                        </p>
-
-                    </div>
-
-                    {
-                        order.note && (
+                            <div>
+                                <span>Số điện thoại</span>
+                                <p>
+                                    {order.phone}
+                                    <FaCopy
+                                        className="copy-icon"
+                                        onClick={() => copyToClipboard(order.phone)}
+                                    />
+                                </p>
+                            </div>
 
                             <div className="full-width">
-
-                                <span>
-                                    Ghi chú
-                                </span>
-
+                                <span>Địa chỉ nhận hàng</span>
                                 <p>
-                                    {order.note}
+                                    {order.address}
+                                    <FaCopy
+                                        className="copy-icon"
+                                        onClick={() => copyToClipboard(order.address)}
+                                    />
                                 </p>
-
                             </div>
 
-                        )
-                    }
+                        </div>
 
-                    {
-                        order.status === "cancelled"
-                        &&
-                        order.admin_note && (
+                    </div>
 
-                            <div className="full-width cancel-reason">
+                </div>
 
-                                <span>
-                                    Lý do huỷ đơn
-                                </span>
+                {/* PAYMENT */}
 
-                                <p>
-                                    {order.admin_note}
-                                </p>
+                <div className="detail-card">
 
+                    <div className="card-title">
+                        <FaMoneyBillWave />
+                        <h3>Thanh toán</h3>
+                    </div>
+
+                    <div className="card-body">
+
+                        <div className="detail-grid">
+
+                            <div>
+                                <span>Phương thức</span>
+                                <p>{order.payment_method}</p>
                             </div>
 
-                        )
-                    }
+                            <div>
+                                <span>Trạng thái</span>
+                                <p className={getPaymentStatusClass()}>
+                                    {getPaymentStatusText()}
+                                </p>
+                            </div>
+
+                            <div>
+                                <span>Mã giảm giá</span>
+                                <p>{order.coupon_code ? order.coupon_code : "Không có"}</p>
+                            </div>
+
+                            {order.note && (
+                                <div className="full-width">
+                                    <span>Ghi chú</span>
+                                    <p>{order.note}</p>
+                                </div>
+                            )}
+
+                            {order.status === "cancelled" && order.admin_note && (
+                                <div className="full-width cancel-reason">
+                                    <span>Lý do huỷ đơn</span>
+                                    <p>{order.admin_note}</p>
+                                </div>
+                            )}
+
+                        </div>
+
+                    </div>
 
                 </div>
 
             </div>
 
-            {/* SHIPPING */}
+            {/* ROW 2: SHIPPING (full width) */}
 
             <div className="detail-card">
 
                 <div className="card-title">
-
                     <FaTruck />
-
-                    <h3>
-                        Vận chuyển
-                    </h3>
-
+                    <h3>Vận chuyển</h3>
                 </div>
 
-                <div className="detail-grid">
+                <div className="card-body">
 
-                    <div>
+                    <div className="detail-grid">
 
-                        <span>
-                            Đơn vị vận chuyển
-                        </span>
+                        <div>
+                            <span>Đơn vị vận chuyển</span>
+                            <p>{order.shipping_provider || "Chưa cập nhật"}</p>
+                        </div>
 
-                        <p>
-                            {
-                                order.shipping_provider
-                                || "Chưa cập nhật"
-                            }
-                        </p>
-
-                    </div>
-
-                    <div>
-
-                        <span>
-                            Mã vận đơn
-                        </span>
-
-                        <p>
-                            {
-                                order.tracking_code
-                                || "Chưa cập nhật"
-                            }
-                        </p>
+                        <div>
+                            <span>Mã vận đơn</span>
+                            <p>{order.tracking_code || "Chưa cập nhật"}</p>
+                        </div>
 
                     </div>
 
@@ -487,77 +466,145 @@ function OrderDetail() {
 
             </div>
 
-            {/* PRODUCTS */}
+            {/* ROW 3: PRODUCTS (full width) */}
 
+            <div className="detail-card">
 
-<div className="detail-card">
+                <div className="card-title">
+                    <FaBox />
+                    <h3>Sản phẩm đã đặt</h3>
+                </div>
 
-    <div className="card-title">
+                <div className="minimal-product-list">
 
-        <FaBox />
+                    {
+                        order.items?.map((item) => (
 
-        <h3>
-            Sản phẩm đã đặt
-        </h3>
+                            <div
+                                className="minimal-product-item"
+                                key={item.id}
+                            >
 
-    </div>
+                                {/* Ảnh sản phẩm */}
+                                <div className="product-image-wrapper">
+                                    <img
+                                        src={item.image || "/placeholder-product.png"}
+                                        alt={item.product_name}
+                                        className="product-image"
+                                    />
+                                </div>
 
-    <div className="minimal-product-list">
+                                {/* LEFT */}
+                                <div className="minimal-product-left">
 
-        {
-            order.items?.map((item) => (
+                                    <h4>
+                                        {item.product_name}
+                                    </h4>
 
-                <div
-                    className="minimal-product-item"
-                    key={item.id}
-                >
+                                    <p>
+                                        {
+                                            item.variant_name
+                                            || "Không có phân loại"
+                                        }
+                                    </p>
 
-                    {/* LEFT */}
+                                </div>
 
-                    <div className="minimal-product-left">
+                                {/* CENTER */}
+                                <div className="minimal-product-qty">
 
-                        <h4>
-                            {item.product_name}
-                        </h4>
+                                    x{item.quantity}
 
-                        <p>
+                                </div>
+
+                                {/* RIGHT */}
+                                <div className="minimal-product-right">
+
+                                    <strong>
+
+                                        {
+                                            (
+                                                Number(item.price)
+                                                * item.quantity
+                                            ).toLocaleString()
+                                        }đ
+
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        ))
+                    }
+
+                </div>
+
+            </div>
+
+            {/* ROW 4: TOTAL & CANCEL (full width) */}
+
+            <div className="detail-row-total">
+
+                {/* TOTAL */}
+
+                <div className="total-wrapper">
+
+                    <div className="total-row">
+
+                        <span>
+                            Tạm tính
+                        </span>
+
+                        <span>
+
                             {
-                                item.variant_name
-                                || "Không có phân loại"
+                                (
+                                    Number(order.total_price)
+                                    +
+                                    Number(order.discount_amount || 0)
+                                ).toLocaleString()
                             }
-                        </p>
+                            đ
+
+                        </span>
 
                     </div>
 
-                    {/* CENTER */}
+                    <div className="total-row discount-row">
 
-                    <div className="minimal-product-qty">
+                        <span>
+                            Giảm giá
+                        </span>
 
-                        x{item.quantity}
+                        <span>
 
-                    </div>
-
-                    {/* RIGHT */}
-
-                    <div className="minimal-product-right">
-
-                        <span className="minimal-price">
-
+                            -
                             {
-                                Number(item.price)
-                                    .toLocaleString()
-                            }đ
+                                Number(
+                                    order.discount_amount || 0
+                                ).toLocaleString()
+                            }
+                            đ
 
+                        </span>
+
+                    </div>
+
+                    <div className="total-box">
+
+                        <span>
+                            Tổng cộng
                         </span>
 
                         <strong>
 
                             {
-                                (
-                                    Number(item.price)
-                                    * item.quantity
+                                Number(
+                                    order.total_price
                                 ).toLocaleString()
-                            }đ
+                            }
+                            đ
 
                         </strong>
 
@@ -565,136 +612,63 @@ function OrderDetail() {
 
                 </div>
 
-            ))
-        }
+                {/* CANCEL */}
 
-    </div>
+                {
+                    (
+                        order.status === "pending"
+                        ||
+                        order.status === "confirmed"
+                    ) && (
 
-</div>
+                        <div className="cancel-card">
 
+                            <div className="cancel-top">
 
+                                <div>
 
-            {/* CANCEL */}
+                                    <h3>
+                                        Huỷ đơn hàng
+                                    </h3>
 
-            {
-                (
-                    order.status === "pending"
-                    ||
-                    order.status === "confirmed"
-                ) && (
+                                    <p>
+                                        Hành động này không thể hoàn tác
+                                    </p>
 
-                    <div className="cancel-card">
+                                </div>
 
-                        <div className="cancel-top">
-
-                            <div>
-
-                                <h3>
-                                    Huỷ đơn hàng
-                                </h3>
-
-                                <p>
-                                    Hành động này không thể hoàn tác
-                                </p>
+                                <FaTimesCircle />
 
                             </div>
 
-                            <FaTimesCircle />
+                            <textarea
+                                value={cancelNote}
+                                onChange={(e) =>
+                                    setCancelNote(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Nhập lý do huỷ đơn hàng..."
+                            />
+
+                            <button
+                                type="button"
+                                onClick={handleCancelOrder}
+                                disabled={cancelLoading}
+                            >
+
+                                {
+                                    cancelLoading
+                                        ? "Đang xử lý..."
+                                        : "Xác nhận huỷ đơn"
+                                }
+
+                            </button>
 
                         </div>
 
-                        <textarea
-                            value={cancelNote}
-                            onChange={(e) =>
-                                setCancelNote(
-                                    e.target.value
-                                )
-                            }
-                            placeholder="Nhập lý do huỷ đơn hàng..."
-                        />
-
-                        <button
-                            type="button"
-                            onClick={handleCancelOrder}
-                            disabled={cancelLoading}
-                        >
-
-                            {
-                                cancelLoading
-                                    ? "Đang xử lý..."
-                                    : "Xác nhận huỷ đơn"
-                            }
-
-                        </button>
-
-                    </div>
-
-                )
-            }
-
-            {/* TOTAL */}
-
-            <div className="total-wrapper">
-
-                <div className="total-row">
-
-                    <span>
-                        Tạm tính
-                    </span>
-
-                    <span>
-
-                        {
-                            (
-                                Number(order.total_price)
-                                +
-                                Number(order.discount_amount || 0)
-                            ).toLocaleString()
-                        }
-                        đ
-
-                    </span>
-
-                </div>
-
-                <div className="total-row discount-row">
-
-                    <span>
-                        Giảm giá
-                    </span>
-
-                    <span>
-
-                        -
-                        {
-                            Number(
-                                order.discount_amount || 0
-                            ).toLocaleString()
-                        }
-                        đ
-
-                    </span>
-
-                </div>
-
-                <div className="total-box">
-
-                    <span>
-                        Tổng cộng
-                    </span>
-
-                    <strong>
-
-                        {
-                            Number(
-                                order.total_price
-                            ).toLocaleString()
-                        }
-                        đ
-
-                    </strong>
-
-                </div>
+                    )
+                }
 
             </div>
 
@@ -704,4 +678,3 @@ function OrderDetail() {
 }
 
 export default OrderDetail;
-
