@@ -1,7 +1,9 @@
+// pages/customer/OrderDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import CustomerLayout from "../../layouts/CustomerLayout";
+import socket from "../../socket";
 
 import {
     getOrderDetail,
@@ -40,6 +42,33 @@ function OrderDetail() {
 
     useEffect(() => {
         if (id) fetchOrderDetail();
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const handleOrderUpdate = (data) => {
+            if (Number(data.order_id) !== Number(id)) {
+                return;
+            }
+
+            setOrder((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        ...data,
+                        status: data.status || data.order_status || prev.status,
+                        payment_status: data.payment_status || prev.payment_status
+                    }
+                    : prev
+            );
+        };
+
+        socket.on("order_updated", handleOrderUpdate);
+
+        return () => {
+            socket.off("order_updated", handleOrderUpdate);
+        };
     }, [id]);
 
     const fetchOrderDetail = async () => {

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
 import CustomerLayout from "../../layouts/CustomerLayout";
@@ -46,6 +47,9 @@ function ProductDetail() {
 
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [showFullDescription, setShowFullDescription] = useState(false);
+
+    const productRef = useRef(null);
+    const relatedProductsRef = useRef([]);
 
     const { loadCart } = useCart();
 
@@ -101,7 +105,7 @@ function ProductDetail() {
     // FETCH PRODUCT
     // =========================
 
-    const fetchProduct = async () => {
+    const fetchProduct = async (loadRelated = true) => {
 
         try {
 
@@ -129,7 +133,9 @@ function ProductDetail() {
                 productData.variants?.[0]
             );
 
-            await fetchRelatedProducts(productData.category_id, productData.id);
+            if (loadRelated) {
+                await fetchRelatedProducts(productData.category_id, productData.id);
+            }
 
         } catch (error) {
 
@@ -147,32 +153,50 @@ function ProductDetail() {
 
         fetchProduct();
 
-        socket.on(
-            "product_updated",
-            (data) => {
-
-                if (
-                    Number(
-                        data.product_id
-                    ) === Number(id)
-                ) {
-
-                    fetchProduct();
-
-                }
-
+        const handleProductUpdated = (data) => {
+            if (Number(data.product_id) !== Number(id)) {
+                return;
             }
-        );
+
+            fetchProduct(false);
+
+            if (
+                relatedProductsRef.current.length > 0 &&
+                productRef.current?.category_id
+            ) {
+                fetchRelatedProducts(
+                    productRef.current.category_id,
+                    data.product_id
+                );
+            }
+        };
+
+        const handleProductDeleted = (data) => {
+            if (Number(data.product_id) !== Number(id)) {
+                return;
+            }
+
+            toast.error("Sản phẩm đã bị gỡ.");
+            navigate("/products");
+        };
+
+        socket.on("product_updated", handleProductUpdated);
+        socket.on("product_deleted", handleProductDeleted);
 
         return () => {
-
-            socket.off(
-                "product_updated"
-            );
-
+            socket.off("product_updated", handleProductUpdated);
+            socket.off("product_deleted", handleProductDeleted);
         };
 
     }, [id]);
+
+    useEffect(() => {
+        productRef.current = product;
+    }, [product]);
+
+    useEffect(() => {
+        relatedProductsRef.current = relatedProducts;
+    }, [relatedProducts]);
 
     // =========================
     // RESET QUANTITY

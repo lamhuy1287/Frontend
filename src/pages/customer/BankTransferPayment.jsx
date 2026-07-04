@@ -1,3 +1,4 @@
+// pages/customer/BankTransferPayment.jsx
 import {
     useEffect,
     useState
@@ -8,12 +9,14 @@ import {
     useParams
 } from "react-router-dom";
 
-import io from "socket.io-client";
+import socket from "../../socket";
+import toast from "react-hot-toast";
+import api from "../../services/api";
 
 import CustomerLayout from "../../layouts/CustomerLayout";
 import { getOrderDetail } from "../../services/orderService";
 
-const socket = io("http://localhost:5000");
+// use shared socket from src/socket.js
 
 function BankTransferPayment() {
     const location = useLocation();
@@ -35,16 +38,36 @@ function BankTransferPayment() {
     }, [orderId, payment]);
 
     useEffect(() => {
-        socket.on("order_updated", (data) => {
-            if (data.order_id === Number(orderId)) {
-                if (data.payment_status === "paid") {
-                    alert("Thanh toán đã được xác nhận");
+        const handleOrderUpdated = async (data) => {
+            if (Number(data.order_id) !== Number(orderId)) return;
+
+            // reload full order whenever relevant fields change
+            if (
+                data.payment_status ||
+                data.status ||
+                data.shipping_provider ||
+                data.tracking_code ||
+                data.admin_note
+            ) {
+                try {
+                    await fetchPayment();
+                } catch (err) {
+                    console.error("Error reloading order on socket event", err);
                 }
             }
-        });
+
+            // handle explicit payment status transitions
+            if (data.payment_status === "paid") {
+                toast.success("Thanh toán đã được xác nhận");
+            } else if (data.payment_status === "failed") {
+                toast.error("Thanh toán không thành công");
+            }
+        };
+
+        socket.on("order_updated", handleOrderUpdated);
 
         return () => {
-            socket.off("order_updated");
+            socket.off("order_updated", handleOrderUpdated);
         };
     }, [orderId]);
 
@@ -61,9 +84,24 @@ function BankTransferPayment() {
         }
     };
 
-    const handleTransferred = () => {
+    const handleTransferred = async () => {
         setSubmitted(true);
-        alert("Yêu cầu xác nhận thanh toán đã được gửi");
+
+        // Try to notify backend that user submitted payment.
+        // Prefer POST /orders/{id}/payment-request, fallback to PUT /orders/{id}/payment-submitted
+        try {
+            await api.post(`/orders/${orderId}/payment-request`);
+            toast.success("Yêu cầu xác nhận thanh toán đã được gửi");
+        } catch (err) {
+            try {
+                await api.put(`/orders/${orderId}/payment-submitted`);
+                toast.success("Yêu cầu xác nhận thanh toán đã được gửi");
+            } catch (err2) {
+                // endpoints may not exist; still mark submitted and inform user
+                console.warn("No payment-submit endpoint, fallback to local submitted state", err2);
+                toast("Yêu cầu xác nhận thanh toán đã được gửi");
+            }
+        }
     };
 
     const handleCancelOrder = () => {

@@ -1,3 +1,4 @@
+// pages/customer/Cart.jsx
 import {
     useEffect,
     useMemo,
@@ -23,6 +24,8 @@ import {
 import {
     validateCoupon
 } from "../../services/couponService";
+import socket from "../../socket";
+
 function Cart() {
 
     const navigate = useNavigate();
@@ -111,6 +114,30 @@ function Cart() {
 
         fetchCart();
 
+    }, []);
+
+    useEffect(() => {
+        const handleCartUpdated = () => {
+            fetchCart();
+        };
+
+        socket.on("cart_updated", handleCartUpdated);
+
+        return () => {
+            socket.off("cart_updated", handleCartUpdated);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleDiscountUpdated = () => {
+            fetchCart();
+        };
+
+        socket.on("discount_updated", handleDiscountUpdated);
+
+        return () => {
+            socket.off("discount_updated", handleDiscountUpdated);
+        };
     }, []);
 
     // =========================
