@@ -236,43 +236,54 @@ function ProductDetail() {
                             </thead>
 
                             <tbody>
-                                {product.variants.map((variant, index) => (
-                                    <tr key={variant.id} style={trStyle}>
-                                        <td style={tdStyle}>{index + 1}</td>
+                                {product.variants.map((variant, index) => {
+                                    // Xác định màu sắc dựa trên số lượng
+                                    let stockColor = "";
+                                    let textColor = "";
+                                    
+                                    if (variant.quantity <= 0) {
+                                        stockColor = "#FEE2E2"; // Đỏ - hết hàng
+                                        textColor = "#991B1B";
+                                    } else if (variant.quantity <= 5) {
+                                        stockColor = "#FEF3C7"; // Vàng - sắp hết
+                                        textColor = "#92400E";
+                                    } else {
+                                        stockColor = "#DCFCE7"; // Xanh lục - còn hàng
+                                        textColor = "#166534";
+                                    }
+                                    
+                                    return (
+                                        <tr key={variant.id} style={trStyle}>
+                                            <td style={tdStyle}>{index + 1}</td>
 
-                                        <td style={tdStyle}>
-                                            <div style={variantNameBox}>
-                                                {variant.variant_name || variant.name}
-                                            </div>
-                                        </td>
+                                            <td style={tdStyle}>
+                                                <div style={variantNameBox}>
+                                                    {variant.variant_name || variant.name}
+                                                </div>
+                                            </td>
 
-                                        <td style={tdStyle}>
-                                            <span style={priceTag}>
-                                                {variant.price
-                                                    ? Number(variant.price).toLocaleString("vi-VN")
-                                                    : 0} VNĐ
-                                            </span>
-                                        </td>
+                                            <td style={tdStyle}>
+                                                <span style={priceTag}>
+                                                    {variant.price
+                                                        ? Number(variant.price).toLocaleString("vi-VN")
+                                                        : 0} VNĐ
+                                                </span>
+                                            </td>
 
-                                        <td style={tdStyle}>
-                                            <span
-                                                style={{
-                                                    ...stockBadge,
-                                                    background:
-                                                        variant.quantity > 0
-                                                            ? "#DCFCE7"
-                                                            : "#FEE2E2",
-                                                    color:
-                                                        variant.quantity > 0
-                                                            ? "#166534"
-                                                            : "#991B1B"
-                                                }}
-                                            >
-                                                {variant.quantity || 0}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            <td style={tdStyle}>
+                                                <span
+                                                    style={{
+                                                        ...stockBadge,
+                                                        background: stockColor,
+                                                        color: textColor
+                                                    }}
+                                                >
+                                                    {variant.quantity || 0}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -348,7 +359,7 @@ function InfoRow({ label, value }) {
 }
 
 // =========================
-// (GIỮ NGUYÊN STYLE CỦA BẠN)
+// STYLES
 // =========================
 
 const pageStyle = {
@@ -520,9 +531,10 @@ const stockBadge = {
     borderRadius: "999px",
     fontWeight: "600",
     fontSize: "13px",
-    display: "inline-block",
+    display: "inline-flex",
+    alignItems: "center",
     minWidth: "40px",
-    textAlign: "center"
+    justifyContent: "center"
 };
 
 const emptyVariant = {

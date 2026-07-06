@@ -95,7 +95,7 @@ export const deleteProduct = async (id) => {
 };
 
 // =========================
-// GET STOCK SUMMARY
+// GET STOCK SUMMARY - CẬP NHẬT
 // =========================
 export const getStockSummary = async () => {
     const token = getToken();
@@ -116,6 +116,8 @@ export const getStockSummary = async () => {
                 data: {
                     low_stock: 0,
                     out_of_stock: 0,
+                    has_low_stock_variant: 0,
+                    has_out_of_stock_variant: 0,
                     in_stock: 0,
                     total_products: 0
                 }
@@ -125,7 +127,7 @@ export const getStockSummary = async () => {
 };
 
 // =========================
-// GET LOW STOCK PRODUCTS
+// GET LOW STOCK PRODUCTS (tổng <= 5)
 // =========================
 export const getLowStockProducts = async (page = 1, limit = 20) => {
     return getProducts({
@@ -136,7 +138,7 @@ export const getLowStockProducts = async (page = 1, limit = 20) => {
 };
 
 // =========================
-// GET OUT OF STOCK PRODUCTS
+// GET OUT OF STOCK PRODUCTS (tổng = 0)
 // =========================
 export const getOutOfStockProducts = async (page = 1, limit = 20) => {
     return getProducts({
@@ -154,6 +156,17 @@ export const getProductsWithLowStockVariants = async (page = 1, limit = 20) => {
         page,
         limit,
         stock_filter: "has_low_stock_variant"
+    });
+};
+
+// =========================
+// GET PRODUCTS WITH OUT OF STOCK VARIANTS - THÊM MỚI
+// =========================
+export const getProductsWithOutOfStockVariants = async (page = 1, limit = 20) => {
+    return getProducts({
+        page,
+        limit,
+        stock_filter: "has_out_of_stock_variant"
     });
 };
 
@@ -267,34 +280,110 @@ export const getBestSellingProducts = async (limit = 8) => {
 };
 
 // =========================
-// HELPER: KIỂM TRA TRẠNG THÁI TỒN KHO
+// HELPER: KIỂM TRA TRẠNG THÁI TỒN KHO - CẬP NHẬT
 // =========================
 export const getStockStatusInfo = (totalQuantity) => {
     if (totalQuantity === 0) {
         return {
             status: "out_of_stock",
             label: "Hết hàng",
-            color: "red",
-            bgColor: "#f8d7da",
-            icon: "❌"
+            color: "#dc2626",
+            bgColor: "#fecaca",
+            icon: "❌",
+            priority: 1 // Độ ưu tiên hiển thị
         };
     }
     if (totalQuantity <= 5) {
         return {
             status: "low_stock",
             label: `Sắp hết (còn ${totalQuantity})`,
-            color: "orange",
-            bgColor: "#fff3cd",
-            icon: "⚠️"
+            color: "#f59e0b",
+            bgColor: "#fef3c7",
+            icon: "⚠️",
+            priority: 2
         };
     }
     return {
         status: "in_stock",
         label: "Còn hàng",
-        color: "green",
+        color: "#22c55e",
         bgColor: "transparent",
-        icon: "✓"
+        icon: "✅",
+        priority: 3
     };
+};
+
+// =========================
+// HELPER: LẤY THÔNG TIN TRẠNG THÁI TỪ API - THÊM MỚI
+// =========================
+export const getStockStatusFromAPI = (product) => {
+    if (!product) {
+        return {
+            status: "unknown",
+            label: "Không xác định",
+            color: "#6b7280",
+            bgColor: "#f3f4f6",
+            icon: "❓",
+            priority: 4
+        };
+    }
+    
+    switch (product.stock_status) {
+        case "out_of_stock":
+            return {
+                status: "out_of_stock",
+                label: "Hết hàng (tổng = 0)",
+                color: "#dc2626",
+                bgColor: "#fecaca",
+                icon: "❌",
+                priority: 1
+            };
+        case "low_stock":
+            return {
+                status: "low_stock",
+                label: "Sắp hết hàng (tổng ≤5)",
+                color: "#f59e0b",
+                bgColor: "#fef3c7",
+                icon: "⚠️",
+                priority: 2
+            };
+        case "has_low_stock_variant":
+            return {
+                status: "has_low_stock_variant",
+                label: "Có biến thể sắp hết",
+                color: "#f59e0b",
+                bgColor: "#fef3c7",
+                icon: "🟡",
+                priority: 3
+            };
+        case "has_out_of_stock_variant":
+            return {
+                status: "has_out_of_stock_variant",
+                label: "Có biến thể hết hàng",
+                color: "#dc2626",
+                bgColor: "#fecaca",
+                icon: "🟣",
+                priority: 3
+            };
+        case "in_stock":
+            return {
+                status: "in_stock",
+                label: "Còn hàng",
+                color: "#22c55e",
+                bgColor: "transparent",
+                icon: "✅",
+                priority: 4
+            };
+        default:
+            return {
+                status: "unknown",
+                label: "Không xác định",
+                color: "#6b7280",
+                bgColor: "#f3f4f6",
+                icon: "❓",
+                priority: 5
+            };
+    }
 };
 
 // =========================
@@ -314,6 +403,14 @@ export const hasLowStockVariant = (variants) => {
 };
 
 // =========================
+// HELPER: KIỂM TRA BIẾN THỂ HẾT HÀNG - THÊM MỚI
+// =========================
+export const hasOutOfStockVariant = (variants) => {
+    if (!variants || variants.length === 0) return false;
+    return variants.some(v => v.quantity === 0);
+};
+
+// =========================
 // HELPER: LẤY DANH SÁCH BIẾN THỂ SẮP HẾT
 // =========================
 export const getLowStockVariants = (variants) => {
@@ -327,4 +424,169 @@ export const getLowStockVariants = (variants) => {
 export const getOutOfStockVariants = (variants) => {
     if (!variants || variants.length === 0) return [];
     return variants.filter(v => v.quantity === 0);
+};
+
+// =========================
+// HELPER: LẤY THÔNG TIN CHI TIẾT VỀ TỒN KHO CỦA SẢN PHẨM - THÊM MỚI
+// =========================
+export const getProductStockDetails = (product) => {
+    if (!product) {
+        return {
+            totalQuantity: 0,
+            stockStatus: "unknown",
+            statusInfo: getStockStatusFromAPI(null),
+            lowStockVariants: [],
+            outOfStockVariants: [],
+            hasLowStockVariant: false,
+            hasOutOfStockVariant: false
+        };
+    }
+    
+    const variants = product.variants || [];
+    const totalQuantity = getTotalQuantityFromVariants(variants);
+    const lowStockVariants = getLowStockVariants(variants);
+    const outOfStockVariants = getOutOfStockVariants(variants);
+    
+    // Xác định stock status dựa trên tổng và biến thể
+    let stockStatus = "in_stock";
+    if (totalQuantity === 0) {
+        stockStatus = "out_of_stock";
+    } else if (totalQuantity <= 5) {
+        stockStatus = "low_stock";
+    } else if (lowStockVariants.length > 0) {
+        stockStatus = "has_low_stock_variant";
+    } else if (outOfStockVariants.length > 0) {
+        stockStatus = "has_out_of_stock_variant";
+    }
+    
+    return {
+        totalQuantity,
+        stockStatus,
+        statusInfo: getStockStatusFromAPI({ stock_status: stockStatus }),
+        lowStockVariants,
+        outOfStockVariants,
+        hasLowStockVariant: lowStockVariants.length > 0,
+        hasOutOfStockVariant: outOfStockVariants.length > 0
+    };
+};
+
+// =========================
+// HELPER: ĐỊNH DẠNG HIỂN THỊ TỒN KHO CHO BẢNG - THÊM MỚI
+// =========================
+export const getStockDisplayInfo = (product) => {
+    const details = getProductStockDetails(product);
+    const { statusInfo, totalQuantity, lowStockVariants, outOfStockVariants } = details;
+    
+    let displayText = statusInfo.label;
+    let detailText = '';
+    
+    if (totalQuantity > 0) {
+        detailText = `Tổng: ${totalQuantity}`;
+        if (lowStockVariants.length > 0) {
+            detailText += ` | Biến thể sắp hết: ${lowStockVariants.length}`;
+        }
+        if (outOfStockVariants.length > 0) {
+            detailText += ` | Biến thể hết: ${outOfStockVariants.length}`;
+        }
+    } else {
+        detailText = 'Không có hàng';
+    }
+    
+    return {
+        ...statusInfo,
+        totalQuantity,
+        displayText,
+        detailText,
+        lowStockVariantsCount: lowStockVariants.length,
+        outOfStockVariantsCount: outOfStockVariants.length
+    };
+};
+
+// =========================
+// CONSTANTS: DANH SÁCH CÁC LOẠI LỌC TỒN KHO - THÊM MỚI
+// =========================
+export const STOCK_FILTERS = {
+    ALL: { value: "all", label: "📦 Tất cả trạng thái", color: "#6b7280" },
+    LOW_STOCK: { value: "low_stock", label: "⚠️ Sắp hết hàng (tổng ≤5)", color: "#f59e0b", bgColor: "#fef3c7" },
+    HAS_LOW_STOCK_VARIANT: { value: "has_low_stock_variant", label: "🟡 Có biến thể sắp hết", color: "#f59e0b", bgColor: "#fef3c7" },
+    OUT_OF_STOCK: { value: "out_of_stock", label: "❌ Hết hàng", color: "#dc2626", bgColor: "#fecaca" },
+    HAS_OUT_OF_STOCK_VARIANT: { value: "has_out_of_stock_variant", label: "🟣 Có biến thể hết hàng", color: "#dc2626", bgColor: "#fecaca" }
+};
+
+// =========================
+// HELPER: LẤY THÔNG TIN FILTER TỪ VALUE - THÊM MỚI
+// =========================
+export const getStockFilterInfo = (value) => {
+    const filter = Object.values(STOCK_FILTERS).find(f => f.value === value);
+    return filter || STOCK_FILTERS.ALL;
+};
+
+// =========================
+// HELPER: KIỂM TRA CÓ CẢNH BÁO TỒN KHO KHÔNG - THÊM MỚI
+// =========================
+export const hasStockWarning = (stockSummary) => {
+    if (!stockSummary) return false;
+    return (
+        stockSummary.low_stock > 0 ||
+        stockSummary.out_of_stock > 0 ||
+        stockSummary.has_low_stock_variant > 0 ||
+        stockSummary.has_out_of_stock_variant > 0
+    );
+};
+
+// =========================
+// HELPER: LẤY DANH SÁCH CẢNH BÁO ĐỂ HIỂN THỊ - THÊM MỚI
+// =========================
+export const getWarningList = (stockSummary) => {
+    const warnings = [];
+    
+    if (!stockSummary) return warnings;
+    
+    if (stockSummary.low_stock > 0) {
+        warnings.push({
+            type: "low_stock",
+            count: stockSummary.low_stock,
+            label: "sắp hết hàng (tổng ≤5)",
+            icon: "🟠",
+            bgColor: "#fef3c7",
+            filter: "low_stock"
+        });
+    }
+    
+    if (stockSummary.out_of_stock > 0) {
+        warnings.push({
+            type: "out_of_stock",
+            count: stockSummary.out_of_stock,
+            label: "hết hàng (tổng = 0)",
+            icon: "🔴",
+            bgColor: "#fecaca",
+            filter: "out_of_stock"
+        });
+    }
+    
+    if (stockSummary.has_low_stock_variant > 0) {
+        warnings.push({
+            type: "has_low_stock_variant",
+            count: stockSummary.has_low_stock_variant,
+            label: "có biến thể sắp hết",
+            icon: "🟡",
+            bgColor: "#fef3c7",
+            filter: "has_low_stock_variant",
+            dashed: true
+        });
+    }
+    
+    if (stockSummary.has_out_of_stock_variant > 0) {
+        warnings.push({
+            type: "has_out_of_stock_variant",
+            count: stockSummary.has_out_of_stock_variant,
+            label: "có biến thể hết hàng",
+            icon: "🟣",
+            bgColor: "#fecaca",
+            filter: "has_out_of_stock_variant",
+            dashed: true
+        });
+    }
+    
+    return warnings;
 };
