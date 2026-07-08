@@ -32,10 +32,10 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#f97316"];
 
 function RevenueReport({ data, loading, dateRange, compareMode }) {
-    const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
+    const [viewMode, setViewMode] = useState('chart');
     const [exporting, setExporting] = useState(false);
 
     if (loading) {
@@ -51,7 +51,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
     
     if (!data) return null;
     
-    // Lấy dữ liệu từ props (cấu trúc từ backend)
     const {
         summary = {},
         daily_revenue = [],
@@ -87,14 +86,26 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
     
     const isPositive = growth_percent >= 0;
 
-    // ============ HÀM XUẤT EXCEL NÂNG CAO ============
+    // Chuẩn hóa dữ liệu cho Pie Chart
+    const totalCategoryRevenue = revenue_by_category.reduce((sum, item) => sum + item.revenue, 0);
+    const categoryDataForPie = revenue_by_category.map(item => ({
+        ...item,
+        percent: totalCategoryRevenue > 0 ? item.revenue / totalCategoryRevenue : 0
+    }));
+
+    // Chuẩn hóa dữ liệu cho Bar Chart (payment)
+    const totalPaymentRevenue = revenue_by_payment.reduce((sum, item) => sum + item.revenue, 0);
+    const paymentDataForBar = revenue_by_payment.map(item => ({
+        ...item,
+        percent: totalPaymentRevenue > 0 ? (item.revenue / totalPaymentRevenue * 100).toFixed(1) : 0
+    }));
+
     const exportToExcel = () => {
         try {
             setExporting(true);
             
             const wb = XLSX.utils.book_new();
             
-            // ===== SHEET 1: TỔNG QUAN =====
             const summaryData = [
                 ['BÁO CÁO DOANH THU'],
                 [`Kỳ báo cáo: ${dateRange.startDate.toLocaleDateString("vi-VN")} - ${dateRange.endDate.toLocaleDateString("vi-VN")}`],
@@ -128,7 +139,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
             ];
             XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan');
             
-            // ===== SHEET 2: DOANH THU THEO NGÀY =====
             if (daily_revenue.length > 0) {
                 const total = daily_revenue.reduce((sum, i) => sum + i.revenue, 0);
                 const dailyData = [
@@ -154,7 +164,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 XLSX.utils.book_append_sheet(wb, ws2, 'Doanh thu theo ngày');
             }
             
-            // ===== SHEET 3: DOANH THU THEO DANH MỤC =====
             if (revenue_by_category.length > 0) {
                 const total = revenue_by_category.reduce((sum, i) => sum + i.revenue, 0);
                 const categoryData = [
@@ -180,7 +189,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 XLSX.utils.book_append_sheet(wb, ws3, 'Doanh thu theo danh mục');
             }
             
-            // ===== SHEET 4: DOANH THU THEO PHƯƠNG THỨC THANH TOÁN =====
             if (revenue_by_payment.length > 0) {
                 const total = revenue_by_payment.reduce((sum, i) => sum + i.revenue, 0);
                 const paymentData = [
@@ -206,7 +214,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 XLSX.utils.book_append_sheet(wb, ws4, 'Doanh thu theo thanh toán');
             }
             
-            // ===== SHEET 5: THỐNG KÊ CHI TIẾT =====
             const detailData = [
                 ['THỐNG KÊ CHI TIẾT'],
                 [],
@@ -237,7 +244,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
             ];
             XLSX.utils.book_append_sheet(wb, ws5, 'Thống kê chi tiết');
             
-            // Xuất file
             const fileName = `Bao_cao_doanh_thu_${new Date().toISOString().split('T')[0]}.xlsx`;
             XLSX.writeFile(wb, fileName);
             
@@ -249,7 +255,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
         }
     };
 
-    // ============ HÀM XUẤT PDF NÂNG CAO ============
     const exportToPDF = () => {
         try {
             setExporting(true);
@@ -257,7 +262,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
             const doc = new jsPDF('p', 'mm', 'a4');
             const pageWidth = doc.internal.pageSize.getWidth();
             
-            // ===== HEADER =====
             doc.setFontSize(22);
             doc.setTextColor(59, 130, 246);
             doc.text('BÁO CÁO DOANH THU', pageWidth / 2, 20, { align: 'center' });
@@ -280,7 +284,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 { align: 'center' }
             );
             
-            // ===== THỐNG KÊ TỔNG QUAN =====
             doc.setFontSize(14);
             doc.setTextColor(15, 23, 42);
             doc.text('THỐNG KÊ TỔNG QUAN', 14, 48);
@@ -319,7 +322,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
             
             let finalY = doc.lastAutoTable.finalY + 12;
             
-            // ===== 1. DOANH THU THEO NGÀY =====
             if (daily_revenue.length > 0) {
                 if (finalY > 240) {
                     doc.addPage();
@@ -375,7 +377,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 finalY = doc.lastAutoTable.finalY + 12;
             }
             
-            // ===== 2. DOANH THU THEO DANH MỤC =====
             if (revenue_by_category.length > 0) {
                 if (finalY > 240) {
                     doc.addPage();
@@ -427,7 +428,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 finalY = doc.lastAutoTable.finalY + 12;
             }
             
-            // ===== 3. DOANH THU THEO PHƯƠNG THỨC THANH TOÁN =====
             if (revenue_by_payment.length > 0) {
                 if (finalY > 240) {
                     doc.addPage();
@@ -479,7 +479,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 finalY = doc.lastAutoTable.finalY + 12;
             }
             
-            // ===== FOOTER =====
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
@@ -492,7 +491,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                     { align: 'center' }
                 );
                 
-                // Thêm đường kẻ phân cách
                 doc.setDrawColor(226, 232, 240);
                 doc.setLineWidth(0.5);
                 doc.line(14, doc.internal.pageSize.getHeight() - 15, pageWidth - 14, doc.internal.pageSize.getHeight() - 15);
@@ -508,7 +506,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
         }
     };
 
-    // ===== COMPONENT HIỂN THỊ BẢNG DỮ LIỆU =====
     const TableView = () => {
         return (
             <div className="table-container">
@@ -531,7 +528,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                     </div>
                 </div>
                 
-                {/* Bảng 1: Doanh thu theo ngày */}
                 <div className="table-section">
                     <h4 className="table-title">
                         <FiCalendar /> Doanh thu theo ngày
@@ -543,29 +539,40 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                     <th>STT</th>
                                     <th>Ngày</th>
                                     <th className="text-right">Doanh thu</th>
-                                    <th className="text-center">Tỷ lệ</th>
+                                    <th className="text-center">Tỷ lệ (%)</th>
+                                    <th className="text-center">Biểu đồ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {daily_revenue.length > 0 ? (
                                     daily_revenue.map((item, index) => {
-                                        const percent = total_revenue > 0 
-                                            ? (item.revenue / total_revenue * 100).toFixed(1) 
-                                            : 0;
+                                        const total = daily_revenue.reduce((sum, i) => sum + i.revenue, 0);
+                                        const percent = total > 0 ? (item.revenue / total * 100) : 0;
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.date}</td>
                                                 <td className="text-right">{formatCurrency(item.revenue)}</td>
                                                 <td className="text-center">
-                                                    <span className="percent-badge">{percent}%</span>
+                                                    <span className="percent-badge">{percent.toFixed(1)}%</span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <div className="progress-bar">
+                                                        <div 
+                                                            className="progress-fill" 
+                                                            style={{ 
+                                                                width: `${Math.min(percent, 100)}%`,
+                                                                background: COLORS[0]
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="text-center">Không có dữ liệu</td>
+                                        <td colSpan="5" className="text-center">Không có dữ liệu</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -574,13 +581,13 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                     <td colSpan="2"><strong>Tổng cộng</strong></td>
                                     <td className="text-right"><strong>{formatCurrency(total_revenue)}</strong></td>
                                     <td className="text-center"><strong>100%</strong></td>
+                                    <td className="text-center"><strong>100%</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
                 </div>
 
-                {/* Bảng 2: Doanh thu theo danh mục */}
                 <div className="table-section">
                     <h4 className="table-title">
                         <FiPieChart /> Doanh thu theo danh mục
@@ -592,28 +599,42 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                     <th>STT</th>
                                     <th>Danh mục</th>
                                     <th className="text-right">Doanh thu</th>
-                                    <th className="text-center">Tỷ lệ</th>
+                                    <th className="text-center">Tỷ lệ (%)</th>
+                                    <th className="text-center">Biểu đồ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {revenue_by_category.length > 0 ? (
                                     revenue_by_category.map((item, index) => {
                                         const total = revenue_by_category.reduce((sum, i) => sum + i.revenue, 0);
-                                        const percent = total > 0 ? (item.revenue / total * 100).toFixed(1) : 0;
+                                        const percent = total > 0 ? (item.revenue / total * 100) : 0;
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
-                                                <td>{item.category_name}</td>
+                                                <td>
+                                                    <span className="category-name">{item.category_name}</span>
+                                                </td>
                                                 <td className="text-right">{formatCurrency(item.revenue)}</td>
                                                 <td className="text-center">
-                                                    <span className="percent-badge">{percent}%</span>
+                                                    <span className="percent-badge">{percent.toFixed(1)}%</span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <div className="progress-bar">
+                                                        <div 
+                                                            className="progress-fill" 
+                                                            style={{ 
+                                                                width: `${Math.min(percent, 100)}%`,
+                                                                background: COLORS[index % COLORS.length]
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="text-center">Không có dữ liệu</td>
+                                        <td colSpan="5" className="text-center">Không có dữ liệu</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -626,13 +647,13 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                         </strong>
                                     </td>
                                     <td className="text-center"><strong>100%</strong></td>
+                                    <td className="text-center"><strong>100%</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
                 </div>
 
-                {/* Bảng 3: Doanh thu theo phương thức thanh toán */}
                 <div className="table-section">
                     <h4 className="table-title">
                         <FiCreditCard /> Doanh thu theo phương thức thanh toán
@@ -644,28 +665,40 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                     <th>STT</th>
                                     <th>Phương thức</th>
                                     <th className="text-right">Doanh thu</th>
-                                    <th className="text-center">Tỷ lệ</th>
+                                    <th className="text-center">Tỷ lệ (%)</th>
+                                    <th className="text-center">Biểu đồ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {revenue_by_payment.length > 0 ? (
                                     revenue_by_payment.map((item, index) => {
                                         const total = revenue_by_payment.reduce((sum, i) => sum + i.revenue, 0);
-                                        const percent = total > 0 ? (item.revenue / total * 100).toFixed(1) : 0;
+                                        const percent = total > 0 ? (item.revenue / total * 100) : 0;
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.payment_method}</td>
                                                 <td className="text-right">{formatCurrency(item.revenue)}</td>
                                                 <td className="text-center">
-                                                    <span className="percent-badge">{percent}%</span>
+                                                    <span className="percent-badge">{percent.toFixed(1)}%</span>
+                                                </td>
+                                                <td className="text-center">
+                                                    <div className="progress-bar">
+                                                        <div 
+                                                            className="progress-fill" 
+                                                            style={{ 
+                                                                width: `${Math.min(percent, 100)}%`,
+                                                                background: COLORS[index % COLORS.length]
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="text-center">Không có dữ liệu</td>
+                                        <td colSpan="5" className="text-center">Không có dữ liệu</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -677,6 +710,7 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                             {formatCurrency(revenue_by_payment.reduce((sum, i) => sum + i.revenue, 0))}
                                         </strong>
                                     </td>
+                                    <td className="text-center"><strong>100%</strong></td>
                                     <td className="text-center"><strong>100%</strong></td>
                                 </tr>
                             </tfoot>
@@ -727,7 +761,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 </div>
             </div>
             
-            {/* 4 thẻ thống kê nhanh */}
             <div className="stats-mini-grid">
                 <div className="stat-mini-card">
                     <div className="stat-mini-icon blue">
@@ -767,10 +800,8 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                 </div>
             </div>
             
-            {/* Hiển thị biểu đồ hoặc bảng */}
             {viewMode === 'chart' ? (
                 <>
-                    {/* Biểu đồ 1: Doanh thu theo ngày */}
                     <div className="chart-container">
                         <h3>
                             <FiCalendar /> Doanh thu theo ngày
@@ -808,31 +839,38 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                         </ResponsiveContainer>
                     </div>
                     
-                    {/* 2 cột: Biểu đồ 2 và 3 */}
                     <div className="two-columns">
-                        {/* Biểu đồ 2: Doanh thu theo danh mục */}
                         <div className="chart-container">
                             <h3>
                                 <FiPieChart /> Doanh thu theo danh mục
                             </h3>
-                            {revenue_by_category.length > 0 ? (
+                            {categoryDataForPie.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={300}>
                                     <PieChart>
                                         <Pie
-                                            data={revenue_by_category}
-                                            dataKey="revenue"
+                                            data={categoryDataForPie}
+                                            dataKey="percent"
                                             nameKey="category_name"
                                             cx="50%"
                                             cy="50%"
                                             outerRadius={100}
-                                            label={({ category_name, percent }) => `${category_name}: ${(percent * 100).toFixed(0)}%`}
+                                            label={({ category_name, percent }) => {
+                                                const percentage = (percent * 100).toFixed(1);
+                                                return `${category_name}: ${percentage}%`;
+                                            }}
                                             labelLine={true}
                                         >
-                                            {revenue_by_category.map((entry, index) => (
+                                            {categoryDataForPie.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                                        <Tooltip 
+                                            formatter={(value, name, props) => {
+                                                const percent = (value * 100).toFixed(1);
+                                                const item = categoryDataForPie.find(d => d.category_name === name);
+                                                return [`${formatCurrency(item?.revenue || 0)} (${percent}%)`, name];
+                                            }}
+                                        />
                                         <Legend />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -841,7 +879,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                             )}
                         </div>
                         
-                        {/* Biểu đồ 3: Doanh thu theo phương thức thanh toán */}
                         <div className="chart-container">
                             <h3>
                                 <FiCreditCard /> Doanh thu theo phương thức thanh toán
@@ -859,7 +896,13 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                                             }}
                                         />
                                         <YAxis type="category" dataKey="payment_method" width={100} fontSize={12}/>
-                                        <Tooltip formatter={(value) => formatCurrency(value)}/>
+                                        <Tooltip 
+                                            formatter={(value, name, props) => {
+                                                const total = revenue_by_payment.reduce((sum, item) => sum + item.revenue, 0);
+                                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                                return [`${formatCurrency(value)} (${percent}%)`, name];
+                                            }}
+                                        />
                                         <Legend />
                                         <Bar dataKey="revenue" fill="#10b981" radius={[0, 8, 8, 0]} name="Doanh thu">
                                             {revenue_by_payment.map((entry, index) => (
@@ -885,10 +928,6 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                     gap: 20px;
                     flex-wrap: wrap;
                 }
-                
-                /* =========================
-                   VIEW TOGGLE - NÂNG CẤP
-                ========================= */
                 
                 .view-toggle {
                     display: flex;
@@ -1088,6 +1127,28 @@ function RevenueReport({ data, loading, dateRange, compareMode }) {
                     padding: 12px 16px;
                     border-top: 2px solid #cbd5e1;
                     border-bottom: none;
+                }
+                
+                .progress-bar {
+                    width: 100%;
+                    max-width: 120px;
+                    height: 8px;
+                    background: #f1f5f9;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    display: inline-block;
+                    margin: 0 auto;
+                }
+                
+                .progress-fill {
+                    height: 100%;
+                    border-radius: 4px;
+                    transition: width 0.6s ease;
+                }
+                
+                .category-name {
+                    font-weight: 500;
+                    color: #0f172a;
                 }
                 
                 .stats-mini-grid {

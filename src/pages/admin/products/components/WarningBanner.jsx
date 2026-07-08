@@ -19,7 +19,6 @@ const WarningBanner = ({
     const warningConfigs = [
         {
             key: 'low_stock',
-            icon: '📦',
             title: 'Sắp hết hàng',
             description: 'Tổng số lượng ≤ 5',
             bgColor: '#fefce8',
@@ -32,7 +31,6 @@ const WarningBanner = ({
         },
         {
             key: 'out_of_stock',
-            icon: '📭',
             title: 'Hết hàng',
             description: 'Tổng số lượng = 0',
             bgColor: '#fef2f2',
@@ -45,7 +43,6 @@ const WarningBanner = ({
         },
         {
             key: 'has_low_stock_variant',
-            icon: '🔸',
             title: 'Biến thể sắp hết',
             description: 'Có biến thể ≤ 5',
             bgColor: '#fefce8',
@@ -58,7 +55,6 @@ const WarningBanner = ({
         },
         {
             key: 'has_out_of_stock_variant',
-            icon: '🔹',
             title: 'Biến thể hết hàng',
             description: 'Có biến thể = 0',
             bgColor: '#fef2f2',
@@ -79,7 +75,6 @@ const WarningBanner = ({
             {/* Header */}
             <div style={styles.header}>
                 <div style={styles.headerLeft}>
-                    <span style={styles.headerIcon}>📊</span>
                     <span style={styles.headerTitle}>Tổng quan tồn kho</span>
                     {totalWarnings > 0 && (
                         <span style={styles.headerBadge}>{totalWarnings}</span>
@@ -91,7 +86,7 @@ const WarningBanner = ({
                             style={styles.viewAllBtn}
                             onClick={() => onFilterChange('all')}
                         >
-                            📋 Tất cả
+                            Tất cả
                         </button>
                     )}
                     {onClose && (
@@ -122,7 +117,7 @@ const WarningBanner = ({
             {activeFilter !== 'all' && (
                 <div style={styles.footer}>
                     <span style={styles.footerText}>
-                        🔍 Đang lọc: <strong>{activeWarnings.find(w => w.filterValue === activeFilter)?.title || activeFilter}</strong>
+                        Đang lọc: <strong>{activeWarnings.find(w => w.filterValue === activeFilter)?.title || activeFilter}</strong>
                     </span>
                     <button 
                         style={styles.clearFilterBtn}
@@ -163,16 +158,7 @@ const WarningCard = ({ warning, onClick, isActive }) => {
                 }
             }}
         >
-            {/* Icon */}
-            <div style={{
-                ...styles.iconContainer,
-                background: warning.iconBg,
-                border: `1px solid ${warning.borderColor}40`
-            }}>
-                <span style={styles.cardIcon}>{warning.icon}</span>
-            </div>
-
-            {/* Content */}
+            {/* Content - Bỏ icon */}
             <div style={styles.cardContent}>
                 <div style={styles.cardHeader}>
                     <h3 style={{
@@ -200,7 +186,7 @@ const WarningCard = ({ warning, onClick, isActive }) => {
                         ...styles.cardAction,
                         color: warning.textColor
                     }}>
-                        {isActive ? '✓ Đang lọc' : (isHovered ? '→ Xem' : 'Nhấn để lọc')}
+                        {isActive ? '✓ Đang lọc' : (isHovered ? '→ Xem' : '→ Xem')}
                     </span>
                 </div>
             </div>
@@ -233,10 +219,6 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '12px'
-    },
-    headerIcon: {
-        fontSize: '22px',
-        opacity: 0.8
     },
     headerTitle: {
         fontSize: '17px',
@@ -306,18 +288,6 @@ const styles = {
     cardHover: {
         transform: 'translateY(-2px)',
         boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
-    },
-    iconContainer: {
-        width: '40px',
-        height: '40px',
-        borderRadius: '10px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-    },
-    cardIcon: {
-        fontSize: '20px'
     },
     cardContent: {
         flex: 1,

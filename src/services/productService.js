@@ -8,7 +8,7 @@ const getToken = () => {
 };
 
 // =========================
-// GET ALL - CÓ HỖ TRỢ stock_filter
+// GET ALL - CÓ HỖ TRỢ stock_filter VÀ hide_out_of_stock
 // =========================
 export const getProducts = async (params) => {
     const cleanedParams = {};
@@ -19,6 +19,11 @@ export const getProducts = async (params) => {
                 cleanedParams[key] = value;
             }
         });
+    }
+    
+    // THÊM: Mặc định ẩn sản phẩm hết hàng
+    if (cleanedParams.hide_out_of_stock === undefined) {
+        cleanedParams.hide_out_of_stock = true;
     }
     
     return axios.get(`${API_URL}/products`, { params: cleanedParams });
@@ -144,7 +149,8 @@ export const getOutOfStockProducts = async (page = 1, limit = 20) => {
     return getProducts({
         page,
         limit,
-        stock_filter: "out_of_stock"
+        stock_filter: "out_of_stock",
+        hide_out_of_stock: false // Hiển thị sản phẩm hết hàng khi lọc
     });
 };
 
@@ -180,6 +186,9 @@ export const searchProducts = async (keyword, limit = null) => {
         if (limit && limit > 0) {
             url += `&limit=${limit}`;
         }
+        
+        // Mặc định ẩn sản phẩm hết hàng khi tìm kiếm
+        url += `&hide_out_of_stock=true`;
         
         console.log("Searching products with URL:", url);
         
@@ -230,6 +239,13 @@ export const searchProductsAdvanced = async (filters) => {
         if (filters.sort) params.append('sort', filters.sort);
         if (filters.page) params.append('page', filters.page);
         if (filters.stock_filter) params.append('stock_filter', filters.stock_filter);
+        
+        // THÊM: Tham số ẩn sản phẩm hết hàng
+        if (filters.hide_out_of_stock !== undefined) {
+            params.append('hide_out_of_stock', filters.hide_out_of_stock);
+        } else {
+            params.append('hide_out_of_stock', true);
+        }
         
         const url = `${API_URL}/products?${params.toString()}`;
         console.log("Advanced search URL:", url);
