@@ -219,7 +219,7 @@ function CouponList() {
 
                         <tr>
 
-                            <th>ID</th>
+                            <th>STT</th>
 
                             <th>Mã</th>
 
@@ -264,7 +264,7 @@ function CouponList() {
                         ) : (
 
                             filteredCoupons.map(
-                                (coupon) => {
+                                (coupon, index) => {
 
                                     const status =
                                         getStatus(
@@ -280,9 +280,7 @@ function CouponList() {
                                         >
 
                                             <td>
-                                                {
-                                                    coupon.id
-                                                }
+                                                {index + 1}
                                             </td>
 
                                             <td>

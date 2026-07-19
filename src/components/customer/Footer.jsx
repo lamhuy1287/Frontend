@@ -1,6 +1,6 @@
 // Footer.jsx
 
-import "./Footer.css";
+import "./footer.css";
 
 import {
     FaFacebookF,
@@ -71,21 +71,21 @@ function Footer() {
                             <li>
                                 <FaMapMarkerAlt />
                                 <span>
-                                    123 Đường Mô Hình, Hà Nội
+                                    Ngõ 55 đường Nguyễn Đạo An Phú Diễn Bắc Từ Liêm Hà Nội
                                 </span>
                             </li>
 
                             <li>
                                 <FaPhoneAlt />
                                 <span>
-                                    0123 456 789
+                                    0377006358
                                 </span>
                             </li>
 
                             <li>
                                 <FaEnvelope />
                                 <span>
-                                    support@hobbycorner.vn
+                                    superrabit266@gmail.com
                                 </span>
                             </li>
 

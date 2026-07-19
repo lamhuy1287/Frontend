@@ -420,12 +420,12 @@ function Users() {
                                                 {selectedUser.total_orders || 0} đơn
                                             </span>
                                         </div>
-                                        <div className="info-row">
+                                        {/* <div className="info-row">
                                             <span className="info-label">Tổng chi tiêu:</span>
                                             <span className="info-value highlight">
                                                 {selectedUser.total_spent ? selectedUser.total_spent.toLocaleString("vi-VN") : 0}đ
                                             </span>
-                                        </div>
+                                        </div> */}
                                     </div>
 
                                     <div className="order-history-section">

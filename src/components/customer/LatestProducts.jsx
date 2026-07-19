@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getProducts } from "../../services/productService";
-import ProductCard from "./PrductCard/ProductCard";
+import ProductCard from "./Prductcard/ProductCard";
 
 import "./LatestProducts.css";
 

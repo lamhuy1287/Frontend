@@ -292,6 +292,23 @@ function OrderDetail() {
 
                 </div>
 
+                {/* SHIPPING INFO - Only show when status is "shipping" */}
+                {order.status === "shipping" && (
+                    <div className="order-card">
+                        <h3>Vận chuyển</h3>
+                        <div className="info-list">
+                            <div>
+                                <span>Đơn vị vận chuyển</span>
+                                <strong>{order.shipping_provider || "Chưa cập nhật"}</strong>
+                            </div>
+                            <div>
+                                <span>Mã vận đơn</span>
+                                <strong>{order.tracking_code || "Chưa cập nhật"}</strong>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* PRODUCTS */}
                 <div className="order-card">
                     <h3>Sản phẩm</h3>
