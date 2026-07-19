@@ -73,19 +73,19 @@ function Checkout() {
             name: "Thanh toán khi nhận hàng",
             icon: "💰",
             description: "Trả tiền mặt khi nhận hàng"
-        },
-        {
-            id: "vnpay",
-            name: "VNPAY",
-            icon: "🏦",
-            description: "Thanh toán qua cổng VNPAY"
-        },
-        {
-            id: "bank_transfer",
-            name: "Chuyển khoản ngân hàng",
-            icon: "🏛️",
-            description: "Chuyển khoản qua ngân hàng"
         }
+        // {
+        //     id: "vnpay",
+        //     name: "VNPAY",
+        //     icon: "🏦",
+        //     description: "Thanh toán qua cổng VNPAY"
+        // },
+        // {
+        //     id: "bank_transfer",
+        //     name: "Chuyển khoản ngân hàng",
+        //     icon: "🏛️",
+        //     description: "Chuyển khoản qua ngân hàng"
+        // }
         // {
         //     id: "momo",
         //     name: "MOMO",
