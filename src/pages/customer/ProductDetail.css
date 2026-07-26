@@ -1,46 +1,47 @@
+/* =========================
+   RESET & BASE
+========================= */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* =========================
-   PAGE
-========================= */
+* {
+    box-sizing: border-box;
+}
 
 .pd-page {
     width: 100%;
     background: #ffffff;
     padding: 30px 0 80px;
-
     font-family: "Inter", sans-serif;
 }
 
 .pd-container {
-    width: 70%;
-    max-width: 1280px;
-    margin: auto;
+    width: min(90%, 1280px);
+    margin: 0 auto;
+    padding: 0 16px;
 }
 
 /* =========================
-   MAIN
+   MAIN LAYOUT
 ========================= */
-
 .pd-main {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 50px;
+    gap: clamp(24px, 5vw, 50px);
     align-items: start;
 }
 
 /* =========================
    GALLERY
 ========================= */
-
 .pd-gallery {
     position: sticky;
     top: 20px;
+    align-self: start;
 }
 
 .pd-main-image {
     width: 100%;
-    border-radius: 24px;
+    border-radius: clamp(16px, 2vw, 24px);
     overflow: hidden;
     background: #fafafa;
     border: 1px solid #f1f1f1;
@@ -50,151 +51,129 @@
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    transition: 0.4s;
+    transition: transform 0.4s ease;
     display: block;
 }
 
-.pd-main-image:hover img {
+.pd-main-image:hover .pd-main-image-img {
     transform: scale(1.03);
 }
 
-/* =========================
-   THUMBNAILS
-========================= */
-
 .pd-thumbnails {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     margin-top: 16px;
     flex-wrap: wrap;
 }
 
 .pd-thumb {
-    width: 78px;
-    height: 78px;
-
-    border-radius: 16px;
-
+    width: clamp(60px, 8vw, 78px);
+    height: clamp(60px, 8vw, 78px);
+    border-radius: clamp(12px, 1.5vw, 16px);
     overflow: hidden;
-
     border: 2px solid transparent;
-
     cursor: pointer;
-
     transition: 0.25s;
-
     background: white;
-
     padding: 0;
+    flex-shrink: 0;
 }
 
 .pd-thumb.active {
     border-color: #ff6b00;
 }
 
-.pd-thumb:hover {
+.pd-thumb:hover:not(.active) {
     transform: translateY(-2px);
+    border-color: #ddd;
 }
 
 .pd-thumb-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 /* =========================
    INFO
 ========================= */
-
 .pd-info {
     padding-top: 5px;
 }
 
 .pd-title {
-    font-size: 22px;
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
     font-weight: 700;
-    line-height: 1.5;
-
+    line-height: 1.4;
     color: #111827;
-
     margin-bottom: 18px;
 }
-
-/* =========================
-   META
-========================= */
 
 .pd-meta {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-
+    gap: 6px;
     padding: 16px 20px;
-
     border-radius: 18px;
-
     background: #fff7f1;
-
     border: 1px solid #ffe2cc;
-
     margin-bottom: 20px;
-
-    font-size: 13px;
+    font-size: clamp(0.75rem, 0.9vw, 0.85rem);
     color: #555;
 }
-
-/* =========================
-   PRICE
-========================= */
 
 .pd-price-box {
     margin-bottom: 26px;
 }
 
 .pd-price {
-    font-size: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.pd-old-price {
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
+    color: #999;
+    text-decoration: line-through;
+}
+
+.pd-sale-price,
+.pd-price .pd-sale-price {
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
     font-weight: 800;
     color: #ff6b00;
 }
 
-.pd-old-price {
-    text-decoration: line-through;
-    color: #999;
-    font-size: 16px;
-    margin-bottom: 6px;
-}
-
 .pd-discount-badge {
     display: inline-block;
-    margin-top: 8px;
     padding: 4px 10px;
     border-radius: 6px;
     background: #e53935;
     color: #fff;
-    font-size: 14px;
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
     font-weight: 600;
 }
 
 /* =========================
    SECTION
 ========================= */
-
 .pd-section {
     margin-bottom: 26px;
 }
 
 .pd-section-title {
-    font-size: 14px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
     font-weight: 700;
     color: #111827;
-
     margin-bottom: 12px;
 }
 
 /* =========================
    VARIANTS
 ========================= */
-
 .pd-variants {
     display: flex;
     flex-wrap: wrap;
@@ -202,25 +181,19 @@
 }
 
 .pd-variant-btn {
-    height: 40px;
-
-    padding: 0 16px;
-
+    height: clamp(38px, 5vw, 44px);
+    padding: 0 clamp(14px, 2vw, 20px);
     border-radius: 999px;
-
     border: 1px solid #e5e7eb;
-
     background: white;
-
-    font-size: 12px;
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
     font-weight: 600;
-
     cursor: pointer;
-
     transition: 0.25s;
+    white-space: nowrap;
 }
 
-.pd-variant-btn:hover {
+.pd-variant-btn:hover:not(.disabled):not(.active) {
     border-color: #ff6b00;
     color: #ff6b00;
 }
@@ -239,7 +212,6 @@
 /* =========================
    QUANTITY
 ========================= */
-
 .pd-qty {
     display: flex;
     align-items: center;
@@ -247,20 +219,17 @@
 }
 
 .pd-qty-btn {
-    width: 38px;
-    height: 38px;
-
+    width: clamp(36px, 4.5vw, 44px);
+    height: clamp(36px, 4.5vw, 44px);
     border-radius: 12px;
-
     border: none;
-
     background: #f3f4f6;
-
-    font-size: 18px;
-
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
     cursor: pointer;
-
     transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .pd-qty-btn:hover {
@@ -268,27 +237,22 @@
 }
 
 .pd-qty-value {
-    width: 40px;
-
+    min-width: 40px;
     text-align: center;
-
-    font-size: 15px;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
     font-weight: 700;
 }
 
 /* =========================
    SERVICES
 ========================= */
-
 .pd-services {
     display: flex;
+    flex-wrap: wrap;
     gap: 20px;
-
     padding: 20px 0;
-
     border-top: 1px solid #eee;
     border-bottom: 1px solid #eee;
-
     margin-bottom: 26px;
 }
 
@@ -296,47 +260,48 @@
     display: flex;
     align-items: center;
     gap: 8px;
-
-    font-size: 12px;
+    font-size: clamp(0.7rem, 0.8vw, 0.8rem);
     color: #555;
 }
 
 /* =========================
    ACTIONS
 ========================= */
-
 .pd-actions {
     display: flex;
     gap: 14px;
+    flex-wrap: wrap;
 }
 
 .pd-add-cart,
 .pd-buy-now {
-    flex: 1;
-
-    height: 50px;
-
+    flex: 1 1 160px;
+    min-height: clamp(48px, 6vw, 56px);
     border-radius: 16px;
-
     border: none;
-
-    font-size: 13px;
+    font-size: clamp(0.8rem, 1vw, 0.9rem);
     font-weight: 700;
-
     cursor: pointer;
-
     transition: 0.25s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .pd-add-cart {
     background: #fff4ec;
     color: #ff6b00;
-
     border: 1px solid #ffd5b5;
 }
 
-.pd-add-cart:hover {
+.pd-add-cart:hover:not(:disabled) {
     background: #ffe8d7;
+}
+
+.pd-add-cart:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .pd-buy-now {
@@ -344,76 +309,63 @@
     color: white;
 }
 
-.pd-buy-now:hover {
+.pd-buy-now:hover:not(:disabled) {
     opacity: 0.92;
     transform: translateY(-2px);
+}
+
+.pd-buy-now:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* =========================
    DESCRIPTION
 ========================= */
-
 .pd-description {
-    margin-top: 70px;
-
-    padding: 28px;
-
+    margin-top: 60px;
+    padding: clamp(20px, 3vw, 32px);
     border-radius: 24px;
-
     background: #fffaf6;
-
     border: 1px solid #ffe7d1;
 }
 
 .pd-description-title {
-    font-size: 20px;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
     font-weight: 700;
-
     margin-bottom: 18px;
-
     color: #111827;
 }
 
 .pd-description-content {
     white-space: pre-wrap;
-
-    line-height: 1.9;
-
+    line-height: 1.8;
     color: #555;
-
-    font-size: 13px;
+    font-size: clamp(0.8rem, 0.9vw, 0.9rem);
 }
 
 .pd-description-toggle {
     margin-top: 18px;
-
     background: #ff6b00;
-
     color: white;
-
     border: none;
-
-    height: 40px;
-
-    padding: 0 18px;
-
+    height: clamp(38px, 4.5vw, 44px);
+    padding: 0 clamp(16px, 2vw, 24px);
     border-radius: 999px;
-
     cursor: pointer;
-
-    font-size: 12px;
+    font-size: clamp(0.7rem, 0.8vw, 0.8rem);
     font-weight: 600;
-
     transition: 0.2s;
 }
 
 .pd-description-toggle:hover {
     opacity: 0.9;
 }
-/* ================================
-   RELATED PRODUCTS
-   ================================ */
 
+/* =========================
+   RELATED PRODUCTS
+========================= */
 .pd-related {
     margin-top: 60px;
     padding-top: 40px;
@@ -421,7 +373,7 @@
 }
 
 .pd-related-title {
-    font-size: 24px;
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
     font-weight: 700;
     color: #111827;
     margin-bottom: 28px;
@@ -443,7 +395,7 @@
 .pd-related-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
+    gap: clamp(16px, 2vw, 24px);
 }
 
 .pd-related-card {
@@ -454,7 +406,8 @@
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     cursor: pointer;
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 .pd-related-card:hover {
@@ -480,7 +433,6 @@
     transform: scale(1.08);
 }
 
-/* Badge phần trăm góc trên bên phải */
 .pd-related-discount-badge-corner {
     position: absolute;
     top: 8px;
@@ -489,19 +441,11 @@
     color: white;
     padding: 4px 8px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: clamp(0.6rem, 0.8vw, 0.75rem);
     font-weight: 700;
     z-index: 2;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     line-height: 1;
-}
-
-/* Giá cũ */
-.pd-related-old-price {
-    font-size: 12px;
-    color: #999;
-    text-decoration: line-through;
-    margin-left: 8px;
 }
 
 .pd-related-soldout {
@@ -515,27 +459,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: clamp(0.8rem, 1vw, 1rem);
     font-weight: 600;
     backdrop-filter: blur(2px);
     z-index: 2;
 }
 
 .pd-related-content {
-    padding: 14px;
+    padding: clamp(12px, 1.5vw, 18px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .pd-related-name {
-    font-size: 14px;
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
     font-weight: 500;
     color: #111827;
     line-height: 1.4;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 38px;
+    min-height: 2.8em;
 }
 
 .pd-related-price {
@@ -543,12 +490,19 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
+    margin-top: auto;
 }
 
 .pd-related-current-price {
-    font-size: 16px;
+    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
     font-weight: 700;
     color: #ee4d2d;
+}
+
+.pd-related-old-price {
+    font-size: clamp(0.65rem, 0.8vw, 0.75rem);
+    color: #999;
+    text-decoration: line-through;
 }
 
 .pd-related-empty {
@@ -557,109 +511,306 @@
     background: #f9fafb;
     border-radius: 12px;
     color: #6b7280;
-    font-size: 15px;
+    font-size: 1rem;
 }
 
-/* ================================
-   RESPONSIVE
-   ================================ */
-
-/* Laptop */
-@media (max-width: 1200px) {
-    .pd-related-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
-    }
+/* =========================
+   LOADING / ERROR
+========================= */
+.pd-loading {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 1.2rem;
+    color: #666;
 }
 
-/* Tablet */
-@media (max-width: 768px) {
-    .pd-page {
-        padding: 20px;
+/* =========================
+   RESPONSIVE TABLET (≤1024px)
+========================= */
+@media (max-width: 1024px) {
+    .pd-main {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
     }
     
+    .pd-gallery {
+        position: static;
+    }
+
+    .pd-related-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* =========================
+   RESPONSIVE MOBILE (≤768px)
+========================= */
+@media (max-width: 768px) {
+    .pd-page {
+        padding: 16px 0 60px;
+    }
+    
+    .pd-container {
+        width: 100%;
+        padding: 0 12px;
+    }
+
     .pd-main {
         grid-template-columns: 1fr;
         gap: 24px;
     }
-    
-    .pd-title {
-        font-size: 22px;
+
+    .pd-gallery {
+        position: static;
+        max-width: 500px;
+        margin: 0 auto;
+        width: 100%;
     }
-    
-    .pd-sale-price {
-        font-size: 26px;
+
+    .pd-thumbnails {
+        gap: 8px;
+        justify-content: center;
     }
-    
+
+    .pd-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+    }
+
+    .pd-info {
+        padding-top: 0;
+    }
+
+    .pd-meta {
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 0.75rem;
+        gap: 4px;
+    }
+
+    .pd-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pd-add-cart,
+    .pd-buy-now {
+        flex: 1;
+        width: 100%;
+        height: 50px;
+    }
+
+    .pd-services {
+        gap: 12px;
+        padding: 16px 0;
+        flex-wrap: wrap;
+    }
+
+    .pd-service-item {
+        font-size: 0.7rem;
+        flex: 1 1 40%;
+    }
+
+    .pd-description {
+        margin-top: 40px;
+        padding: 18px;
+        border-radius: 18px;
+    }
+
     .pd-related {
         margin-top: 40px;
         padding-top: 30px;
     }
-    
-    .pd-related-title {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
-    
+
     .pd-related-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
+        gap: 14px;
     }
-    
+
     .pd-related-content {
         padding: 10px;
     }
-    
+
     .pd-related-name {
-        font-size: 12px;
-        min-height: 32px;
+        font-size: 0.7rem;
+        min-height: 2.6em;
+        margin-bottom: 6px;
     }
-    
+
     .pd-related-current-price {
-        font-size: 14px;
+        font-size: 0.8rem;
     }
-    
+
     .pd-related-old-price {
-        font-size: 11px;
+        font-size: 0.6rem;
     }
-    
+
     .pd-related-discount-badge-corner {
-        font-size: 10px;
+        font-size: 0.6rem;
         padding: 3px 6px;
         top: 6px;
         right: 6px;
     }
 }
 
-/* Mobile */
+/* =========================
+   RESPONSIVE MOBILE SMALL (≤480px)
+========================= */
 @media (max-width: 480px) {
+    .pd-container {
+        padding: 0 8px;
+    }
+
+    .pd-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+    }
+
+    .pd-title {
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+    }
+
+    .pd-price .pd-sale-price {
+        font-size: 1.4rem;
+    }
+
+    .pd-old-price {
+        font-size: 0.8rem;
+    }
+
+    .pd-discount-badge {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+    }
+
+    .pd-variant-btn {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 0.65rem;
+    }
+
+    .pd-qty-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+
+    .pd-qty-value {
+        min-width: 32px;
+        font-size: 0.8rem;
+    }
+
     .pd-related-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
     }
-    
-    .pd-related-title {
-        font-size: 18px;
-    }
-    
+
     .pd-related-name {
-        font-size: 11px;
+        font-size: 0.65rem;
+        min-height: 2.4em;
     }
-    
+
     .pd-related-current-price {
-        font-size: 13px;
+        font-size: 0.7rem;
     }
-    
+
     .pd-related-old-price {
-        font-size: 10px;
+        font-size: 0.55rem;
+    }
+
+    .pd-add-cart,
+    .pd-buy-now {
+        height: 44px;
+        font-size: 0.8rem;
+        border-radius: 12px;
+    }
+
+    .pd-description-title {
+        font-size: 1rem;
+    }
+
+    .pd-description-content {
+        font-size: 0.75rem;
+        line-height: 1.6;
+    }
+
+    .pd-description-toggle {
+        height: 34px;
+        font-size: 0.7rem;
+        padding: 0 14px;
+    }
+
+    .pd-related-title {
+        font-size: 1rem;
+    }
+
+    .pd-related-title::after {
+        width: 40px;
+        height: 2px;
+        bottom: -5px;
+    }
+}
+
+/* =========================
+   EXTRA: TOUCH TARGET OPTIMIZATION
+========================= */
+@media (hover: none) and (pointer: coarse) {
+    .pd-variant-btn,
+    .pd-qty-btn,
+    .pd-add-cart,
+    .pd-buy-now,
+    .pd-thumb,
+    .pd-description-toggle,
+    .pd-related-card {
+        cursor: default;
+    }
+
+    /* Increase touch target for small buttons */
+    .pd-qty-btn {
+        min-width: 44px;
+        min-height: 44px;
     }
     
-    .pd-actions {
-        flex-direction: column;
+    .pd-variant-btn {
+        min-height: 42px;
+        padding: 0 16px;
     }
-    
+
     .pd-thumb {
-        width: 60px;
-        height: 60px;
+        min-width: 52px;
+        min-height: 52px;
     }
+}
+
+/* =========================
+   PERFORMANCE
+========================= */
+.pd-main-image-img,
+.pd-related-image {
+    will-change: transform;
+}
+
+.pd-related-card {
+    will-change: transform;
+}
+
+/* =========================
+   ACCESSIBILITY
+========================= */
+.pd-variant-btn:focus-visible,
+.pd-qty-btn:focus-visible,
+.pd-add-cart:focus-visible,
+.pd-buy-now:focus-visible,
+.pd-thumb:focus-visible,
+.pd-description-toggle:focus-visible {
+    outline: 2px solid #ff6b00;
+    outline-offset: 2px;
+}
+
+.pd-related-card:focus-visible {
+    outline: 2px solid #ff6b00;
+    outline-offset: 2px;
 }

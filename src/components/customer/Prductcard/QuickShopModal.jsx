@@ -1,443 +1,354 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import {
-    addToCart
-} from "../../../services/cartService";
-import {
-    useCart
-} from "../../../context/CartContext";
+import { addToCart } from "../../../services/cartService";
+import { useCart } from "../../../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./QuickShopModal.css";
 
-function QuickShopModal({
-    product,
-    onClose
-}) {
+function QuickShopModal({ product, onClose }) {
+  const { increaseCartCount } = useCart();
+  const navigate = useNavigate();
 
-    // =========================
-    // CART CONTEXT
-    // =========================
+  const modalRef = useRef(null);
+  const closeTimeoutRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
-    const {
-        increaseCartCount
-    } = useCart();
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [loadingAdd, setLoadingAdd] = useState(false);
+  const [loadingBuy, setLoadingBuy] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-    // =========================
-    // STATES
-    // =========================
+  const variants = useMemo(() => product?.variants || [], [product]);
+  const mainImage = useMemo(
+    () => product?.images?.[0]?.image_url || product?.thumbnail || "/placeholder-image.jpg",
+    [product]
+  );
 
-    const [selectedVariant,
-        setSelectedVariant] =
-        useState(
-            product?.variants?.[0] || null
-        );
+  const isVariantOutOfStock = useCallback((variant) => {
+    if (!variant) return true;
+    const stock = variant.quantity ?? variant.stock ?? 0;
+    return stock === 0;
+  }, []);
 
-    const [quantity,
-        setQuantity] =
-        useState(1);
+  const availableStock = useMemo(() => {
+    if (!selectedVariant) return 0;
+    return selectedVariant.quantity ?? selectedVariant.stock ?? 0;
+  }, [selectedVariant]);
 
-    const [loading,
-        setLoading] =
-        useState(false);
-    
-    const [isClosing, setIsClosing] = useState(false);
+  const originalPrice = useMemo(
+    () => Number(selectedVariant?.price || 0),
+    [selectedVariant]
+  );
+  const salePrice = useMemo(
+    () => Number(selectedVariant?.sale_price ?? selectedVariant?.price ?? 0),
+    [selectedVariant]
+  );
+  const hasDiscount = useMemo(
+    () => originalPrice > 0 && salePrice < originalPrice,
+    [originalPrice, salePrice]
+  );
 
-    const navigate = useNavigate();
+  useEffect(() => {
+    if (product?.variants?.length) {
+      const firstInStock = product.variants.find(v => !isVariantOutOfStock(v));
+      setSelectedVariant(firstInStock || product.variants[0]);
+      setQuantity(1);
+    } else {
+      setSelectedVariant(null);
+      setQuantity(1);
+    }
+  }, [product, isVariantOutOfStock]);
 
-    // Ngăn scroll body khi modal mở
-    useEffect(() => {
-        if (product) {
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = '0px';
-            
-            // 🆕 Thêm class để báo hiệu modal đang mở
-            document.body.classList.add('qsm-modal-open');
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-            document.body.style.paddingRight = '';
-            document.body.classList.remove('qsm-modal-open');
-        };
-    }, [product]);
+  const handleClose = useCallback(() => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    setIsClosing(true);
+    closeTimeoutRef.current = setTimeout(() => {
+      onClose();
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+    }, 250);
+  }, [onClose]);
 
-    // Reset state khi product thay đổi
-    useEffect(() => {
-        if (product?.variants?.[0]) {
-            setSelectedVariant(product.variants[0]);
-            setQuantity(1);
-        }
-    }, [product]);
+  useEffect(() => {
+    if (!product) return;
+    previousFocusRef.current = document.activeElement;
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("qsm-modal-open");
 
-    // 🆕 Xử lý phím ESC để đóng modal
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === 'Escape') {
-                handleClose();
-            }
-        };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, []);
+    if (modalRef.current) {
+      modalRef.current.focus();
+    }
 
-    // Xử lý đóng modal với animation
-    const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-        }, 250);
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("qsm-modal-open");
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
+  }, [product]);
 
-    if (!product) return null;
-
-    // =========================
-    // CHECK STOCK AVAILABILITY
-    // =========================
-
-    const isVariantOutOfStock = (variant) => {
-        return variant?.quantity === 0 || variant?.stock === 0;
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") handleClose();
     };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [handleClose]);
 
-    const handleVariantChange = (variant) => {
-        if (isVariantOutOfStock(variant)) {
-            toast.warning(
-                "Biến thể này đã hết hàng. Vui lòng chọn phân loại khác."
-            );
-            return;
-        }
-        setSelectedVariant(variant);
-        setQuantity(1);
-    };
+  const handleVariantChange = useCallback(
+    (variant) => {
+      if (isVariantOutOfStock(variant)) {
+        toast.error("Biến thể này đã hết hàng. Vui lòng chọn phân loại khác.");
+        return;
+      }
+      setSelectedVariant(variant);
+      setQuantity(1);
+    },
+    [isVariantOutOfStock]
+  );
 
-    const originalPrice =
-        Number(selectedVariant?.price || 0);
+  const handleAddToCart = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập");
+      return;
+    }
+    if (!selectedVariant) {
+      toast.error("Vui lòng chọn phân loại");
+      return;
+    }
+    if (isVariantOutOfStock(selectedVariant)) {
+      toast.error("Sản phẩm này đã hết hàng!");
+      return;
+    }
+    if (quantity > availableStock) {
+      toast.error(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
+      return;
+    }
 
-    const salePrice =
-        Number(
-            selectedVariant?.sale_price ||
-            selectedVariant?.price ||
-            0
-        );
+    setLoadingAdd(true);
+    try {
+      await addToCart({
+        product_variant_id: selectedVariant.id,
+        quantity,
+      });
+      increaseCartCount(quantity);
+      toast.success("Đã thêm vào giỏ hàng!", { position: "top-right", autoClose: 2000 });
+      handleClose();
+    } catch (error) {
+      console.error("ADD CART ERROR:", error);
+      toast.error(error.response?.data?.message || "Thêm vào giỏ thất bại");
+    } finally {
+      setLoadingAdd(false);
+    }
+  }, [selectedVariant, quantity, availableStock, increaseCartCount, handleClose, isVariantOutOfStock]);
 
-    const hasDiscount =
-        originalPrice > 0 &&
-        salePrice < originalPrice;
+  const handleBuyNow = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập");
+      return;
+    }
+    if (!selectedVariant) {
+      toast.error("Vui lòng chọn phân loại");
+      return;
+    }
+    if (isVariantOutOfStock(selectedVariant)) {
+      toast.error("Sản phẩm này đã hết hàng!");
+      return;
+    }
+    if (quantity > availableStock) {
+      toast.error(`Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`);
+      return;
+    }
 
-    // =========================
-    // ADD TO CART
-    // =========================
+    setLoadingBuy(true);
+    try {
+      const finalPrice = salePrice || originalPrice;
+      const buyNowData = {
+        buyNow: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          image: mainImage,
+        },
+        variant: {
+          id: selectedVariant.id,
+          variant_name: selectedVariant.variant_name,
+        },
+        price: finalPrice,
+        quantity,
+        subtotal: finalPrice * quantity,
+      };
+      navigate("/checkout", { state: buyNowData });
+    } catch (error) {
+      console.error("BUY NOW ERROR:", error);
+      toast.error(error.response?.data?.message || "Mua ngay thất bại");
+    } finally {
+      setLoadingBuy(false);
+    }
+  }, [selectedVariant, quantity, availableStock, product, mainImage, salePrice, originalPrice, navigate, isVariantOutOfStock]);
 
-    const handleAddToCart =
-        async () => {
+  const handleDecrease = useCallback(() => {
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  }, []);
 
-            const token =
-                localStorage.getItem(
-                    "token"
-                );
+  const handleIncrease = useCallback(() => {
+    setQuantity((prev) => {
+      if (prev < availableStock) return prev + 1;
+      toast.error(`Chỉ còn ${availableStock} sản phẩm`);
+      return prev;
+    });
+  }, [availableStock]);
 
-            if (!token) {
-                toast.warning("Vui lòng đăng nhập");
-                return;
-            }
+  if (!product) return null;
 
-            if (!selectedVariant) {
-                toast.warning("Vui lòng chọn phân loại");
-                return;
-            }
+  const isOutOfStock = !selectedVariant || isVariantOutOfStock(selectedVariant);
 
-            if (isVariantOutOfStock(selectedVariant)) {
-                toast.error("Sản phẩm này đã hết hàng!");
-                return;
-            }
-
-            const availableStock =
-                selectedVariant.quantity ||
-                selectedVariant.stock ||
-                0;
-
-            if (quantity > availableStock) {
-                toast.warning(
-                    `Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`
-                );
-                return;
-            }
-
-            try {
-
-                setLoading(true);
-
-                await addToCart({
-                    product_variant_id: selectedVariant.id,
-                    quantity
-                });
-
-                increaseCartCount(quantity);
-                toast.success(
-                    "Đã thêm vào giỏ hàng!",
-                    {
-                        position: "top-right",
-                        autoClose: 2000,
-                    }
-                );
-                handleClose();
-
-            } catch (error) {
-
-                console.log("ADD CART ERROR:", error);
-                toast.error(
-                    error.response?.data?.message ||
-                    "Add to cart failed"
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-
-        };
-
-    // =========================
-    // BUY NOW
-    // =========================
-
-    const handleBuyNow = async () => {
-
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            toast.warning("Vui lòng đăng nhập");
-            return;
-        }
-
-        if (!selectedVariant) {
-            toast.warning("Vui lòng chọn phân loại");
-            return;
-        }
-
-        if (isVariantOutOfStock(selectedVariant)) {
-            toast.error("Sản phẩm này đã hết hàng!");
-            return;
-        }
-
-        const availableStock = selectedVariant.quantity || selectedVariant.stock || 0;
-        if (quantity > availableStock) {
-            toast.warning(
-                `Số lượng không đủ. Chỉ còn ${availableStock} sản phẩm.`
-            );
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            const finalPrice = salePrice || originalPrice;
-
-            const buyNowData = {
-                buyNow: true,
-                product: {
-                    id: product.id,
-                    name: product.name,
-                    image: product.images?.[0]?.image_url || product.thumbnail || "",
-                },
-                variant: {
-                    id: selectedVariant.id,
-                    variant_name: selectedVariant.variant_name,
-                },
-                price: finalPrice,
-                quantity: quantity,
-                subtotal: finalPrice * quantity
-            };
-
-            navigate("/checkout", { state: buyNowData });
-
-        } catch (error) {
-            console.log("BUY NOW ERROR:", error);
-            toast.error(
-                error.response?.data?.message ||
-                "Mua ngay thất bại"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Render modal bằng Portal
-    return createPortal(
-        <div
-            className={`qsm-overlay ${isClosing ? 'qsm-closing' : ''}`}
-            onClick={handleClose}
+  return createPortal(
+    <div
+      className={`qsm-overlay ${isClosing ? "qsm-closing" : ""}`}
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="qsm-title"
+    >
+      <div
+        ref={modalRef}
+        className={`qsm-modal ${isClosing ? "qsm-closing" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
+      >
+        <button
+          className="qsm-close"
+          onClick={handleClose}
+          aria-label="Đóng cửa sổ"
         >
-            <div
-                className={`qsm-modal ${isClosing ? 'qsm-closing' : ''}`}
-                onClick={(e) =>
-                    e.stopPropagation()
-                }
-            >
-                <button
-                    className="qsm-close"
-                    onClick={handleClose}
-                >
-                    ✕
-                </button>
+          ✕
+        </button>
 
-                <div className="qsm-content">
+        <div className="qsm-content">
+          <div className="qsm-left">
+            <img
+              src={mainImage}
+              alt={product.name}
+              className="qsm-image"
+              loading="lazy"
+            />
+          </div>
 
-                    <div className="qsm-left">
-                        <img
-                            src={
-                                product.images?.[0]
-                                    ?.image_url || "/placeholder-image.jpg"
-                            }
-                            alt={product.name}
-                            className="qsm-image"
-                            loading="lazy"
-                        />
-                    </div>
+          <div className="qsm-right">
+            <h2 id="qsm-title" className="qsm-title">
+              {product.name}
+            </h2>
 
-                    <div className="qsm-right">
-                        <h2 className="qsm-title">
-                            {product.name}
-                        </h2>
-
-                        <div className="qsm-price">
-                            {hasDiscount ? (
-                                <>
-                                    <span className="qsm-old-price">
-                                        {originalPrice.toLocaleString("vi-VN")}đ
-                                    </span>
-                                    <span className="qsm-sale-price">
-                                        {salePrice.toLocaleString("vi-VN")}đ
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="qsm-sale-price">
-                                    {originalPrice.toLocaleString("vi-VN")}đ
-                                </span>
-                            )}
-                        </div>
-
-                        {
-                            product.variants?.length > 0 && (
-                                <div className="qsm-section">
-                                    <h4 className="qsm-section-title">
-                                        Phân loại
-                                    </h4>
-                                    <div className="qsm-variants">
-                                        {
-                                            product.variants.map(
-                                                (
-                                                    variant
-                                                ) => {
-                                                    const isOutOfStock = isVariantOutOfStock(variant);
-                                                    return (
-                                                        <button
-                                                            key={
-                                                                variant.id
-                                                            }
-                                                            className={
-                                                                selectedVariant?.id ===
-                                                                    variant.id
-                                                                    ? "qsm-variant-btn qsm-active"
-                                                                    : "qsm-variant-btn"
-                                                            }
-                                                            onClick={() =>
-                                                                handleVariantChange(variant)
-                                                            }
-                                                            disabled={isOutOfStock}
-                                                        >
-                                                            {variant.variant_name}
-                                                            {isOutOfStock && " (Hết hàng)"}
-                                                        </button>
-                                                    );
-                                                }
-                                            )
-                                        }
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        <div className="qsm-section">
-                            <h4 className="qsm-section-title">
-                                Số lượng
-                            </h4>
-                            <div className="qsm-qty-wrapper">
-                                <button
-                                    className="qsm-qty-btn"
-                                    onClick={() =>
-                                        setQuantity(
-                                            (
-                                                prev
-                                            ) =>
-                                                prev > 1
-                                                    ? prev - 1
-                                                    : 1
-                                        )
-                                    }
-                                    disabled={isVariantOutOfStock(selectedVariant)}
-                                >
-                                    -
-                                </button>
-                                <span className="qsm-qty-value">
-                                    {quantity}
-                                </span>
-                                <button
-                                    className="qsm-qty-btn"
-                                    onClick={() => {
-                                        const maxStock = selectedVariant?.quantity || selectedVariant?.stock || Infinity;
-                                        if (quantity < maxStock) {
-                                            setQuantity(prev => prev + 1);
-                                        } else {
-                                            toast.warning(
-                                                `Chỉ còn ${maxStock} sản phẩm`
-                                            );
-                                        }
-                                    }}
-                                    disabled={isVariantOutOfStock(selectedVariant)}
-                                >
-                                    +
-                                </button>
-                            </div>
-                            {selectedVariant && (
-                                <div className="qsm-stock-info">
-                                    {isVariantOutOfStock(selectedVariant) ? (
-                                        <span className="qsm-stock-out">Hết hàng</span>
-                                    ) : (
-                                        <span>Còn lại: {selectedVariant.quantity || selectedVariant.stock || 0} sản phẩm</span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="qsm-actions">
-                            <button
-                                className="qsm-add-cart-btn"
-                                onClick={
-                                    handleAddToCart
-                                }
-                                disabled={loading || isVariantOutOfStock(selectedVariant)}
-                            >
-                                {
-                                    loading
-                                        ? "Đang thêm..."
-                                        : (isVariantOutOfStock(selectedVariant) ? "Hết hàng" : "Thêm vào giỏ")
-                                }
-                            </button>
-                            <button
-                                className="qsm-buy-now-btn"
-                                onClick={handleBuyNow}
-                                disabled={loading || isVariantOutOfStock(selectedVariant)}
-                            >
-                                {loading ? "Đang xử lý..." : (isVariantOutOfStock(selectedVariant) ? "Hết hàng" : "Mua ngay")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div className="qsm-price">
+              {hasDiscount ? (
+                <>
+                  <span className="qsm-old-price">
+                    {originalPrice.toLocaleString("vi-VN")}đ
+                  </span>
+                  <span className="qsm-sale-price">
+                    {salePrice.toLocaleString("vi-VN")}đ
+                  </span>
+                </>
+              ) : (
+                <span className="qsm-sale-price">
+                  {originalPrice.toLocaleString("vi-VN")}đ
+                </span>
+              )}
             </div>
-        </div>,
-        document.body
-    );
+
+            {variants.length > 0 && (
+              <div className="qsm-section">
+                <h4 className="qsm-section-title">Phân loại</h4>
+                <div className="qsm-variants">
+                  {variants.map((variant) => {
+                    const outOfStock = isVariantOutOfStock(variant);
+                    return (
+                      <button
+                        key={variant.id}
+                        className={`qsm-variant-btn ${
+                          selectedVariant?.id === variant.id ? "qsm-active" : ""
+                        }`}
+                        onClick={() => handleVariantChange(variant)}
+                        disabled={outOfStock}
+                        aria-pressed={selectedVariant?.id === variant.id}
+                      >
+                        {variant.variant_name}
+                        {outOfStock && " (Hết hàng)"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="qsm-section">
+              <h4 className="qsm-section-title">Số lượng</h4>
+              <div className="qsm-qty-wrapper">
+                <button
+                  className="qsm-qty-btn"
+                  onClick={handleDecrease}
+                  disabled={quantity <= 1 || isOutOfStock}
+                  aria-label="Giảm số lượng"
+                >
+                  −
+                </button>
+                <span className="qsm-qty-value">{quantity}</span>
+                <button
+                  className="qsm-qty-btn"
+                  onClick={handleIncrease}
+                  disabled={quantity >= availableStock || isOutOfStock}
+                  aria-label="Tăng số lượng"
+                >
+                  +
+                </button>
+              </div>
+              {selectedVariant && (
+                <div className="qsm-stock-info">
+                  {isOutOfStock ? (
+                    <span className="qsm-stock-out">Hết hàng</span>
+                  ) : (
+                    <span>Còn lại: {availableStock} sản phẩm</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="qsm-actions">
+              <button
+                className="qsm-add-cart-btn"
+                onClick={handleAddToCart}
+                disabled={loadingAdd || isOutOfStock}
+              >
+                {loadingAdd
+                  ? "Đang thêm..."
+                  : isOutOfStock
+                  ? "Hết hàng"
+                  : "Thêm vào giỏ"}
+              </button>
+              <button
+                className="qsm-buy-now-btn"
+                onClick={handleBuyNow}
+                disabled={loadingBuy || isOutOfStock}
+              >
+                {loadingBuy
+                  ? "Đang xử lý..."
+                  : isOutOfStock
+                  ? "Hết hàng"
+                  : "Mua ngay"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 export default QuickShopModal;

@@ -2,15 +2,14 @@ import {
     BrowserRouter,
     Routes,
     Route,
-    useLocation
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+
 // Đăng ký , đăng nhập
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+
 // Trang admin
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import UserDashboard from "./pages/customer/UserDashboard";
 import AdminRoutes from "./routes/AdminRoutes";
 
 // Trang người dùng
@@ -24,44 +23,25 @@ import PaymentSuccess from "./pages/customer/PaymentSuccess";
 import PaymentCancel from "./pages/customer/PaymentCancel";
 import OrderDetail from "./pages/customer/OrderDetail";
 import MyOrders from "./pages/customer/orders/MyOrders";
-import SearchResults from './pages/customer/SearchResults';
-
-// Import ChatWidget
-import ChatWidget from "./components/Chat/ChatWidget";
-
-// Component để kiểm soát hiển thị ChatWidget
-function ConditionalChatWidget() {
-    const location = useLocation();
-    const pathname = location.pathname;
-    
-    // Các route KHÔNG hiển thị chat
-    const hiddenPaths = [
-        '/',           // Login
-        '/register',   // Register
-        '/admin'       // Admin (và tất cả route con của admin)
-    ];
-    
-    // Kiểm tra xem có đang ở trang cần ẩn chat không
-    const shouldHideChat = 
-        pathname === '/' || 
-        pathname === '/register' || 
-        pathname.startsWith('/admin');
-    
-    if (shouldHideChat) {
-        return null; // Không hiển thị chat
-    }
-    
-    return <ChatWidget />;
-}
+import SearchResults from "./pages/customer/SearchResults";
 
 function App() {
     return (
         <BrowserRouter>
             <Toaster position="top-right" />
+
             <Routes>
-                <Route path="/" element={<Login />} />
+                {/* Trang chủ */}
+                <Route path="/" element={<Home />} />
+
+                {/* Đăng nhập / Đăng ký */}
+                <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+
+                {/* Admin */}
                 <Route path="/admin/*" element={<AdminRoutes />} />
+
+                {/* Người dùng */}
                 <Route path="/user" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
@@ -74,9 +54,6 @@ function App() {
                 <Route path="/my-orders" element={<MyOrders />} />
                 <Route path="/search" element={<SearchResults />} />
             </Routes>
-            
-            {/* ChatWidget chỉ hiển thị trên các trang customer */}
-            <ConditionalChatWidget />
         </BrowserRouter>
     );
 }

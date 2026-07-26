@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "../../components/auth/authStyles";
 import logo from "../../assets/logo.png";
 
@@ -12,6 +12,25 @@ import API from "../../services/api";
 function Register() {
 
     const navigate = useNavigate();
+
+    // Responsive
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+
+    }, []);
+
+    const [loading, setLoading] = useState(false);
 
     const [form, setForm] = useState({
         username: "",
@@ -40,7 +59,11 @@ function Register() {
 
         e.preventDefault();
 
+        if (loading) return;
+
         try {
+
+            setLoading(true);
 
             const res = await API.post(
                 "/auth/register",
@@ -49,7 +72,7 @@ function Register() {
 
             alert(res.data.message);
 
-            navigate("/");
+            navigate("/login");
 
         } catch (err) {
 
@@ -65,95 +88,168 @@ function Register() {
 
             }
 
+        } finally {
+
+            setLoading(false);
+
         }
+
     };
 
-return (
-    <div style={styles.page}>
+    return (
 
-        {/* Container chính */}
-        <div style={styles.container}>
+        <div style={styles.page}>
 
-            {/* LEFT */}
-            <div style={styles.leftSide}>
+            <div style={styles.container}>
 
-                <div style={styles.overlay}>
+                {/* Desktop Banner */}
+                {!isMobile && (
 
-                    <img
-                        src={logo}
-                        alt="Logo"
-                        style={styles.logo}
-                    />
+                    <div style={styles.leftSide}>
 
-                    <h1 style={styles.title}>
-                        LEGO & Mini Car Store
-                    </h1>
+                        <div style={styles.overlay}>
+    <img
+        src={logo}
+        alt="Logo"
+        style={{
+            ...styles.logo,
+            width: 500,
+            margin: "0 auto 20px",
+            display: "block",
+        }}
+    />
 
-                    <p style={styles.description}>
-                        Chuyên mô hình LEGO và xe 1:64 cao cấp dành cho người sưu tầm.
-                    </p>
+                            <h1 style={styles.title}>
+                                LEGO & Mini Car Store
+                            </h1>
+
+                            <p style={styles.description}>
+                                Chuyên mô hình LEGO và xe 1:64 cao cấp dành cho người sưu tầm.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+                {/* Register Form */}
+
+                <div style={styles.rightSide}>
+
+                    <form
+                        style={styles.form}
+                        onSubmit={handleSubmit}
+                    >
+
+                        {isMobile && (
+
+                            <img
+                                src={logo}
+                                alt="Logo"
+                                style={{
+                                    ...styles.logo,
+                                    width: 110,
+                                    margin: "0 auto 15px",
+                                }}
+                            />
+
+                        )}
+
+                        <h2
+                            style={{
+                                textAlign: "center",
+                                color: "#ff6b00",
+                                margin: 0,
+                            }}
+                        >
+                            Tạo tài khoản
+                        </h2>
+
+                        <p
+                            style={{
+                                textAlign: "center",
+                                color: "#666",
+                                marginTop: 5,
+                                marginBottom: 20,
+                                fontSize: 14,
+                            }}
+                        >
+                            Đăng ký để bắt đầu mua sắm cùng LEGO & Mini Car Store
+                        </p>
+
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Tên người dùng"
+                            value={form.username}
+                            onChange={handleChange}
+                            style={styles.input}
+                            required
+                        />
+
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="Email"
+                            value={form.email}
+                            onChange={handleChange}
+                            style={styles.input}
+                            required
+                        />
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Mật khẩu"
+                            value={form.password}
+                            onChange={handleChange}
+                            style={styles.input}
+                            required
+                        />
+
+                        <button
+                            type="submit"
+                            style={styles.button}
+                            disabled={loading}
+                        >
+                            {loading
+                                ? "Đang đăng ký..."
+                                : "Đăng ký"}
+                        </button>
+
+                        <p
+                            style={{
+                                textAlign: "center",
+                                margin: 0,
+                                fontSize: 14,
+                            }}
+                        >
+                            Đã có tài khoản?{" "}
+
+                            <Link
+                                to="/login"
+                                style={{
+                                    color: "#ff6b00",
+                                    fontWeight: "bold",
+                                    textDecoration: "none",
+                                }}
+                            >
+                                Đăng nhập
+                            </Link>
+
+                        </p>
+
+                    </form>
 
                 </div>
 
             </div>
 
-            {/* RIGHT */}
-            <div style={styles.rightSide}>
-
-                <form
-                    style={styles.form}
-                    onSubmit={handleSubmit}
-                >
-
-                    <h2 style={styles.heading}>
-                        Đăng ký
-                    </h2>
-
-                    <input
-                        type="text"
-                        name="username"
-                        placeholder="Username"
-                        onChange={handleChange}
-                        style={styles.input}
-                    />
-
-                    <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        onChange={handleChange}
-                        style={styles.input}
-                    />
-
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        onChange={handleChange}
-                        style={styles.input}
-                    />
-
-                    <button style={styles.button}>
-                        Đăng ký
-                    </button>
-
-                    <p style={styles.text}>
-                        Đã có tài khoản?
-
-                        <Link to="/" style={styles.link}>
-                            {" "}Đăng nhập
-                        </Link>
-                    </p>
-
-                </form>
-
-            </div>
-
         </div>
 
-    </div>
-);
-}
+    );
 
+}
 
 export default Register;

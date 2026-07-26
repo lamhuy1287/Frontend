@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "../../components/auth/authStyles";
 import logo from "../../assets/logo.png";
 
@@ -13,14 +13,27 @@ function Login() {
 
     const navigate = useNavigate();
 
+    // Responsive
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+
+    }, []);
+
     const [form, setForm] = useState({
         email: "",
         password: "",
     });
-
-    // =========================
-    // HANDLE CHANGE
-    // =========================
 
     const handleChange = (e) => {
 
@@ -31,36 +44,15 @@ function Login() {
 
     };
 
-    // =========================
-    // HANDLE LOGIN
-    // =========================
-
     const handleSubmit = async (e) => {
 
         e.preventDefault();
 
         try {
 
-            const res = await API.post(
-                "/auth/login",
-                form
-            );
+            const res = await API.post("/auth/login", form);
 
-            console.log(res.data);
-
-            // =====================
-            // BACKEND RESPONSE
-            // =====================
-
-            const responseData = res.data.data;
-
-            const user = responseData.user;
-
-            const token = responseData.access_token;
-
-            // =====================
-            // SAVE LOCAL STORAGE
-            // =====================
+            const { user, access_token } = res.data.data;
 
             localStorage.setItem(
                 "user",
@@ -69,31 +61,18 @@ function Login() {
 
             localStorage.setItem(
                 "token",
-                token
+                access_token
             );
-            console.log(
-    localStorage.getItem("token")
-);
 
             alert(res.data.message);
 
-            // =====================
-            // REDIRECT
-            // =====================
-
-            if (user.role === "admin") {
-
-                navigate("/admin");
-
-            } else {
-
-                navigate("/user");
-
-            }
+            navigate(
+                user.role === "admin"
+                    ? "/admin"
+                    : "/user"
+            );
 
         } catch (err) {
-
-            console.log(err);
 
             if (err.response) {
 
@@ -106,34 +85,43 @@ function Login() {
             }
 
         }
+
     };
 
     return (
+
         <div style={styles.page}>
 
-            {/* Container chính */}
             <div style={styles.container}>
 
-                {/* Bên trái */}
-                <div style={styles.leftSide}>
-                    <div style={styles.overlay}>
-                        <img
-                            src={logo}
-                            alt="Logo"
-                            style={styles.logo}
-                        />
+                {/* Banner Desktop */}
+                {!isMobile && (
 
-                        <h1 style={styles.title}>
-                            LEGO & Mini Car Store
-                        </h1>
+                    <div style={styles.leftSide}>
 
-                        <p style={styles.description}>
-                            Chuyên mô hình LEGO và xe 1:64 cao cấp dành cho người sưu tầm.
-                        </p>
+                        <div style={styles.overlay}>
+
+                            <img
+                                src={logo}
+                                alt="Logo"
+                                style={styles.logo}
+                            />
+
+                            <h1 style={styles.title}>
+                                LEGO & Mini Car Store
+                            </h1>
+
+                            <p style={styles.description}>
+                                Chuyên mô hình LEGO và xe 1:64 cao cấp dành cho người sưu tầm.
+                            </p>
+
+                        </div>
+
                     </div>
-                </div>
 
-                {/* Bên phải */}
+                )}
+
+                {/* Form */}
                 <div style={styles.rightSide}>
 
                     <form
@@ -141,34 +129,90 @@ function Login() {
                         onSubmit={handleSubmit}
                     >
 
-                        <h2>Đăng nhập</h2>
+                        {isMobile && (
+
+    <img
+        src={logo}
+        alt="Logo"
+        style={{
+            ...styles.logo,
+            width: 500,
+            margin: "0 auto 20px",
+            display: "block",
+        }}
+    />
+
+                        )}
+
+                        <h2
+                            style={{
+                                textAlign: "center",
+                                margin: 0,
+                                color: "#ff6b00",
+                            }}
+                        >
+                            Chào mừng trở lại
+                        </h2>
+
+                        <p
+                            style={{
+                                textAlign: "center",
+                                color: "#666",
+                                marginTop: 5,
+                                marginBottom: 20,
+                                fontSize: 14,
+                            }}
+                        >
+                            Đăng nhập để tiếp tục mua sắm
+                        </p>
 
                         <input
                             type="email"
                             name="email"
                             placeholder="Email"
+                            value={form.email}
                             onChange={handleChange}
                             style={styles.input}
+                            required
                         />
 
                         <input
                             type="password"
                             name="password"
-                            placeholder="Password"
+                            placeholder="Mật khẩu"
+                            value={form.password}
                             onChange={handleChange}
                             style={styles.input}
+                            required
                         />
 
-                        <button style={styles.button}>
+                        <button
+                            type="submit"
+                            style={styles.button}
+                        >
                             Đăng nhập
                         </button>
 
-                        <p>
-                            Chưa có tài khoản?
+                        <p
+                            style={{
+                                textAlign: "center",
+                                margin: 0,
+                                fontSize: 14,
+                            }}
+                        >
+                            Chưa có tài khoản?{" "}
 
-                            <Link to="/register">
-                                {" "}Đăng ký
+                            <Link
+                                to="/register"
+                                style={{
+                                    color: "#ff6b00",
+                                    fontWeight: "bold",
+                                    textDecoration: "none",
+                                }}
+                            >
+                                Đăng ký
                             </Link>
+
                         </p>
 
                     </form>
@@ -178,9 +222,9 @@ function Login() {
             </div>
 
         </div>
+
     );
+
 }
-
-
 
 export default Login;

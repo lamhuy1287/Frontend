@@ -1,363 +1,495 @@
-
-
-
+/* ===== OVERLAY ===== */
 .qsm-overlay {
-    position: fixed !important;
-    inset: 0 !important;
-    background: rgba(0, 0, 0, 0.55) !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    z-index: 999999 !important;
-    backdrop-filter: blur(4px) !important;
-    animation: qsmFadeIn 0.25s ease !important;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
+  backdrop-filter: blur(4px);
+  animation: qsmFadeIn 0.25s ease;
+  padding: 12px; /* Để modal không sát mép */
+  box-sizing: border-box;
 }
 
 .qsm-overlay.qsm-closing {
-    animation: qsmFadeOut 0.25s ease forwards !important;
+  animation: qsmFadeOut 0.25s ease forwards;
 }
 
-
+/* ===== MODAL ===== */
 .qsm-modal {
-    width: 950px !important;
-    max-width: 95% !important;
-    max-height: 92vh !important;
-    background: #fff !important;
-    border-radius: 20px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
-    animation: qsmPopupShow 0.3s ease !important;
+  width: min(950px, 96%);
+  max-height: min(92vh, 800px);
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden; /* Ẩn phần tràn */
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: qsmPopupShow 0.3s ease;
+  display: flex;
+  flex-direction: column; /* Để modal co giãn theo nội dung */
 }
 
 .qsm-modal.qsm-closing {
-    animation: qsmPopupHide 0.25s ease forwards !important;
+  animation: qsmPopupHide 0.25s ease forwards;
 }
 
-
+/* ===== CONTENT (GRID) ===== */
 .qsm-content {
-    display: grid !important;
-    grid-template-columns: 420px 1fr !important;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  flex: 1;
+  min-height: 0; /* Cho phép co giãn */
 }
 
-
+/* ===== LEFT (IMAGE) ===== */
 .qsm-left {
-    background: #f8f8f8 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 24px !important;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+  overflow: hidden; /* Ẩn phần thừa */
 }
 
 .qsm-image {
-    width: 100% !important;
-    max-width: 360px !important;
-    aspect-ratio: 1/1 !important;
-    object-fit: cover !important;
-    border-radius: 18px !important;
-    background: white !important;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 18px;
+  background: #fff;
 }
 
-
+/* ===== RIGHT (INFO) ===== */
 .qsm-right {
-    padding: 32px !important;
-    overflow-y: auto !important;
-    max-height: 92vh !important;
-    scrollbar-width: thin !important;
+  padding: clamp(20px, 4vw, 32px);
+  overflow-y: auto;
+  max-height: 80vh; /* fallback */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
 }
 
 .qsm-right::-webkit-scrollbar {
-    width: 6px !important;
+  width: 6px;
 }
-
 .qsm-right::-webkit-scrollbar-track {
-    background: #f1f1f1 !important;
-    border-radius: 10px !important;
+  background: #f1f1f1;
+  border-radius: 10px;
 }
-
 .qsm-right::-webkit-scrollbar-thumb {
-    background: #888 !important;
-    border-radius: 10px !important;
+  background: #888;
+  border-radius: 10px;
 }
 
+/* ===== TITLE ===== */
 .qsm-title {
-    font-size: 28px !important;
-    font-weight: 700 !important;
-    line-height: 1.4 !important;
-    margin-bottom: 18px !important;
-    color: #222 !important;
-    font-family: inherit !important;
+  font-size: clamp(1.4rem, 3.5vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  color: #222;
 }
 
-
+/* ===== PRICE ===== */
 .qsm-price {
-    margin-bottom: 28px !important;
+  margin-bottom: 24px;
 }
 
 .qsm-old-price {
-    display: block !important;
-    font-size: 16px !important;
-    color: #999 !important;
-    text-decoration: line-through !important;
-    margin-bottom: 8px !important;
+  display: block;
+  font-size: clamp(0.875rem, 1.2vw, 1rem);
+  color: #999;
+  text-decoration: line-through;
+  margin-bottom: 4px;
 }
 
 .qsm-sale-price {
-    display: block !important;
-    font-size: 34px !important;
-    font-weight: 800 !important;
-    color: #ee4d2d !important;
+  display: block;
+  font-size: clamp(1.75rem, 4vw, 2.125rem);
+  font-weight: 800;
+  color: #ee4d2d;
 }
 
-
+/* ===== SECTIONS ===== */
 .qsm-section {
-    margin-bottom: 28px !important;
+  margin-bottom: 24px;
 }
 
 .qsm-section-title {
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    margin-bottom: 14px !important;
-    color: #555 !important;
-    font-family: inherit !important;
+  font-size: clamp(0.875rem, 1.2vw, 0.95rem);
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #555;
 }
 
-
+/* ===== VARIANTS ===== */
 .qsm-variants {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 12px !important;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .qsm-variant-btn {
-    border: 1px solid #ddd !important;
-    background: white !important;
-    padding: 10px 18px !important;
-    border-radius: 12px !important;
-    cursor: pointer !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    transition: all 0.25s ease !important;
-    font-family: inherit !important;
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  font-weight: 500;
+  transition: all 0.25s ease;
+  font-family: inherit;
 }
 
 .qsm-variant-btn:hover:not(:disabled) {
-    border-color: #ee4d2d !important;
-    color: #ee4d2d !important;
-    transform: translateY(-2px) !important;
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+  transform: translateY(-2px);
 }
 
 .qsm-variant-btn.qsm-active {
-    background: #fff1ee !important;
-    border-color: #ee4d2d !important;
-    color: #ee4d2d !important;
-    font-weight: 700 !important;
+  background: #fff1ee;
+  border-color: #ee4d2d;
+  color: #ee4d2d;
+  font-weight: 700;
 }
 
 .qsm-variant-btn:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
-
+/* ===== QUANTITY ===== */
 .qsm-qty-wrapper {
-    display: inline-flex !important;
-    align-items: center !important;
-    border: 1px solid #ddd !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .qsm-qty-btn {
-    width: 42px !important;
-    height: 42px !important;
-    border: none !important;
-    background: white !important;
-    cursor: pointer !important;
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    transition: 0.2s !important;
-    font-family: inherit !important;
+  width: clamp(40px, 6vw, 48px);
+  height: clamp(40px, 6vw, 48px);
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: clamp(1.2rem, 2vw, 1.4rem);
+  font-weight: 600;
+  transition: background 0.2s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .qsm-qty-btn:hover:not(:disabled) {
-    background: #f5f5f5 !important;
+  background: #f5f5f5;
 }
 
 .qsm-qty-btn:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .qsm-qty-value {
-    width: 60px !important;
-    text-align: center !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
+  min-width: 50px;
+  text-align: center;
+  font-size: clamp(1rem, 1.2vw, 1.1rem);
+  font-weight: 600;
+  padding: 0 4px;
 }
 
 .qsm-stock-info {
-    font-size: 13px !important;
-    color: #666 !important;
-    margin-top: 8px !important;
+  font-size: clamp(0.75rem, 0.9vw, 0.85rem);
+  color: #666;
+  margin-top: 8px;
 }
 
 .qsm-stock-out {
-    color: #ee4d2d !important;
-    font-weight: bold !important;
+  color: #ee4d2d;
+  font-weight: 700;
 }
 
-
+/* ===== ACTIONS ===== */
 .qsm-actions {
-    display: flex !important;
-    gap: 16px !important;
-    margin-top: 36px !important;
+  display: flex;
+  gap: 14px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+  flex-shrink: 0; /* Không co lại khi thiếu không gian */
 }
 
 .qsm-add-cart-btn,
 .qsm-buy-now-btn {
-    flex: 1 !important;
-    height: 52px !important;
-    border: none !important;
-    border-radius: 14px !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
-    transition: all 0.25s ease !important;
-    font-family: inherit !important;
+  flex: 1;
+  min-width: 140px;
+  height: clamp(48px, 7vw, 56px);
+  border: none;
+  border-radius: 14px;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
 }
 
 .qsm-add-cart-btn {
-    background: #fff1ee !important;
-    color: #ee4d2d !important;
-    border: 1px solid #ee4d2d !important;
+  background: #fff1ee;
+  color: #ee4d2d;
+  border: 1px solid #ee4d2d;
 }
 
 .qsm-add-cart-btn:hover:not(:disabled) {
-    background: #ffe4dc !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(238, 77, 45, 0.2) !important;
+  background: #ffe4dc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(238, 77, 45, 0.2);
 }
 
 .qsm-buy-now-btn {
-    background: #ee4d2d !important;
-    color: white !important;
+  background: #ee4d2d;
+  color: #fff;
 }
 
 .qsm-buy-now-btn:hover:not(:disabled) {
-    background: #d93f21 !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(238, 77, 45, 0.3) !important;
+  background: #d93f21;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(238, 77, 45, 0.3);
 }
 
 button:disabled {
-    opacity: 0.6 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }
 
-
+/* ===== CLOSE BUTTON ===== */
 .qsm-close {
-    position: absolute !important;
-    top: 18px !important;
-    right: 18px !important;
-    width: 38px !important;
-    height: 38px !important;
-    border: none !important;
-    border-radius: 50% !important;
-    background: #f3f3f3 !important;
-    cursor: pointer !important;
-    font-size: 18px !important;
-    font-weight: bold !important;
-    z-index: 10 !important;
-    transition: all 0.2s ease !important;
-    font-family: inherit !important;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(243, 243, 243, 0.9);
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 10;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
 }
 
 .qsm-close:hover {
-    background: #e5e5e5 !important;
-    transform: rotate(90deg) !important;
+  background: #e5e5e5;
+  transform: rotate(90deg);
 }
 
-
+/* ===== ANIMATIONS ===== */
 @keyframes qsmPopupShow {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes qsmPopupHide {
-    from {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: scale(0.9) translateY(20px);
-    }
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
 }
 
 @keyframes qsmFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes qsmFadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
+/* ======================================== */
+/* ===== RESPONSIVE TABLET (≤1024px) ===== */
+/* ======================================== */
+@media (max-width: 1024px) {
+  .qsm-content {
+    grid-template-columns: 1fr 1.2fr;
+  }
 
+  .qsm-left {
+    padding: 16px;
+  }
+
+  .qsm-image {
+    max-width: 280px;
+  }
+
+  .qsm-right {
+    max-height: 70vh;
+    padding: 20px;
+  }
+}
+
+/* ======================================== */
+/* ===== RESPONSIVE MOBILE (≤768px) ===== */
+/* ======================================== */
 @media (max-width: 768px) {
-    .qsm-modal {
-        width: 95% !important;
-        border-radius: 18px !important;
-    }
+  .qsm-modal {
+    width: 95%;
+    max-height: 96vh;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+  }
 
-    .qsm-content {
-        grid-template-columns: 1fr !important;
-    }
+  .qsm-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* Cho phép co giãn */
+  }
 
-    .qsm-left {
-        padding: 18px !important;
-    }
+  .qsm-left {
+    padding: 16px 16px 8px;
+    flex-shrink: 0; /* Không co lại */
+    background: #f8f8f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-    .qsm-image {
-        max-width: 260px !important;
-    }
+  .qsm-image {
+    max-width: 200px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+  }
 
-    .qsm-right {
-        padding: 20px !important;
-    }
+  .qsm-right {
+    padding: 16px 18px 24px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    max-height: none; /* Để flex quyết định */
+    display: flex;
+    flex-direction: column;
+  }
 
-    .qsm-title {
-        font-size: 22px !important;
-    }
+  /* Các phần bên trong không bị co */
+  .qsm-title,
+  .qsm-price,
+  .qsm-section,
+  .qsm-actions {
+    flex-shrink: 0;
+  }
 
-    .qsm-sale-price {
-        font-size: 28px !important;
-    }
+  .qsm-actions {
+    margin-top: auto; /* Đẩy xuống cuối */
+    padding-top: 12px;
+    flex-direction: column; /* Xếp chồng trên mobile */
+    gap: 10px;
+  }
 
-    .qsm-actions {
-        flex-direction: column !important;
-    }
+  .qsm-add-cart-btn,
+  .qsm-buy-now-btn {
+    min-width: unset;
+    width: 100%;
+    height: 50px;
+    font-size: 0.95rem;
+  }
+
+  .qsm-close {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .qsm-variant-btn {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .qsm-title {
+    font-size: 1.25rem;
+  }
+  .qsm-sale-price {
+    font-size: 1.5rem;
+  }
+  .qsm-price {
+    margin-bottom: 16px;
+  }
+  .qsm-section {
+    margin-bottom: 16px;
+  }
 }
 
+/* ===== VERY SMALL SCREENS (≤400px) ===== */
+@media (max-width: 400px) {
+  .qsm-modal {
+    width: 98%;
+    border-radius: 12px;
+  }
+  .qsm-image {
+    max-width: 150px;
+    max-height: 150px;
+  }
+  .qsm-right {
+    padding: 12px 14px 18px;
+    font-size: 0.9rem;
+  }
+  .qsm-title {
+    font-size: 1.1rem;
+  }
+  .qsm-sale-price {
+    font-size: 1.3rem;
+  }
+  .qsm-qty-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+  .qsm-qty-value {
+    min-width: 40px;
+  }
+  .qsm-add-cart-btn,
+  .qsm-buy-now-btn {
+    height: 44px;
+    font-size: 0.85rem;
+  }
+}
 
+/* ===== PERFORMANCE ===== */
 .qsm-modal,
 .qsm-overlay {
-    will-change: transform, opacity !important;
+  will-change: transform, opacity;
 }
